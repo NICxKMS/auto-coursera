@@ -10,7 +10,7 @@
 		"dev": "webpack --mode development --watch",
 		"test": "vitest run",
 		"format": "biome format src/ --write",
- 		"test:watch": "vitest",
+		"test:watch": "vitest",
 		"lint": "eslint src/ --ext .ts",
 		"typecheck": "tsc --noEmit"
 	},

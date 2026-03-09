@@ -3,7 +3,7 @@
  * REQ: REQ-011
  */
 
-import type { ErrorPayload, Message } from '../types/messages';
+import type { ErrorPayload, Message, MessageType } from '../types/messages';
 import { ERROR_CODES } from '../utils/constants';
 import { Logger } from '../utils/logger';
 
@@ -15,9 +15,9 @@ export type MessageHandler = (
 ) => Promise<Message>;
 
 export class MessageRouter {
-	private handlers: Map<string, MessageHandler> = new Map();
+	private handlers: Map<MessageType, MessageHandler> = new Map();
 
-	on(type: string, handler: MessageHandler): void {
+	on(type: MessageType, handler: MessageHandler): void {
 		this.handlers.set(type, handler);
 	}
 

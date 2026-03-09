@@ -9,7 +9,7 @@ const API_KEY_FIELDS = [
 	'groqApiKey',
 	'cerebrasApiKey',
 ] as const;
-let derivedKey: CryptoKey | null = null;
+let derivedKeyPromise: Promise<CryptoKey> | null = null;
 
 export async function getSettings(): Promise<AppSettings> {
 	const raw = await chrome.storage.local.get(DEFAULT_SETTINGS);
@@ -70,25 +70,28 @@ async function decrypt(stored: string): Promise<string> {
 }
 
 async function getDerivedKey(): Promise<CryptoKey> {
-	if (derivedKey) return derivedKey;
-	const material = await crypto.subtle.importKey(
-		'raw',
-		new TextEncoder().encode(chrome.runtime.id),
-		'PBKDF2',
-		false,
-		['deriveKey'],
-	);
-	derivedKey = await crypto.subtle.deriveKey(
-		{
-			name: 'PBKDF2',
-			salt: new TextEncoder().encode('auto-coursera-v1'),
-			iterations: 100_000,
-			hash: 'SHA-256',
-		},
-		material,
-		{ name: 'AES-GCM', length: 256 },
-		false,
-		['encrypt', 'decrypt'],
-	);
-	return derivedKey;
+	if (!derivedKeyPromise) {
+		derivedKeyPromise = (async () => {
+			const material = await crypto.subtle.importKey(
+				'raw',
+				new TextEncoder().encode(chrome.runtime.id),
+				'PBKDF2',
+				false,
+				['deriveKey'],
+			);
+			return crypto.subtle.deriveKey(
+				{
+					name: 'PBKDF2',
+					salt: new TextEncoder().encode('auto-coursera-v1'),
+					iterations: 100_000,
+					hash: 'SHA-256',
+				},
+				material,
+				{ name: 'AES-GCM', length: 256 },
+				false,
+				['encrypt', 'decrypt'],
+			);
+		})();
+	}
+	return derivedKeyPromise;
 }

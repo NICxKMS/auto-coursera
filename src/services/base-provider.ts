@@ -169,38 +169,14 @@ export abstract class BaseAIProvider implements IAIProvider {
 		for (let attempt = 0; attempt <= retries; attempt++) {
 			const controller = new AbortController();
 			const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+			let res: Response;
 			try {
-				const res = await fetch(url, {
+				res = await fetch(url, {
 					method: 'POST',
 					headers,
 					body: JSON.stringify(body),
 					signal: controller.signal,
 				});
-				clearTimeout(timeout);
-
-				if (res.ok) {
-					return (await res.json()) as APICompletionResponse;
-				}
-
-				if (res.status === 401 || res.status === 403) {
-					throw new Error(
-						`${providerName} API key is invalid or expired. Please check your API key in extension settings.`,
-					);
-				}
-
-				if (res.status === 429 || res.status >= 500) {
-					const backoff = 2 ** attempt * RETRY_BACKOFF_BASE_MS + Math.random() * RETRY_JITTER_MS;
-					this.logger.warn(
-						`${providerName} ${res.status}, retrying in ${Math.round(backoff)}ms (attempt ${attempt + 1}/${retries + 1})`,
-					);
-					await new Promise<void>((r) => setTimeout(r, backoff));
-					continue;
-				}
-
-				const errorBody = await res.text().catch(() => '');
-				throw new Error(
-					`${providerName} API error: ${res.status} ${res.statusText}${errorBody ? ` - ${errorBody}` : ''}`,
-				);
 			} catch (error) {
 				clearTimeout(timeout);
 				if (error instanceof Error && error.name === 'AbortError') {
@@ -217,6 +193,34 @@ export abstract class BaseAIProvider implements IAIProvider {
 				}
 				throw error;
 			}
+			clearTimeout(timeout);
+
+			if (res.ok) {
+				return (await res.json()) as APICompletionResponse;
+			}
+
+			// Non-retryable auth errors — throw immediately, never retry
+			if (res.status === 401 || res.status === 403) {
+				throw new Error(
+					`${providerName} API key is invalid or expired. Please check your API key in extension settings.`,
+				);
+			}
+
+			// Retryable server/rate-limit errors
+			if ((res.status === 429 || res.status >= 500) && attempt < retries) {
+				const backoff = 2 ** attempt * RETRY_BACKOFF_BASE_MS + Math.random() * RETRY_JITTER_MS;
+				this.logger.warn(
+					`${providerName} ${res.status}, retrying in ${Math.round(backoff)}ms (attempt ${attempt + 1}/${retries + 1})`,
+				);
+				await new Promise<void>((r) => setTimeout(r, backoff));
+				continue;
+			}
+
+			// Non-retryable client error or exhausted retries on server error
+			const errorBody = await res.text().catch(() => '');
+			throw new Error(
+				`${providerName} API error: ${res.status} ${res.statusText}${errorBody ? ` - ${errorBody}` : ''}`,
+			);
 		}
 
 		throw new Error(`${providerName}: Max retries exceeded`);

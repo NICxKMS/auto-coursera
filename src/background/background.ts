@@ -13,9 +13,13 @@ import { OpenRouterProvider } from '../services/openrouter';
 import type { AIBatchRequest, AIRequest, IAIProvider } from '../types/api';
 import type {
 	BatchQuestionPayload,
+	BatchSolveResponsePayload,
 	ErrorPayload,
+	GetSettingsResponsePayload,
 	Message,
+	ResetExtensionResponsePayload,
 	SelectAnswerPayload,
+	SetEnabledResponsePayload,
 	SolveImageQuestionPayload,
 	SolveQuestionPayload,
 	StatusPayload,
@@ -36,6 +40,9 @@ function errorResponse(code: string, message: string): Message {
 }
 
 const KEEPALIVE_ALARM = 'sw-keepalive';
+const IDLE_RESET_ALARM = 'sw-idle-reset';
+let _idleResetTimestamp = 0;
+let solveMutex: Promise<void> = Promise.resolve();
 
 function startKeepAlive(): void {
 	chrome.alarms.create(KEEPALIVE_ALARM, { periodInMinutes: 0.4 }); // 24s, under 30s idle limit
@@ -48,8 +55,27 @@ function stopKeepAlive(): void {
 chrome.alarms.onAlarm.addListener((alarm) => {
 	if (alarm.name === KEEPALIVE_ALARM) {
 		logger.debug('Keep-alive ping');
+	} else if (alarm.name === IDLE_RESET_ALARM) {
+		handleIdleReset();
 	}
 });
+
+async function handleIdleReset(): Promise<void> {
+	try {
+		const current = await chrome.storage.session.get({
+			_lastStatus: '',
+			_lastStatusTimestamp: 0,
+		});
+		if (
+			current._lastStatus === 'active' &&
+			(current._lastStatusTimestamp as number) <= _idleResetTimestamp
+		) {
+			await chrome.storage.session.set({ _lastStatus: 'idle' });
+		}
+	} catch {
+		/* SW context may have been invalidated */
+	}
+}
 let providersReady = false;
 let providerReadyPromise: Promise<void> = getSettings()
 	.then((s) => initializeProviders(s))
@@ -84,7 +110,30 @@ async function initializeProviders(settings: AppSettings): Promise<void> {
 	logger.info(`Providers initialized: ${providerManager.getProviderNames().join(', ')}`);
 }
 
+async function acquireSolveLock(): Promise<() => void> {
+	let release!: () => void;
+	const gate = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const prev = solveMutex;
+	solveMutex = gate;
+	await prev;
+	return release;
+}
+
 async function solveLifecycle(label: string, execute: () => Promise<Message>): Promise<Message> {
+	const release = await acquireSolveLock();
+	try {
+		return await solveLifecycleCore(label, execute);
+	} finally {
+		release();
+	}
+}
+
+async function solveLifecycleCore(
+	label: string,
+	execute: () => Promise<Message>,
+): Promise<Message> {
 	await chrome.storage.session.set({
 		_lastStatus: 'processing',
 		_lastError: '',
@@ -129,16 +178,8 @@ async function solveLifecycle(label: string, execute: () => Promise<Message>): P
 }
 
 function scheduleIdleReset(): void {
-	setTimeout(async () => {
-		try {
-			const current = await chrome.storage.session.get({ _lastStatus: '' });
-			if (current._lastStatus === 'active') {
-				await chrome.storage.session.set({ _lastStatus: 'idle' });
-			}
-		} catch {
-			/* SW may have stopped */
-		}
-	}, 30_000);
+	_idleResetTimestamp = Date.now();
+	chrome.alarms.create(IDLE_RESET_ALARM, { delayInMinutes: 0.5 });
 }
 
 async function handleSolveQuestion(payload: unknown): Promise<Message> {
@@ -164,6 +205,7 @@ async function handleSolveQuestion(payload: unknown): Promise<Message> {
 		const result = await providerManager.solve(request);
 
 		const session = await chrome.storage.session.get({ solvedCount: 0, tokenCount: 0 });
+		const newSolvedCount = (session.solvedCount as number) + 1;
 		await chrome.storage.session.set({
 			_lastProvider: result.provider,
 			_lastModel: result.model,
@@ -171,10 +213,10 @@ async function handleSolveQuestion(payload: unknown): Promise<Message> {
 			_lastStatus: 'active',
 			_lastError: '',
 			_lastStatusTimestamp: Date.now(),
-			solvedCount: (session.solvedCount as number) + 1,
+			solvedCount: newSolvedCount,
 			tokenCount: (session.tokenCount as number) + (result.tokensUsed || 0),
 		});
-		chrome.action.setBadgeText({ text: '1' });
+		chrome.action.setBadgeText({ text: String(newSolvedCount) });
 		chrome.action.setBadgeBackgroundColor({ color: '#22c55e' });
 
 		return {
@@ -218,7 +260,7 @@ async function handleSetEnabled(payload: unknown): Promise<Message> {
 	await setEnabled(payload);
 	return {
 		type: 'SET_ENABLED',
-		payload: { success: true },
+		payload: { success: true } satisfies SetEnabledResponsePayload,
 	};
 }
 
@@ -230,7 +272,7 @@ async function handleGetSettings(): Promise<Message> {
 	}
 	return {
 		type: 'GET_SETTINGS',
-		payload: masked,
+		payload: masked satisfies GetSettingsResponsePayload,
 	};
 }
 
@@ -291,9 +333,26 @@ async function handleSolveBatch(payload: unknown): Promise<Message> {
 			type: 'SOLVE_BATCH',
 			payload: {
 				answers: result.answers,
-			},
+			} satisfies BatchSolveResponsePayload,
 		};
 	});
+}
+
+async function handleResetExtension(): Promise<Message> {
+	try {
+		await resetAndReinitialize();
+		logger.info('Extension reset via popup');
+		return {
+			type: 'RESET_EXTENSION',
+			payload: { success: true } satisfies ResetExtensionResponsePayload,
+		};
+	} catch (error) {
+		logger.error('Reset failed', error);
+		return errorResponse(
+			ERROR_CODES.SOLVE_FAILED,
+			error instanceof Error ? error.message : 'Reset failed',
+		);
+	}
 }
 
 router.on('SOLVE_QUESTION', handleSolveQuestion);
@@ -302,6 +361,7 @@ router.on('SOLVE_BATCH', handleSolveBatch);
 router.on('GET_STATUS', handleGetStatus);
 router.on('SET_ENABLED', handleSetEnabled);
 router.on('GET_SETTINGS', handleGetSettings);
+router.on('RESET_EXTENSION', handleResetExtension);
 
 chrome.commands.onCommand.addListener(async (command) => {
 	if (command === 'scan-page') {
@@ -327,6 +387,7 @@ async function resetAndReinitialize(): Promise<void> {
 		failedCount: 0,
 		tokenCount: 0,
 	});
+	providersReady = false;
 	const settings = await getSettings();
 	providerReadyPromise = initializeProviders(settings);
 	await providerReadyPromise;
@@ -371,7 +432,16 @@ chrome.runtime.onMessage.addListener(
 			});
 			return false;
 		}
-		router.route(message, sender).then(sendResponse);
+		if (!message || typeof message.type !== 'string') {
+			sendResponse(errorResponse('INVALID_MESSAGE', 'Invalid message format'));
+			return false;
+		}
+		router
+			.route(message, sender)
+			.then(sendResponse)
+			.catch(() => {
+				sendResponse(errorResponse('INTERNAL_ERROR', 'Unexpected routing failure'));
+			});
 		return true; // Keep message channel open for async response
 	},
 );

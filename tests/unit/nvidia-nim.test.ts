@@ -79,8 +79,8 @@ describe('NvidiaNimProvider', () => {
 	});
 
 	describe('timeout configuration', () => {
-		it('should use NVIDIA_NIM_TIMEOUT_MS (240000ms / 4 minutes)', () => {
-			expect(NVIDIA_NIM_TIMEOUT_MS).toBe(240_000);
+		it('should use NVIDIA_NIM_TIMEOUT_MS (600000ms / 10 min)', () => {
+			expect(NVIDIA_NIM_TIMEOUT_MS).toBe(600_000);
 		});
 
 		it('should throw timeout error on AbortError', async () => {

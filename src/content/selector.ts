@@ -9,7 +9,9 @@ import { Logger } from '../utils/logger';
 
 const logger = new Logger('AnswerSelector');
 
-const CONFIDENCE_COLORS: Record<string, string> = {
+type ConfidenceLevel = 'high' | 'medium' | 'low';
+
+const CONFIDENCE_COLORS: Record<ConfidenceLevel, string> = {
 	high: '#22c55e',
 	medium: '#eab308',
 	low: '#f97316',
@@ -56,24 +58,54 @@ export class AnswerSelector {
 			}));
 		}
 
-		return Promise.all(
-			answerIndices.map(async (idx) => {
-				const option = options[idx];
-				if (!option) {
-					logger.error(`Invalid answer index: ${idx}`);
-					return {
-						success: false,
-						selectedIndex: idx,
-						confidence,
-						method: 'click' as const,
-					};
+		// Process clicks sequentially — parallel clicks cause React re-renders
+		// that can revert earlier selections (controlled component race condition)
+		const results: SelectionResult[] = [];
+		for (const idx of answerIndices) {
+			const option = options[idx];
+			if (!option) {
+				logger.error(`Invalid answer index: ${idx}`);
+				results.push({
+					success: false,
+					selectedIndex: idx,
+					confidence,
+					method: 'click' as const,
+				});
+				continue;
+			}
+			const { method, verified } = await this.performClick(option);
+			this.highlightOption(option, confidence, verified);
+			logger.info(`Selected option ${idx} via ${method}${verified ? '' : ' (unverified)'}`);
+			results.push({ success: verified, selectedIndex: idx, confidence, method });
+		}
+
+		// Re-verification: a later click's React re-render can revert an earlier selection.
+		// Wait for React to settle, then re-check and re-click any reverted inputs.
+		if (results.length > 1) {
+			await new Promise<void>((r) => setTimeout(r, 250));
+			for (let i = 0; i < results.length; i++) {
+				if (!results[i].success) continue;
+				const option = options[results[i].selectedIndex];
+				if (!option) continue;
+				const input =
+					option.inputElement ??
+					(option.element as HTMLElement).querySelector<HTMLInputElement>(
+						'input[type="radio"], input[type="checkbox"]',
+					);
+				if (input && !input.checked) {
+					logger.warn(
+						`Option ${results[i].selectedIndex} reverted by later React render, re-selecting`,
+					);
+					const { verified } = await this.performClick(option);
+					results[i] = { ...results[i], success: verified };
+					if (!verified) {
+						this.highlightOption(option, confidence, false);
+					}
 				}
-				const method = await this.performClick(option);
-				this.highlightOption(option, confidence);
-				logger.info(`Selected option ${idx} via ${method}`);
-				return { success: true, selectedIndex: idx, confidence, method };
-			}),
-		);
+			}
+		}
+
+		return results;
 	}
 
 	/**
@@ -83,8 +115,15 @@ export class AnswerSelector {
 	 */
 	private async performClick(
 		option: AnswerOption,
-	): Promise<'click' | 'input-change' | 'label-click'> {
+	): Promise<{ method: 'click' | 'input-change' | 'label-click'; verified: boolean }> {
 		const el = option.element as HTMLElement;
+
+		// Warn if the element was detached by a React re-render —
+		// the click may not be visible, but clickWithVerification will
+		// detect the failure and the solvedUIDs guard prevents re-processing loops.
+		if (!el.isConnected) {
+			logger.warn('Option element may be detached from DOM');
+		}
 
 		// Strategy 1: Label click (most reliable for React controlled inputs)
 		// Coursera hides <input> at opacity:0; clicking the <label> wrapper
@@ -92,8 +131,8 @@ export class AnswerSelector {
 		// and the click event bubbles to React's delegation root.
 		const label = el.closest('label') ?? el.querySelector('label');
 		if (label) {
-			await AnswerSelector.clickWithVerification(label);
-			return 'label-click';
+			const verified = await AnswerSelector.clickWithVerification(label);
+			return { method: 'label-click', verified };
 		}
 
 		// Strategy 2: Input element directly via native click
@@ -101,13 +140,13 @@ export class AnswerSelector {
 			option.inputElement ??
 			el.querySelector<HTMLInputElement>('input[type="radio"], input[type="checkbox"]');
 		if (input) {
-			await AnswerSelector.clickWithVerification(input);
-			return 'input-change';
+			const verified = await AnswerSelector.clickWithVerification(input);
+			return { method: 'input-change', verified };
 		}
 
 		// Strategy 3: Direct wrapper element click
-		await AnswerSelector.clickWithVerification(el);
-		return 'click';
+		const verified = await AnswerSelector.clickWithVerification(el);
+		return { method: 'click', verified };
 	}
 
 	/**
@@ -151,6 +190,9 @@ export class AnswerSelector {
 		const input =
 			target.querySelector<HTMLInputElement>('input[type="radio"], input[type="checkbox"]') ??
 			(target instanceof HTMLInputElement ? target : null);
+
+		// Already in desired state — skip clicking to avoid checkbox toggle-off
+		if (input?.checked) return true;
 
 		for (let attempt = 0; attempt <= maxRetries; attempt++) {
 			AnswerSelector.simulateClick(target);

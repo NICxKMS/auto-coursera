@@ -33,19 +33,17 @@ export interface ChatMessage {
 	content: string | ContentPart[];
 }
 
-/** Content part for multimodal messages */
-export interface ContentPart {
-	type: 'text' | 'image_url';
-	text?: string;
-	image_url?: { url: string; detail?: 'low' | 'high' | 'auto' };
-}
+/** Content part for multimodal messages (discriminated union) */
+export type ContentPart =
+	| { type: 'text'; text: string }
+	| { type: 'image_url'; image_url: { url: string; detail?: 'low' | 'high' | 'auto' } };
 
 /** OpenRouter/NVIDIA API response shape */
 export interface APICompletionResponse {
 	id: string;
 	choices: Array<{
 		index: number;
-		message: { role: string; content: string };
+		message: { role: 'system' | 'user' | 'assistant'; content: string };
 		finish_reason: string;
 	}>;
 	usage?: {

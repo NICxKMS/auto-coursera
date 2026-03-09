@@ -32,16 +32,16 @@ export class RateLimiter {
 	 * AC-NFR-002.2: Callers wait when bucket is empty, not rejected.
 	 */
 	async acquire(): Promise<void> {
-		this.refill();
-		if (this.tokens >= 1) {
-			this.tokens -= 1;
-			return;
+		while (true) {
+			this.refill();
+			if (this.tokens >= 1) {
+				this.tokens -= 1;
+				return;
+			}
+			// Calculate wait time until 1 token is available
+			const waitMs = Math.ceil((1 - this.tokens) / this.refillRate);
+			await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
 		}
-		// Calculate wait time until 1 token is available
-		const waitMs = Math.ceil((1 - this.tokens) / this.refillRate);
-		await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
-		this.refill();
-		this.tokens -= 1;
 	}
 
 	/**

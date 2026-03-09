@@ -15,6 +15,8 @@ const ALLOWED_IMAGE_HOSTS = [
 	'coursera-university-assets.s3.amazonaws.com',
 ];
 
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
+
 /**
  * Fetch a CORS-blocked image from the service worker context.
  * Service workers can fetch any URL via host_permissions.
@@ -26,6 +28,9 @@ export async function fetchAsBase64(url: string): Promise<{ base64: string; mime
 	if (url.startsWith('data:')) {
 		const match = url.match(/^data:([^;,]+)/);
 		const mime = match?.[1] || 'image/png';
+		if (!mime.startsWith('image/')) {
+			throw new Error(`Invalid data URI MIME type: ${mime}`);
+		}
 		const commaIdx = url.indexOf(',');
 		return { base64: commaIdx >= 0 ? url.slice(commaIdx + 1) : '', mime };
 	}
@@ -42,11 +47,19 @@ export async function fetchAsBase64(url: string): Promise<{ base64: string; mime
 	) {
 		throw new Error(`Blocked image fetch from untrusted host: ${parsed.hostname}`);
 	}
+	if (parsed.protocol !== 'https:') {
+		throw new Error(`Only HTTPS image URLs are allowed: ${url}`);
+	}
 
 	try {
 		const response = await fetch(url);
 		if (!response.ok) {
 			throw new Error(`Image fetch failed: ${response.status} ${response.statusText}`);
+		}
+
+		const contentLength = response.headers.get('content-length');
+		if (contentLength && Number.parseInt(contentLength, 10) > MAX_IMAGE_SIZE) {
+			throw new Error(`Image too large: ${contentLength} bytes (max ${MAX_IMAGE_SIZE})`);
 		}
 
 		const blob = await response.blob();

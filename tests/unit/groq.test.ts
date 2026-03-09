@@ -139,8 +139,8 @@ describe('GroqProvider', () => {
 	});
 
 	describe('timeout configuration', () => {
-		it('should use default timeout (30s)', () => {
-			expect(DEFAULT_REQUEST_TIMEOUT_MS).toBe(30_000);
+		it('should use default timeout (10 min)', () => {
+			expect(DEFAULT_REQUEST_TIMEOUT_MS).toBe(600_000);
 		});
 
 		it('should throw timeout error on AbortError', async () => {

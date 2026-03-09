@@ -3,6 +3,7 @@
  * REQ: REQ-013
  */
 
+import type { ErrorPayload, Message } from '../types/messages';
 import type { AppSettings } from '../types/settings';
 import { CEREBRAS_MODELS, GEMINI_MODELS, GROQ_MODELS } from '../utils/constants';
 import { Logger } from '../utils/logger';
@@ -31,9 +32,11 @@ let primaryProviderRadios: NodeListOf<HTMLInputElement>;
 let confidenceSlider: HTMLInputElement;
 let thresholdValue: HTMLElement;
 let autoSelectCheckbox: HTMLInputElement;
+let autoStartOnPageLoadCheckbox: HTMLInputElement;
 let saveBtn: HTMLButtonElement;
 let testBtn: HTMLButtonElement;
 let statusMessage: HTMLElement;
+let statusTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function populateSelect(select: HTMLSelectElement, models: readonly string[]): void {
 	for (const model of models) {
@@ -81,6 +84,7 @@ async function init(): Promise<void> {
 	confidenceSlider = getElement<HTMLInputElement>('confidenceThreshold');
 	thresholdValue = getElement<HTMLElement>('thresholdValue');
 	autoSelectCheckbox = getElement<HTMLInputElement>('autoSelect');
+	autoStartOnPageLoadCheckbox = getElement<HTMLInputElement>('autoStartOnPageLoad');
 	saveBtn = getElement<HTMLButtonElement>('saveBtn');
 	testBtn = getElement<HTMLButtonElement>('testBtn');
 	statusMessage = getElement<HTMLElement>('statusMessage');
@@ -122,6 +126,23 @@ async function loadSettings(): Promise<void> {
 	applyKeyMask(groqKeyInput, settings.groqApiKey, 'gsk_...');
 	applyKeyMask(cerebrasKeyInput, settings.cerebrasApiKey, 'cbs-...');
 
+	// Clear hasKey flag when user interacts with a key field, enabling intentional clearing
+	for (const input of [
+		openrouterKeyInput,
+		nvidiaKeyInput,
+		geminiKeyInput,
+		groqKeyInput,
+		cerebrasKeyInput,
+	]) {
+		input.addEventListener(
+			'input',
+			() => {
+				delete input.dataset.hasKey;
+			},
+			{ once: true },
+		);
+	}
+
 	// Model selection
 	openrouterModelSelect.value = settings.openrouterModel;
 	nvidiaModelSelect.value = settings.nvidiaModel;
@@ -138,6 +159,7 @@ async function loadSettings(): Promise<void> {
 	confidenceSlider.value = settings.confidenceThreshold.toString();
 	thresholdValue.textContent = settings.confidenceThreshold.toString();
 	autoSelectCheckbox.checked = settings.autoSelect;
+	autoStartOnPageLoadCheckbox.checked = settings.autoStartOnPageLoad;
 }
 
 /**
@@ -163,8 +185,15 @@ async function handleSave(): Promise<void> {
 		];
 		const resolvedKeys: Partial<AppSettings> = {};
 		for (const { input, key } of apiKeyFields) {
-			(resolvedKeys as Record<string, string>)[key] =
-				input.value.trim() || (currentSettings[key] as string);
+			// If user typed a new value, use it; if field was untouched (has stored key), keep it; otherwise clear
+			const typed = input.value.trim();
+			if (typed) {
+				(resolvedKeys as Record<string, string>)[key] = typed;
+			} else if (input.dataset.hasKey === 'true') {
+				(resolvedKeys as Record<string, string>)[key] = currentSettings[key] as string;
+			} else {
+				(resolvedKeys as Record<string, string>)[key] = '';
+			}
 		}
 
 		const settings: Partial<AppSettings> = {
@@ -177,6 +206,7 @@ async function handleSave(): Promise<void> {
 			primaryProvider: selectedProvider as AppSettings['primaryProvider'],
 			confidenceThreshold: parseFloat(confidenceSlider.value),
 			autoSelect: autoSelectCheckbox.checked,
+			autoStartOnPageLoad: autoStartOnPageLoadCheckbox.checked,
 		};
 
 		await saveSettings(settings);
@@ -204,10 +234,26 @@ async function handleTest(): Promise<void> {
 
 		// Issue 3: Enhanced model validation — test selected model
 		const hasKey = (el: HTMLInputElement) => el.value.trim() || el.dataset.hasKey === 'true';
-		const selectedModel = openrouterModelSelect.value || nvidiaModelSelect.value;
-		if (hasKey(openrouterKeyInput) || hasKey(nvidiaKeyInput)) {
+		const allKeyInputs = [
+			openrouterKeyInput,
+			nvidiaKeyInput,
+			geminiKeyInput,
+			groqKeyInput,
+			cerebrasKeyInput,
+		];
+		const selectedProvider =
+			Array.from(primaryProviderRadios).find((r) => r.checked)?.value ?? 'openrouter';
+		const modelSelects: Record<string, HTMLSelectElement> = {
+			openrouter: openrouterModelSelect,
+			'nvidia-nim': nvidiaModelSelect,
+			gemini: geminiModelSelect,
+			groq: groqModelSelect,
+			cerebras: cerebrasModelSelect,
+		};
+		const selectedModel = modelSelects[selectedProvider]?.value || 'unknown';
+		if (allKeyInputs.some((el) => hasKey(el))) {
 			try {
-				const res = await chrome.runtime.sendMessage({
+				const res = (await chrome.runtime.sendMessage({
 					type: 'SOLVE_QUESTION',
 					payload: {
 						uid: 'test',
@@ -221,11 +267,12 @@ async function handleTest(): Promise<void> {
 							totalQuestions: 1,
 						},
 					},
-				});
+				})) as Message | undefined;
 				if (res?.type === 'SELECT_ANSWER') {
 					results.push(`✅ Model ${selectedModel}: Connected`);
 				} else {
-					results.push(`⚠️ Model ${selectedModel}: ${res?.payload?.message || 'Unknown error'}`);
+					const errPayload = res?.payload as ErrorPayload | undefined;
+					results.push(`⚠️ Model ${selectedModel}: ${errPayload?.message || 'Unknown error'}`);
 				} // Clear test pollution from session status
 				await chrome.storage.session.set({
 					_lastStatus: 'idle',
@@ -251,10 +298,12 @@ async function handleTest(): Promise<void> {
 }
 
 function showStatus(message: string, type: 'success' | 'error'): void {
+	if (statusTimeout) clearTimeout(statusTimeout);
 	statusMessage.textContent = message;
 	statusMessage.className = `status-message ${type}`;
-	setTimeout(() => {
+	statusTimeout = setTimeout(() => {
 		statusMessage.className = 'status-message';
+		statusTimeout = null;
 	}, 5000);
 }
 

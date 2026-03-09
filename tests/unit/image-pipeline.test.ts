@@ -41,16 +41,16 @@ describe('ImagePipeline', () => {
 
 		describe('host allowlist validation', () => {
 			it('should reject URLs from untrusted hosts', async () => {
-				await expect(
-					fetchAsBase64('https://evil.com/malware.png'),
-				).rejects.toThrow('Blocked image fetch from untrusted host: evil.com');
+				await expect(fetchAsBase64('https://evil.com/malware.png')).rejects.toThrow(
+					'Blocked image fetch from untrusted host: evil.com',
+				);
 				expect(globalThis.fetch).not.toHaveBeenCalled();
 			});
 
 			it('should reject URLs from hosts that look similar to allowed ones', async () => {
-				await expect(
-					fetchAsBase64('https://not-coursera.org/img.png'),
-				).rejects.toThrow('Blocked image fetch from untrusted host');
+				await expect(fetchAsBase64('https://not-coursera.org/img.png')).rejects.toThrow(
+					'Blocked image fetch from untrusted host',
+				);
 			});
 
 			it('should allow coursera.org', async () => {
@@ -78,9 +78,7 @@ describe('ImagePipeline', () => {
 			});
 
 			it('should reject invalid URLs', async () => {
-				await expect(
-					fetchAsBase64('not-a-url'),
-				).rejects.toThrow('Invalid image URL');
+				await expect(fetchAsBase64('not-a-url')).rejects.toThrow('Invalid image URL');
 			});
 		});
 
@@ -102,9 +100,9 @@ describe('ImagePipeline', () => {
 					new Response('Not Found', { status: 404, statusText: 'Not Found' }),
 				);
 
-				await expect(
-					fetchAsBase64('https://coursera.org/missing.png'),
-				).rejects.toThrow('Image fetch failed: 404 Not Found');
+				await expect(fetchAsBase64('https://coursera.org/missing.png')).rejects.toThrow(
+					'Image fetch failed: 404 Not Found',
+				);
 			});
 		});
 	});
@@ -125,13 +123,9 @@ describe('ImagePipeline', () => {
 		it('should re-fetch CORS-blocked images', async () => {
 			const imgBytes = new Uint8Array([0xff, 0xd8]); // JPEG magic
 			const blob = new Blob([imgBytes], { type: 'image/jpeg' });
-			vi.mocked(globalThis.fetch).mockResolvedValue(
-				new Response(blob, { status: 200 }),
-			);
+			vi.mocked(globalThis.fetch).mockResolvedValue(new Response(blob, { status: 200 }));
 
-			const images = [
-				{ base64: 'CORS_BLOCKED:https://coursera.org/img.jpg', context: 'question' },
-			];
+			const images = [{ base64: 'CORS_BLOCKED:https://coursera.org/img.jpg', context: 'question' }];
 			const result = await processCorsBlockedImages(images);
 			expect(result).toHaveLength(1);
 			expect(result[0].base64).toBeTruthy();
@@ -153,9 +147,7 @@ describe('ImagePipeline', () => {
 		});
 
 		it('should skip CORS-blocked images from untrusted hosts', async () => {
-			const images = [
-				{ base64: 'CORS_BLOCKED:https://evil.com/bad.png', context: 'question' },
-			];
+			const images = [{ base64: 'CORS_BLOCKED:https://evil.com/bad.png', context: 'question' }];
 			const result = await processCorsBlockedImages(images);
 			// Should be skipped because the host is blocked
 			expect(result).toHaveLength(0);
@@ -185,7 +177,5 @@ describe('ImagePipeline', () => {
 /** Utility: mock a successful fetch returning a small PNG blob */
 function mockFetchSuccess() {
 	const blob = new Blob([new Uint8Array([0x89, 0x50])], { type: 'image/png' });
-	vi.mocked(globalThis.fetch).mockResolvedValue(
-		new Response(blob, { status: 200 }),
-	);
+	vi.mocked(globalThis.fetch).mockResolvedValue(new Response(blob, { status: 200 }));
 }

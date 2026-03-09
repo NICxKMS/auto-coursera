@@ -50,11 +50,17 @@ describe('parseAIResponse', () => {
 			expect(result.answer).toContain(0); // A
 		});
 
-		it('should fall through to regex if all letter values are invalid', () => {
-			// Letters beyond J are not valid option letters
-			// Falls through to contextual regex → finds "answer: B" → index 1
+		it('should parse letters beyond J (extended A-Z range)', () => {
+			// X=23, Y=24 are valid A-Z letters
+			const result = parseAIResponse('{"answer": ["X", "Y"], "confidence": 0.9, "reasoning": ""}');
+			expect(result.answer).toEqual([23, 24]);
+			expect(result.confidence).toBe(0.9);
+		});
+
+		it('should fall through to regex if all answer values are non-letter/non-number', () => {
+			// Non-letter strings cause fallthrough to contextual regex → "answer: B" → index 1
 			const result = parseAIResponse(
-				'{"answer": ["X", "Y"], "confidence": 0.9, "reasoning": ""}\nAnswer: B',
+				'{"answer": ["!!", "??"], "confidence": 0.9, "reasoning": ""}\nAnswer: B',
 			);
 			expect(result.answer).toContain(1);
 		});

@@ -1,4 +1,7 @@
 /** Complete application settings */
+/** Known AI provider identifiers */
+export type ProviderName = 'openrouter' | 'nvidia-nim' | 'gemini' | 'groq' | 'cerebras';
+
 export interface AppSettings {
 	enabled: boolean;
 	openrouterApiKey: string;
@@ -11,11 +14,13 @@ export interface AppSettings {
 	geminiModel: string;
 	groqModel: string;
 	cerebrasModel: string;
-	primaryProvider: 'openrouter' | 'nvidia-nim' | 'gemini' | 'groq' | 'cerebras';
+	primaryProvider: ProviderName;
 	/** Minimum confidence to auto-select (0.0 - 1.0) */
 	confidenceThreshold: number;
 	/** Whether to auto-click or just highlight */
 	autoSelect: boolean;
+	/** Whether to automatically start solving when a Coursera page loads */
+	autoStartOnPageLoad: boolean;
 	maxRetries: number;
 	/** Requests per minute per provider */
 	rateLimitRpm: number;
@@ -37,6 +42,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	primaryProvider: 'openrouter',
 	confidenceThreshold: 0.7,
 	autoSelect: true,
+	autoStartOnPageLoad: true,
 	maxRetries: 2,
 	rateLimitRpm: 20,
 };

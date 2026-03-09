@@ -11,12 +11,13 @@ export type MessageType =
 	| 'SET_ENABLED'
 	| 'GET_SETTINGS'
 	| 'SCAN_PAGE'
-	| 'RETRY_QUESTIONS';
+	| 'RETRY_QUESTIONS'
+	| 'RESET_EXTENSION';
 
 /** Generic message envelope */
 export interface Message<T = unknown> {
 	type: MessageType;
-	payload: T;
+	payload?: T;
 	tabId?: number;
 }
 
@@ -83,3 +84,26 @@ export interface BatchQuestionPayload {
 		questionType: ExtractedQuestionType;
 	}>;
 }
+
+/** Response payload for SOLVE_BATCH messages */
+export interface BatchSolveResponsePayload {
+	answers: Array<{
+		uid: string;
+		answer: number[];
+		confidence: number;
+		reasoning: string;
+	}>;
+}
+
+/** Response payload for SET_ENABLED messages */
+export interface SetEnabledResponsePayload {
+	success: boolean;
+}
+
+/** Response payload for RESET_EXTENSION messages */
+export interface ResetExtensionResponsePayload {
+	success: boolean;
+}
+
+/** Response payload for GET_SETTINGS messages (API keys are masked) */
+export interface GetSettingsResponsePayload extends Omit<import('./settings').AppSettings, never> {}

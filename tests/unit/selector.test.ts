@@ -159,7 +159,13 @@ describe('AnswerSelector', () => {
 			input.type = 'radio';
 			label.appendChild(input);
 			element.appendChild(label);
-			const option: AnswerOption = { element, index: 0, text: 'Opt', inputElement: null, images: [] };
+			const option: AnswerOption = {
+				element,
+				index: 0,
+				text: 'Opt',
+				inputElement: null,
+				images: [],
+			};
 
 			const results = await selector.select([option], [0], 0.9);
 			expect(results[0].success).toBe(true);
@@ -172,7 +178,13 @@ describe('AnswerSelector', () => {
 			const input = document.createElement('input');
 			input.type = 'checkbox';
 			element.appendChild(input);
-			const option: AnswerOption = { element, index: 0, text: 'Opt', inputElement: null, images: [] };
+			const option: AnswerOption = {
+				element,
+				index: 0,
+				text: 'Opt',
+				inputElement: null,
+				images: [],
+			};
 
 			const results = await selector.select([option], [0], 0.9);
 			expect(results[0].success).toBe(true);

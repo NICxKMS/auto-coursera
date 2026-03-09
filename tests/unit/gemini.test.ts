@@ -68,9 +68,7 @@ describe('GeminiProvider', () => {
 			});
 
 			const [url] = fetchMock.mock.calls[0];
-			expect(url).toBe(
-				'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-			);
+			expect(url).toBe('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions');
 		});
 	});
 
@@ -141,8 +139,8 @@ describe('GeminiProvider', () => {
 	});
 
 	describe('timeout configuration', () => {
-		it('should use default timeout (30s)', () => {
-			expect(DEFAULT_REQUEST_TIMEOUT_MS).toBe(30_000);
+		it('should use default timeout (10 min)', () => {
+			expect(DEFAULT_REQUEST_TIMEOUT_MS).toBe(600_000);
 		});
 
 		it('should throw timeout error on AbortError', async () => {

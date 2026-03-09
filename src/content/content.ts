@@ -4,7 +4,12 @@
  * REQ: REQ-011
  */
 
-import type { BatchQuestionPayload, ErrorPayload, Message } from '../types/messages';
+import type {
+	BatchQuestionPayload,
+	BatchSolveResponsePayload,
+	ErrorPayload,
+	Message,
+} from '../types/messages';
 import type { DetectedQuestion, ExtractedQuestion } from '../types/questions';
 import { DATA_ATTRIBUTES } from '../utils/constants';
 import { Logger } from '../utils/logger';
@@ -50,6 +55,9 @@ let selector: AnswerSelector;
 let isEnabled = false;
 const pendingQuestions: PendingQuestion[] = [];
 let batchTimeout: ReturnType<typeof setTimeout> | null = null;
+let isProcessing = false;
+let batchEpoch = 0;
+const solvedUIDs = new Set<string>();
 const BATCH_DEBOUNCE_MS = 800;
 
 function markBatchFailed(batch: PendingQuestion[]): void {
@@ -69,6 +77,7 @@ async function init(): Promise<void> {
 		enabled: false,
 		confidenceThreshold: 0.7,
 		autoSelect: true,
+		autoStartOnPageLoad: true,
 	});
 	isEnabled = settings.enabled as boolean;
 
@@ -78,7 +87,7 @@ async function init(): Promise<void> {
 		settings.autoSelect as boolean,
 	);
 
-	if (isEnabled) {
+	if (isEnabled && settings.autoStartOnPageLoad) {
 		startDetection();
 	}
 
@@ -90,7 +99,16 @@ async function init(): Promise<void> {
 				return false;
 			}
 			pendingQuestions.length = 0;
-			if (batchTimeout) clearTimeout(batchTimeout);
+			if (batchTimeout) {
+				clearTimeout(batchTimeout);
+				batchTimeout = null;
+			}
+			batchEpoch++;
+			solvedUIDs.clear();
+			// Clear previous error markers so questions are re-processable
+			document
+				.querySelectorAll(`[${DATA_ATTRIBUTES.ERROR}="true"]`)
+				.forEach((el) => AnswerSelector.clearProcessing(el as HTMLElement));
 			if (detector) {
 				detector.scan();
 			} else {
@@ -103,7 +121,8 @@ async function init(): Promise<void> {
 	});
 
 	// Listen for settings changes
-	chrome.storage.onChanged.addListener(async (changes) => {
+	chrome.storage.onChanged.addListener(async (changes, areaName) => {
+		if (areaName !== 'local') return;
 		if (changes.enabled) {
 			isEnabled = changes.enabled.newValue as boolean;
 			if (isEnabled) {
@@ -134,6 +153,13 @@ async function init(): Promise<void> {
 		];
 		if (isEnabled && retryKeys.some((key) => key in changes)) {
 			logger.info('API settings changed, clearing errors and re-scanning');
+			pendingQuestions.length = 0;
+			if (batchTimeout) {
+				clearTimeout(batchTimeout);
+				batchTimeout = null;
+			}
+			batchEpoch++;
+			solvedUIDs.clear();
 			document
 				.querySelectorAll(`[${DATA_ATTRIBUTES.ERROR}="true"]`)
 				.forEach((el) => AnswerSelector.clearProcessing(el as HTMLElement));
@@ -169,7 +195,12 @@ async function init(): Promise<void> {
 			});
 
 		pendingQuestions.length = 0;
-		if (batchTimeout) clearTimeout(batchTimeout);
+		if (batchTimeout) {
+			clearTimeout(batchTimeout);
+			batchTimeout = null;
+		}
+		batchEpoch++;
+		solvedUIDs.clear();
 		if (detector) {
 			detector.scan();
 		}
@@ -201,10 +232,21 @@ function stopDetection(): void {
 		detector.stop();
 		detector = null;
 	}
+	pendingQuestions.length = 0;
+	if (batchTimeout) {
+		clearTimeout(batchTimeout);
+		batchTimeout = null;
+	}
 	logger.info('Detection stopped');
 }
 
 async function handleDetectedQuestion(detected: DetectedQuestion): Promise<void> {
+	if (!isEnabled) return;
+	// Skip questions that were already successfully answered
+	if (solvedUIDs.has(detected.uid)) {
+		logger.info(`Skipping already-solved question ${detected.uid}`);
+		return;
+	}
 	try {
 		AnswerSelector.markProcessing(detected.element);
 
@@ -223,7 +265,10 @@ async function handleDetectedQuestion(detected: DetectedQuestion): Promise<void>
 		});
 
 		// Reset debounce timer
-		if (batchTimeout) clearTimeout(batchTimeout);
+		if (batchTimeout) {
+			clearTimeout(batchTimeout);
+			batchTimeout = null;
+		}
 		batchTimeout = setTimeout(() => {
 			processBatch().catch((err) => logger.error('Batch processing failed', err));
 		}, BATCH_DEBOUNCE_MS);
@@ -238,10 +283,21 @@ async function handleDetectedQuestion(detected: DetectedQuestion): Promise<void>
 
 async function processBatch(): Promise<void> {
 	if (pendingQuestions.length === 0) return;
+	if (isProcessing) {
+		// Re-schedule: another batch is in-flight
+		if (!batchTimeout) {
+			batchTimeout = setTimeout(() => {
+				processBatch().catch((err) => logger.error('Batch processing failed', err));
+			}, BATCH_DEBOUNCE_MS);
+		}
+		return;
+	}
 
 	const batch = [...pendingQuestions];
 	pendingQuestions.length = 0;
 	batchTimeout = null;
+	isProcessing = true;
+	const epoch = batchEpoch;
 
 	logger.info(`Processing batch of ${batch.length} questions`);
 
@@ -273,17 +329,21 @@ async function processBatch(): Promise<void> {
 			payload,
 		});
 
-		const batchPayload = response?.payload as Record<string, unknown> | undefined;
+		// Discard stale results if page navigated or re-scanned during the request
+		if (epoch !== batchEpoch) {
+			logger.info('Batch response discarded (epoch changed — navigation or rescan)');
+			for (const q of batch) {
+				AnswerSelector.clearProcessing(q.element);
+			}
+			return;
+		}
+
+		const batchPayload = response?.payload as BatchSolveResponsePayload | undefined;
 		if (response?.type === 'SOLVE_BATCH' && batchPayload?.answers) {
-			for (const answer of batchPayload.answers as Array<{
-				uid: string;
-				answer: number[];
-				confidence: number;
-				reasoning: string;
-			}>) {
+			for (const answer of batchPayload.answers) {
 				const pending = batch.find((q) => q.uid === answer.uid);
-				if (pending) {
-					pending.detected.processed = true;
+				if (!pending) continue;
+				try {
 					AnswerSelector.clearProcessing(pending.element);
 					if (answer.answer.length === 0) {
 						AnswerSelector.markError(pending.element);
@@ -295,10 +355,16 @@ async function processBatch(): Promise<void> {
 						answer.answer,
 						answer.confidence,
 					);
+					pending.detected.processed = true;
+					solvedUIDs.add(answer.uid);
 					const anyClicked = results.some((r) => r.success);
 					logger.info(
 						`Applied answer for ${answer.uid} (confidence: ${answer.confidence}, clicked: ${anyClicked})`,
 					);
+				} catch (answerErr) {
+					AnswerSelector.clearProcessing(pending.element);
+					AnswerSelector.markError(pending.element);
+					logger.error(`Failed to apply answer for ${answer.uid}`, answerErr);
 				}
 			}
 		} else if (response?.type === 'ERROR') {
@@ -321,6 +387,14 @@ async function processBatch(): Promise<void> {
 				_lastError: error instanceof Error ? error.message : String(error),
 			})
 			.catch(() => {});
+	} finally {
+		isProcessing = false;
+		// Drain any questions that arrived while processing
+		if (pendingQuestions.length > 0 && !batchTimeout) {
+			batchTimeout = setTimeout(() => {
+				processBatch().catch((err) => logger.error('Batch processing failed', err));
+			}, BATCH_DEBOUNCE_MS);
+		}
 	}
 }
 

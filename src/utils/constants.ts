@@ -68,16 +68,16 @@ export const MUTATION_DEBOUNCE_MS = 300;
 export const AI_TEMPERATURE = 0.1;
 
 /** Default max tokens for AI responses */
-export const AI_MAX_TOKENS = 1024;
+export const AI_MAX_TOKENS = 32 * 1024;
 
 /** Max retry attempts for API calls */
 export const MAX_RETRIES = 2;
 
-/** Default request timeout in ms (30 seconds) */
-export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+/** Default request timeout in ms (10 minutes) */
+export const DEFAULT_REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
-/** NVIDIA NIM request timeout in ms (4 minutes — large model inference) */
-export const NVIDIA_NIM_TIMEOUT_MS = 240_000;
+/** NVIDIA NIM request timeout in ms (10 minutes — large model inference) */
+export const NVIDIA_NIM_TIMEOUT_MS = 10 * 60 * 1000;
 
 /** Base backoff time in ms for exponential retry */
 export const RETRY_BACKOFF_BASE_MS = 1000;

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { MessageRouter } from '../../src/background/router';
-import type { Message } from '../../src/types/messages';
+import type { ErrorPayload, Message } from '../../src/types/messages';
 
 /**
  * Tests for background message routing and sender validation.
@@ -25,7 +25,10 @@ describe('MessageRouter', () => {
 			}));
 
 			const message: Message = { type: 'GET_STATUS', payload: null };
-			const sender = { id: 'ext-id', tab: { url: 'https://www.coursera.org/' } } as chrome.runtime.MessageSender;
+			const sender = {
+				id: 'ext-id',
+				tab: { url: 'https://www.coursera.org/' },
+			} as chrome.runtime.MessageSender;
 			const result = await router.route(message, sender);
 			expect(result.type).toBe('GET_STATUS');
 			expect((result.payload as Record<string, unknown>).status).toBe('idle');
@@ -36,8 +39,9 @@ describe('MessageRouter', () => {
 			const sender = { id: 'ext-id' } as chrome.runtime.MessageSender;
 			const result = await router.route(message, sender);
 			expect(result.type).toBe('ERROR');
-			expect((result.payload as Record<string, string>).code).toBe('UNKNOWN_MESSAGE');
-			expect((result.payload as Record<string, string>).message).toContain('NONEXISTENT_TYPE');
+			const errPayload = result.payload as ErrorPayload;
+			expect(errPayload.code).toBe('UNKNOWN_MESSAGE');
+			expect(errPayload.message).toContain('NONEXISTENT_TYPE');
 		});
 
 		it('should handle handler errors gracefully', async () => {
@@ -49,8 +53,9 @@ describe('MessageRouter', () => {
 			const sender = { id: 'ext-id' } as chrome.runtime.MessageSender;
 			const result = await router.route(message, sender);
 			expect(result.type).toBe('ERROR');
-			expect((result.payload as Record<string, string>).code).toBe('SOLVE_FAILED');
-			expect((result.payload as Record<string, string>).message).toBe('Provider exploded');
+			const errPayload = result.payload as ErrorPayload;
+			expect(errPayload.code).toBe('SOLVE_FAILED');
+			expect(errPayload.message).toBe('Provider exploded');
 		});
 
 		it('should persist error state to session storage on handler error', async () => {
@@ -90,7 +95,10 @@ describe('MessageRouter', () => {
 			});
 
 			const message: Message = { type: 'SOLVE_QUESTION', payload: { questionText: 'test?' } };
-			const sender = { id: 'ext-id', tab: { id: 42, url: 'https://www.coursera.org/learn/test' } } as chrome.runtime.MessageSender;
+			const sender = {
+				id: 'ext-id',
+				tab: { id: 42, url: 'https://www.coursera.org/learn/test' },
+			} as chrome.runtime.MessageSender;
 			await router.route(message, sender);
 
 			expect(receivedPayload).toEqual({ questionText: 'test?' });
@@ -117,9 +125,7 @@ describe('Sender Validation Logic', () => {
 	}
 
 	it('should allow messages from extension popup (empty url)', () => {
-		expect(
-			isAllowedSender({ id: MOCK_EXTENSION_ID } as chrome.runtime.MessageSender),
-		).toBe(true);
+		expect(isAllowedSender({ id: MOCK_EXTENSION_ID } as chrome.runtime.MessageSender)).toBe(true);
 	});
 
 	it('should allow messages from Coursera tabs', () => {

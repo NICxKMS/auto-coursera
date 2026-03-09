@@ -10,7 +10,7 @@ import type {
 	AIResponse,
 	IAIProvider,
 } from '../types/api';
-import { CircuitBreaker } from '../utils/circuit-breaker';
+import { CircuitBreaker, CircuitState } from '../utils/circuit-breaker';
 import { Logger } from '../utils/logger';
 
 const logger = new Logger('AIProviderManager');
@@ -66,9 +66,12 @@ export class AIProviderManager {
 		}
 
 		const errors: Array<{ provider: string; error: unknown }> = [];
+		// Use getState() instead of canProceed() — canProceed() has side effects
+		// (consumes HALF_OPEN probe slots) that would prevent the actual loop from
+		// sending a test request through a recovering provider.
 		const allCircuitsOpen = ordered.every((p) => {
 			const cb = this.circuits.get(p.name);
-			return cb && !cb.canProceed();
+			return cb?.getState() === CircuitState.OPEN;
 		});
 
 		for (const provider of ordered) {

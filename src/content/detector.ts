@@ -14,7 +14,7 @@ const CODE_EXPRESSION_MARKER = 'CodeExpression';
 
 export class QuestionDetector {
 	private observer: MutationObserver | null = null;
-	private seen: Set<string> = new Set();
+	private seenElements = new WeakSet<Element>();
 	private readonly onDetect: (q: DetectedQuestion) => void;
 	private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -27,6 +27,10 @@ export class QuestionDetector {
 	 * AC-002.1: MutationObserver on document.body with {childList: true, subtree: true}
 	 */
 	start(): void {
+		if (this.observer) {
+			logger.warn('QuestionDetector already started, ignoring duplicate start');
+			return;
+		}
 		this.observer = new MutationObserver(this.handleMutations.bind(this));
 		this.observer.observe(document.body, {
 			childList: true,
@@ -42,9 +46,13 @@ export class QuestionDetector {
 	 * Clears seen set so all questions are re-detected (Retry/Scan support).
 	 */
 	scan(): void {
-		this.seen.clear();
-		this.scanPage();
-		logger.info(`Detected ${this.seen.size} questions on page`);
+		if (this.debounceTimer) {
+			clearTimeout(this.debounceTimer);
+			this.debounceTimer = null;
+		}
+		this.seenElements = new WeakSet<Element>();
+		const count = this.scanPage();
+		logger.info(`Detected ${count} questions on page`);
 	}
 
 	/**
@@ -83,7 +91,9 @@ export class QuestionDetector {
 	 * Skips CodeExpression questions (unsupported).
 	 * Deduplicates nested elements as a safety net.
 	 */
-	private scanPage(): void {
+	private scanPage(): number {
+		if (!this.observer) return 0;
+
 		const selector = COURSERA_SELECTORS.questionContainer;
 		let elements: NodeListOf<HTMLElement> | HTMLElement[] =
 			document.querySelectorAll<HTMLElement>(selector);
@@ -119,8 +129,9 @@ export class QuestionDetector {
 			(el, _, arr) => !arr.some((other) => other !== el && other.contains(el)),
 		);
 
-		for (let i = 0; i < deduped.length; i++) {
-			this.processElement(deduped[i], i);
+		let count = 0;
+		for (const el of deduped) {
+			if (this.processElement(el)) count++;
 		}
 
 		if (deduped.length === 0) {
@@ -130,18 +141,21 @@ export class QuestionDetector {
 				document.querySelector('main')?.innerHTML?.substring(0, 500) ?? 'No <main> found',
 			);
 		}
+
+		return count;
 	}
 
 	/**
 	 * Process a single question element.
-	 * UID is derived from data-testid + position index for stability.
+	 * Dedup via WeakSet (element identity). UID derived from data-testid + content hash.
 	 * AC-002.4: Does not re-process previously detected questions.
 	 */
-	private processElement(el: HTMLElement, index: number): void {
+	private processElement(el: HTMLElement): boolean {
+		if (this.seenElements.has(el)) return false;
+		this.seenElements.add(el);
+
 		const testId = el.getAttribute('data-testid') ?? '';
-		const uid = this.computeUID(`${testId}::${index}`);
-		if (this.seen.has(uid)) return;
-		this.seen.add(uid);
+		const uid = this.computeUID(`${testId}::${el.textContent?.substring(0, 200) ?? ''}`);
 
 		const detected: DetectedQuestion = {
 			element: el,
@@ -152,6 +166,7 @@ export class QuestionDetector {
 
 		logger.info(`Detected ${detected.type} question: ${uid} (${testId})`);
 		this.onDetect(detected);
+		return true;
 	}
 
 	/**

@@ -98,14 +98,14 @@ export class DataExtractor {
 			h.remove();
 		});
 
-		// Replace math blocks with their LaTeX source
-		clone.querySelectorAll(COURSERA_SELECTORS.mathAnnotation).forEach((ann) => {
+		// Replace math blocks with their LaTeX source (query blocks directly to avoid
+		// orphaned annotations when multiple exist under the same math block)
+		clone.querySelectorAll('[data-pendo="math-block"]').forEach((mathBlock) => {
+			const ann = mathBlock.querySelector(COURSERA_SELECTORS.mathAnnotation);
+			if (!ann || !mathBlock.parentNode) return;
 			const latex = ann.textContent || '';
-			const mathBlock = ann.closest('[data-pendo="math-block"]');
-			if (mathBlock?.parentNode) {
-				const textNode = document.createTextNode(` $${latex}$ `);
-				mathBlock.parentNode.replaceChild(textNode, mathBlock);
-			}
+			const textNode = document.createTextNode(` $${latex}$ `);
+			mathBlock.parentNode.replaceChild(textNode, mathBlock);
 		});
 
 		return clone.textContent?.trim() || '';

@@ -27,7 +27,7 @@ export class CircuitBreaker {
 			case CircuitState.OPEN:
 				if (Date.now() - this.lastFailureTime >= this.cooldownMs) {
 					this.state = CircuitState.HALF_OPEN;
-					this.halfOpenRequestInFlight = false;
+					this.halfOpenRequestInFlight = true;
 					logger.info(`${this.name} circuit half-open, allowing test request`);
 					return true;
 				}

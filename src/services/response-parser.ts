@@ -7,10 +7,14 @@ function letterToIndex(letter: string): number {
 	return letter.toUpperCase().charCodeAt(0) - 65;
 }
 
+function escapeRegex(str: string): string {
+	return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function normalizeAnswerValues(raw: unknown[]): number[] {
 	return raw
 		.map((a) => {
-			if (typeof a === 'string' && /^[A-J]$/i.test(a)) return letterToIndex(a);
+			if (typeof a === 'string' && /^[A-Z]$/i.test(a)) return letterToIndex(a);
 			return typeof a === 'number' ? a : -1;
 		})
 		.filter((n) => n >= 0);
@@ -34,7 +38,7 @@ export function parseAIResponse(content: string): ParsedAIAnswer {
 					return {
 						answer: normalized,
 						confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.5,
-						reasoning: parsed.reasoning || '',
+						reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning.slice(0, 1000) : '',
 					};
 				}
 				// Valid JSON but answer values were all invalid — fall through to regex
@@ -45,7 +49,7 @@ export function parseAIResponse(content: string): ParsedAIAnswer {
 	}
 
 	// 2. Regex fallback: find letter answers with answer context
-	const matches = [...content.matchAll(/(?:^|\n)\s*([A-J])\s*[).,:]/gim)];
+	const matches = [...content.matchAll(/(?:^|\n)\s*([A-Z])\s*[).,:]/gim)];
 	if (matches.length > 0) {
 		const indices = [...new Set(matches.map((m) => letterToIndex(m[1])))];
 		return {
@@ -56,7 +60,7 @@ export function parseAIResponse(content: string): ParsedAIAnswer {
 	}
 
 	// 2b. Contextual fallback: "answer is A" or "Answer: A"
-	const contextMatches = [...content.matchAll(/(?:answer|select|correct|option)[:\s]+([A-J])\b/gi)];
+	const contextMatches = [...content.matchAll(/(?:answer|select|correct|option)[:\s]+([A-Z])\b/gi)];
 	if (contextMatches.length > 0) {
 		const indices = [...new Set(contextMatches.map((m) => letterToIndex(m[1])))];
 		return {
@@ -85,7 +89,11 @@ export function parseAIResponse(content: string): ParsedAIAnswer {
  */
 export function parseBatchAIResponse(
 	rawContent: string,
-	questions: Array<{ uid: string; options?: string[]; questionType?: string }>,
+	questions: Array<{
+		uid: string;
+		options?: string[];
+		questionType?: import('../types/questions').ExtractedQuestionType;
+	}>,
 ): {
 	answers: Array<{
 		uid: string;
@@ -124,7 +132,7 @@ export function parseBatchAIResponse(
 						uid: q.uid,
 						answer,
 						confidence: typeof match.confidence === 'number' ? match.confidence : 0.5,
-						reasoning: (match.reasoning as string) || '',
+						reasoning: typeof match.reasoning === 'string' ? match.reasoning.slice(0, 1000) : '',
 					};
 				}
 				return {
@@ -149,14 +157,17 @@ export function parseBatchAIResponse(
 				`(?:Q|Question)\\s*${qNum}[:\\s]([\\s\\S]*?)(?=(?:Q|Question)\\s*${qNum + 1}[:\\s]|$)`,
 				'i',
 			),
-			new RegExp(`${q.uid}[:\\s]([\\s\\S]*?)(?=${questions[i + 1]?.uid || '$'})`, 'i'),
+			new RegExp(
+				`${escapeRegex(q.uid)}[:\\s]([\\s\\S]*?)(?=${questions[i + 1]?.uid ? escapeRegex(questions[i + 1].uid) : '$'})`,
+				'i',
+			),
 			new RegExp(`^\\s*${qNum}\\.?\\s*([\\s\\S]*?)(?=^\\s*${qNum + 1}\\.?\\s|$)`, 'im'),
 		];
 		for (const pat of sectionPatterns) {
 			const m = rawContent.match(pat);
 			if (m) {
 				const answerSection = m[1] || m[0];
-				const allLetters = [...answerSection.matchAll(/\b([A-J])\b/gi)];
+				const allLetters = [...answerSection.matchAll(/\b([A-Z])\b/gi)];
 				if (allLetters.length > 0) {
 					const indices = [...new Set(allLetters.map((lm) => letterToIndex(lm[1])))];
 					return {

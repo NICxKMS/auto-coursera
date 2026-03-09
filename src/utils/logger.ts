@@ -84,7 +84,11 @@ export class Logger {
 			};
 		}
 		if (typeof data === 'object' && data !== null) {
-			return JSON.parse(this.sanitize(JSON.stringify(data)));
+			try {
+				return JSON.parse(this.sanitize(JSON.stringify(data)));
+			} catch {
+				return '[Unserializable object]';
+			}
 		}
 		return data;
 	}
