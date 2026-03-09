@@ -1,0 +1,76 @@
+/* Auto-Coursera - Injected styles for Coursera pages */
+
+/* Issue 4: Confidence-level styles via data attributes */
+[data-auto-coursera-suggestion="high"] {
+	outline: 2px solid #22c55e !important;
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+[data-auto-coursera-suggestion="medium"] {
+	outline: 2px solid #eab308 !important;
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+[data-auto-coursera-suggestion="low"] {
+	outline: 2px solid #f97316 !important;
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+[data-auto-coursera-suggestion="high"].highlight-only {
+	outline-style: dashed !important;
+}
+[data-auto-coursera-suggestion="medium"].highlight-only {
+	outline-style: dashed !important;
+}
+[data-auto-coursera-suggestion="low"].highlight-only {
+	outline-style: dashed !important;
+}
+
+/* Legacy fallback for old suggestion attribute */
+[data-auto-coursera-suggestion="true"] {
+	outline: 3px solid #f59e0b;
+	outline-offset: 2px;
+	position: relative;
+}
+
+/* Legacy confidence-level classes */
+.auto-coursera-high {
+	outline-color: #22c55e;
+}
+.auto-coursera-medium {
+	outline-color: #eab308;
+}
+.auto-coursera-low {
+	outline-color: #f97316;
+}
+
+/* Error indicator (red outline) - failed question */
+[data-auto-coursera-error="true"] {
+	outline: 3px solid #ef4444;
+	outline-offset: 2px;
+}
+
+/* Processing spinner - question being analyzed */
+[data-auto-coursera-processing="true"] {
+	position: relative;
+	opacity: 0.8;
+}
+
+[data-auto-coursera-processing="true"]::after {
+	content: "";
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	width: 16px;
+	height: 16px;
+	border: 2px solid #0056d2;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: auto-coursera-spin 0.8s linear infinite;
+}
+
+@keyframes auto-coursera-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}

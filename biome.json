@@ -1,0 +1,72 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.6/schema.json",
+	"vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+	"files": { "includes": ["**", "!!**/dist"] },
+	"formatter": {
+		"enabled": true,
+		"formatWithErrors": false,
+		"indentStyle": "tab",
+		"indentWidth": 2,
+		"lineEnding": "lf",
+		"lineWidth": 100,
+		"attributePosition": "auto",
+		"bracketSameLine": false,
+		"bracketSpacing": true,
+		"expand": "auto",
+		"useEditorconfig": true
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": false,
+			"complexity": {
+				"noBannedTypes": "error",
+				"noUselessTypeConstraint": "error"
+			},
+			"correctness": {
+				"noPrecisionLoss": "error",
+				"noUnusedVariables": "error"
+			},
+			"style": {
+				"noCommonJs": "error",
+				"noNamespace": "error",
+				"useArrayLiterals": "error",
+				"useAsConstAssertion": "error"
+			},
+			"suspicious": {
+				"noConsole": {
+					"level": "warn",
+					"options": { "allow": ["warn", "error", "log"] }
+				},
+				"noExplicitAny": "warn",
+				"noExtraNonNullAssertion": "error",
+				"noMisleadingInstantiator": "error",
+				"noNonNullAssertedOptionalChain": "error",
+				"noUnsafeDeclarationMerging": "error"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"jsxQuoteStyle": "double",
+			"quoteProperties": "asNeeded",
+			"trailingCommas": "all",
+			"semicolons": "always",
+			"arrowParentheses": "always",
+			"bracketSameLine": false,
+			"quoteStyle": "single",
+			"attributePosition": "auto",
+			"bracketSpacing": true
+		}
+	},
+	"html": {
+		"formatter": {
+			"indentScriptAndStyle": false,
+			"selfCloseVoidElements": "always"
+		}
+	},
+	"assist": {
+		"enabled": true,
+		"actions": { "source": { "organizeImports": "on" } }
+	}
+}

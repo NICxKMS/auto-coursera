@@ -1,0 +1,309 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	width: 320px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 14px;
+	color: #1a1a2e;
+	background: #f8f9fa;
+}
+
+.popup-container {
+	padding: 16px;
+}
+
+.popup-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid #e0e0e0;
+}
+
+.popup-header h1 {
+	font-size: 16px;
+	font-weight: 600;
+	color: #0056d2;
+}
+
+.toggle {
+	position: relative;
+	display: inline-block;
+	width: 44px;
+	height: 24px;
+}
+
+.toggle input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #ccc;
+	transition: 0.3s;
+	border-radius: 24px;
+}
+
+.slider::before {
+	content: "";
+	position: absolute;
+	height: 18px;
+	width: 18px;
+	left: 3px;
+	bottom: 3px;
+	background-color: white;
+	transition: 0.3s;
+	border-radius: 50%;
+}
+
+input:checked + .slider {
+	background-color: #0056d2;
+}
+
+input:checked + .slider::before {
+	transform: translateX(20px);
+}
+
+.status-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 16px;
+}
+
+.status-indicator {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.status-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background-color: #999;
+}
+
+.status-dot.active {
+	background-color: #22c55e;
+}
+
+.status-dot.error {
+	background-color: #ef4444;
+}
+
+.provider-info,
+.confidence-display {
+	font-size: 12px;
+	color: #666;
+}
+
+.popup-footer {
+	padding-top: 12px;
+	border-top: 1px solid #e0e0e0;
+	text-align: center;
+}
+
+.popup-footer a {
+	color: #0056d2;
+	text-decoration: none;
+	font-size: 12px;
+}
+
+.popup-footer a:hover {
+	text-decoration: underline;
+}
+
+/* Error banner */
+.error-banner {
+	background: #fef2f2;
+	border: 1px solid #fca5a5;
+	border-radius: 8px;
+	padding: 10px 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 4px;
+	animation: fadeIn 0.3s ease;
+	cursor: pointer;
+}
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+.error-content {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+}
+.error-icon {
+	font-size: 14px;
+	flex-shrink: 0;
+}
+.error-text {
+	font-size: 12px;
+	color: #dc2626;
+	word-break: break-word;
+	line-height: 1.4;
+}
+.error-copy-btn {
+	width: 100%;
+	background: #fee2e2;
+	border: 1px solid #fca5a5;
+	border-radius: 6px;
+	padding: 6px 12px;
+	font-size: 12px;
+	cursor: pointer;
+	color: #dc2626;
+	font-weight: 500;
+	transition: all 0.2s;
+}
+.error-copy-btn:hover {
+	background: #fecaca;
+}
+.error-copy-btn:active {
+	background: #fca5a5;
+}
+.error-copy-btn.copied {
+	background: #dcfce7;
+	border-color: #86efac;
+	color: #16a34a;
+}
+
+/* Session stats */
+.session-stats {
+	display: flex;
+	justify-content: space-around;
+	padding: 8px 0;
+	border-top: 1px solid #e5e7eb;
+	font-size: 12px;
+	color: #6b7280;
+}
+.session-stats strong {
+	color: #1f2937;
+}
+
+/* Action buttons section */
+.actions-section {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+.action-btn {
+	flex: 1;
+	padding: 6px 12px;
+	background: #f0f4ff;
+	border: 1px solid #c7d2fe;
+	border-radius: 6px;
+	font-size: 12px;
+	color: #4338ca;
+	cursor: pointer;
+	transition: background 0.2s;
+}
+.action-btn:hover {
+	background: #e0e7ff;
+}
+.action-btn:active {
+	background: #c7d2fe;
+}
+.action-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+*:focus-visible {
+	outline: 2px solid #3b82f6;
+	outline-offset: 2px;
+}
+
+/* Issue 8: Dark mode */
+@media (prefers-color-scheme: dark) {
+	body {
+		background: #1a1a2e;
+		color: #e0e0e0;
+	}
+	.popup-container {
+		background: #1a1a2e;
+	}
+	.popup-header {
+		border-color: #404060;
+	}
+	.popup-header h1 {
+		color: #6d9eeb;
+	}
+	.status-dot {
+		background-color: #666;
+	}
+	.provider-info,
+	.confidence-display {
+		color: #a0a0b0;
+	}
+	.session-stats {
+		border-color: #404060;
+		color: #a0a0b0;
+	}
+	.session-stats strong {
+		color: #e0e0e0;
+	}
+	.error-banner {
+		background: #2d1b1b;
+		border-color: #7f1d1d;
+	}
+	.error-text {
+		color: #fca5a5;
+	}
+	.error-copy-btn {
+		background: #3b1b1b;
+		border-color: #7f1d1d;
+		color: #fca5a5;
+	}
+	.error-copy-btn:hover {
+		background: #4b2020;
+	}
+	.error-copy-btn.copied {
+		background: #1a2e1a;
+		border-color: #166534;
+		color: #86efac;
+	}
+	.actions-section .action-btn {
+		background: #2d2d44;
+		border-color: #404060;
+		color: #a5b4fc;
+	}
+	.actions-section .action-btn:hover {
+		background: #3d3d5c;
+	}
+	.actions-section .action-btn:disabled {
+		opacity: 0.4;
+	}
+	.popup-footer {
+		border-color: #404060;
+	}
+	.popup-footer a {
+		color: #6d9eeb;
+	}
+	.slider {
+		background-color: #555;
+	}
+	input:checked + .slider {
+		background-color: #6d9eeb;
+	}
+}

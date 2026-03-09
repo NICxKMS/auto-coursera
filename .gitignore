@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.js.map
+.env
+.DS_Store
+.vscode
+.ouroboros
+.vexp
+.github

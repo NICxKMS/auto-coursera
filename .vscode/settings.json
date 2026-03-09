@@ -1,5 +1,9 @@
 {
-    "chat.tools.terminal.autoApprove": {
-        "Copy-Item": true
-    }
+	"chat.tools.terminal.autoApprove": {
+		"Copy-Item": true
+	},
+	"github.copilot.chat.backgroundCompaction": true,
+	"github.copilot.chat.codesearch.enabled": true,
+	"github.copilot.chat.copilotMemory.enabled": true,
+	"github.copilot.chat.responsesApiReasoningEffort": "high"
 }
