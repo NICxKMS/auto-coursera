@@ -1,0 +1,220 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Base title="Downloads" description="Download Auto-Coursera Assistant native installers and install scripts for Windows, macOS, and Linux.">
+  <Header />
+
+  <main class="py-16 sm:py-24 px-4">
+    <div class="max-w-5xl mx-auto">
+      <!-- Title -->
+      <div class="text-center mb-16 animate-fade-in">
+        <p class="section-label">Downloads</p>
+        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">All Downloads</h1>
+        <p class="text-lg text-surface-400 max-w-xl mx-auto">
+          Native installers and terminal scripts for every supported platform.
+        </p>
+        <div class="mt-4">
+          <span class="badge" data-version-auto>
+            <span class="font-mono version-text shimmer"><span class="invisible">v0.0.0</span></span>
+            <span class="text-primary-400/50">&middot;</span>
+            <span class="text-primary-400/70">Latest Release</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- ═══════════════════ NATIVE INSTALLERS ═══════════════════ -->
+      <section class="mb-20 animate-slide-up delay-100">
+        <h2 class="text-2xl font-semibold text-white mb-2">Native Installers</h2>
+        <p class="text-surface-400 mb-8">One-click installers that automatically configure browser policies.</p>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Windows x64 -->
+          <a href="https://api.autocr.nicx.app/api/download/windows" class="card-interactive group flex items-center gap-4">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12V6.5l8-1.1V12H3zm0 .5h8v6.6l-8-1.1V12.5zM11.5 12V5.3l9.5-1.3V12h-9.5zm0 .5H21v7.5l-9.5-1.3v-6.2z"/></svg>
+            </div>
+            <div>
+              <p class="text-surface-200 font-medium">Windows x64</p>
+              <p class="text-xs text-surface-500">.exe installer — ~8 MB</p>
+            </div>
+            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+
+          <!-- Windows ARM64 -->
+          <a href="https://api.autocr.nicx.app/api/download/windows-arm64" class="card-interactive group flex items-center gap-4">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12V6.5l8-1.1V12H3zm0 .5h8v6.6l-8-1.1V12.5zM11.5 12V5.3l9.5-1.3V12h-9.5zm0 .5H21v7.5l-9.5-1.3v-6.2z"/></svg>
+            </div>
+            <div>
+              <p class="text-surface-200 font-medium">Windows ARM64</p>
+              <p class="text-xs text-surface-500">.exe installer — ~8 MB</p>
+            </div>
+            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+
+          <!-- macOS Universal -->
+          <a href="https://api.autocr.nicx.app/api/download/macos" class="card-interactive group flex items-center gap-4">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            </div>
+            <div>
+              <p class="text-surface-200 font-medium">macOS Universal</p>
+              <p class="text-xs text-surface-500">Intel + Apple Silicon — ~8 MB</p>
+            </div>
+            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+
+          <!-- Linux x64 -->
+          <a href="https://api.autocr.nicx.app/api/download/linux" class="card-interactive group flex items-center gap-4">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.311.004-.466.013a7.18 7.18 0 0 0-.375.031c-.625.063-1.15.218-1.578.465-.844.49-1.316 1.297-1.512 2.18a6.73 6.73 0 0 0-.117.875 8.59 8.59 0 0 0 .004.965c.03.434.09.852.18 1.242.094.39.21.75.344 1.074.094.227.199.437.312.625.094.155.203.3.32.441.086.102.152.168.152.168l.008.008c.082.07.168.137.258.2.219.153.468.27.742.352.262.078.547.117.848.117s.586-.04.848-.117c.274-.082.523-.2.742-.352.09-.063.176-.13.258-.2l.008-.008s.066-.066.152-.168c.117-.14.227-.286.32-.441.114-.188.219-.398.313-.625.133-.324.25-.684.344-1.074.09-.39.148-.808.18-1.242a8.59 8.59 0 0 0 .003-.965 6.73 6.73 0 0 0-.117-.875c-.196-.883-.668-1.69-1.512-2.18a3.76 3.76 0 0 0-1.578-.465 7.95 7.95 0 0 0-.375-.031A5.7 5.7 0 0 0 12.504 0z"/></svg>
+            </div>
+            <div>
+              <p class="text-surface-200 font-medium">Linux x64</p>
+              <p class="text-xs text-surface-500">Debian, Ubuntu, Fedora — ~8 MB</p>
+            </div>
+            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+
+          <!-- Linux ARM64 -->
+          <a href="https://api.autocr.nicx.app/api/download/linux-arm64" class="card-interactive group flex items-center gap-4">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.311.004-.466.013a7.18 7.18 0 0 0-.375.031c-.625.063-1.15.218-1.578.465-.844.49-1.316 1.297-1.512 2.18a6.73 6.73 0 0 0-.117.875 8.59 8.59 0 0 0 .004.965c.03.434.09.852.18 1.242.094.39.21.75.344 1.074.094.227.199.437.312.625.094.155.203.3.32.441.086.102.152.168.152.168l.008.008c.082.07.168.137.258.2.219.153.468.27.742.352.262.078.547.117.848.117s.586-.04.848-.117c.274-.082.523-.2.742-.352.09-.063.176-.13.258-.2l.008-.008s.066-.066.152-.168c.117-.14.227-.286.32-.441.114-.188.219-.398.313-.625.133-.324.25-.684.344-1.074.09-.39.148-.808.18-1.242a8.59 8.59 0 0 0 .003-.965 6.73 6.73 0 0 0-.117-.875c-.196-.883-.668-1.69-1.512-2.18a3.76 3.76 0 0 0-1.578-.465 7.95 7.95 0 0 0-.375-.031A5.7 5.7 0 0 0 12.504 0z"/></svg>
+            </div>
+            <div>
+              <p class="text-surface-200 font-medium">Linux ARM64</p>
+              <p class="text-xs text-surface-500">Raspberry Pi, ARM — ~8 MB</p>
+            </div>
+            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+        </div>
+      </section>
+
+      <!-- ═══════════════════ INSTALL SCRIPTS ═══════════════════ -->
+      <section class="mb-20 animate-slide-up delay-200">
+        <h2 class="text-2xl font-semibold text-white mb-2">Install Scripts</h2>
+        <p class="text-surface-400 mb-8">Terminal-based installers for automated deployments and power users.</p>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Windows PowerShell -->
+          <a href="https://autocr.nicx.app/scripts/install.ps1" class="card-interactive group flex items-center gap-4">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            </div>
+            <div>
+              <p class="text-surface-200 font-medium">install.ps1</p>
+              <p class="text-xs text-surface-500">Windows PowerShell</p>
+            </div>
+            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </a>
+
+          <!-- Windows Uninstall -->
+          <a href="https://autocr.nicx.app/scripts/uninstall.ps1" class="card-interactive group flex items-center gap-4">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            </div>
+            <div>
+              <p class="text-surface-200 font-medium">uninstall.ps1</p>
+              <p class="text-xs text-surface-500">Windows uninstaller</p>
+            </div>
+            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </a>
+
+          <!-- Linux Install -->
+          <a href="https://autocr.nicx.app/scripts/install.sh" class="card-interactive group flex items-center gap-4">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            </div>
+            <div>
+              <p class="text-surface-200 font-medium">install.sh</p>
+              <p class="text-xs text-surface-500">Linux bash script</p>
+            </div>
+            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </a>
+
+          <!-- macOS Install -->
+          <a href="https://autocr.nicx.app/scripts/install-mac.sh" class="card-interactive group flex items-center gap-4">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            </div>
+            <div>
+              <p class="text-surface-200 font-medium">install-mac.sh</p>
+              <p class="text-xs text-surface-500">macOS bash script</p>
+            </div>
+            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </a>
+
+          <!-- Linux/macOS Uninstall -->
+          <a href="https://autocr.nicx.app/scripts/uninstall.sh" class="card-interactive group flex items-center gap-4">
+            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            </div>
+            <div>
+              <p class="text-surface-200 font-medium">uninstall.sh</p>
+              <p class="text-xs text-surface-500">Linux &amp; macOS uninstaller</p>
+            </div>
+            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </a>
+        </div>
+      </section>
+
+      <!-- ═══════════════════ VERIFICATION ═══════════════════ -->
+      <section class="animate-slide-up delay-300">
+        <div class="glass p-8">
+          <h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            Verify Your Installation
+          </h2>
+          <p class="text-surface-400 mb-4">After installing, verify the extension is active:</p>
+          <ol class="space-y-3 text-surface-300 text-sm">
+            <li class="flex gap-3">
+              <span class="text-primary-400 font-mono font-semibold shrink-0">1.</span>
+              <span>Open your browser and go to <code>chrome://extensions</code></span>
+            </li>
+            <li class="flex gap-3">
+              <span class="text-primary-400 font-mono font-semibold shrink-0">2.</span>
+              <span>Look for <strong class="text-white">Auto-Coursera Assistant</strong> in the list</span>
+            </li>
+            <li class="flex gap-3">
+              <span class="text-primary-400 font-mono font-semibold shrink-0">3.</span>
+              <span>Confirm it shows <strong class="text-white">"Installed by enterprise policy"</strong></span>
+            </li>
+            <li class="flex gap-3">
+              <span class="text-primary-400 font-mono font-semibold shrink-0">4.</span>
+              <span>Optionally, check <code>chrome://policy</code> to see the active policy</span>
+            </li>
+          </ol>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>
+
+<script>
+  // Auto-fetch version for badges
+  const autoBadges = document.querySelectorAll<HTMLElement>('[data-version-auto]');
+  if (autoBadges.length > 0) {
+    fetch('https://api.autocr.nicx.app/api/latest-version', { signal: AbortSignal.timeout(5000) })
+      .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
+      .then((data: { version?: string }) => {
+        const ver = data.version || 'unknown';
+        autoBadges.forEach((badge) => {
+          const textEl = badge.querySelector('.version-text');
+          if (textEl) { textEl.classList.remove('shimmer'); textEl.innerHTML = `v${ver}`; }
+        });
+      })
+      .catch(() => {
+        autoBadges.forEach((badge) => {
+          const textEl = badge.querySelector('.version-text');
+          if (textEl) { textEl.classList.remove('shimmer'); textEl.innerHTML = 'v1.7.5'; }
+        });
+      });
+  }
+</script>

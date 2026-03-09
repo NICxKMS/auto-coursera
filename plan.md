@@ -5,6 +5,8 @@ You are a senior full-stack developer building a complete browser extension dist
 >**Important**: You can modify plan details if you find any issues or improvements, but do not change the overall architecture or requirements. Always ask before making significant changes.
 > **Important:** The browser extension source code is already built and lives in the `extension/` directory. Your job is to build everything else around it: website, installer, API, packaging scripts, CI/CD, documentation.
 
+> Domain is `nicx.me` and `nicx.app`.
+
 ---
 
 ## CONTEXT

@@ -1,0 +1,22 @@
+name = "auto-coursera-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+EXTENSION_ID = "EXTENSION_ID_PLACEHOLDER"
+CURRENT_VERSION = "1.7.5"
+ALLOWED_ORIGIN = "https://autocr.nicx.app"
+
+[[r2_buckets]]
+binding = "EXTENSIONS_BUCKET"
+bucket_name = "extensions-bucket"
+
+[[r2_buckets]]
+binding = "RELEASES_BUCKET"
+bucket_name = "releases-bucket"
+
+[env.production]
+routes = [
+  { pattern = "api.autocr.nicx.app/*", zone_name = "nicx.app" }
+]

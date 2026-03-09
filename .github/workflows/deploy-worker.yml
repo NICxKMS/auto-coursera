@@ -1,0 +1,38 @@
+# =============================================================================
+# deploy-worker.yml — Manual Worker Deploy
+# =============================================================================
+# Standalone workflow for deploying the Cloudflare Worker on demand.
+# Use when you need to push a worker update outside of a tagged release.
+#
+# Required Secrets: CF_ACCOUNT_ID, CF_API_TOKEN
+
+name: Deploy Worker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install worker dependencies
+        run: cd workers && npm ci
+
+      - name: Deploy worker to production
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: deploy --env production
+          workingDirectory: workers

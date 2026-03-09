@@ -1,0 +1,98 @@
+---
+interface Props {
+	command: string;
+	label: string;
+}
+
+const { command, label } = Astro.props;
+const blockId = `script-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<div class="w-full">
+  <!-- Label -->
+  <div class="mb-2.5">
+    <span class="badge text-[11px] uppercase tracking-wider">
+      {label}
+    </span>
+  </div>
+
+  <!-- Code block -->
+  <div class="group relative glass-strong overflow-hidden transition-colors duration-300 hover:border-white/[0.12]">
+    <!-- Left gradient accent -->
+    <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary-500 via-primary-400/50 to-transparent" aria-hidden="true"></div>
+
+    <div class="flex items-center gap-3">
+      <!-- Command display -->
+      <div class="flex-1 overflow-x-auto pl-5 pr-2 py-4">
+        <pre class="text-sm font-mono text-surface-200 whitespace-nowrap"><code id={`${blockId}-code`}>{command}</code></pre>
+      </div>
+
+      <!-- Copy button -->
+      <button
+        type="button"
+        data-copy-target={`${blockId}-code`}
+        class="copy-btn shrink-0 flex items-center justify-center w-10 h-10 mr-3 rounded-lg text-surface-500 hover:text-white hover:bg-white/[0.06] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
+        aria-label={`Copy ${label} command to clipboard`}
+      >
+        <svg
+          class="copy-icon w-4 h-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+        </svg>
+        <svg
+          class="check-icon w-4 h-4 hidden text-emerald-400"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.copy-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const targetId = btn.dataset.copyTarget;
+      if (!targetId) return;
+      const codeEl = document.getElementById(targetId);
+      if (!codeEl) return;
+      const text = codeEl.textContent || '';
+
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+
+      const copyIcon = btn.querySelector('.copy-icon')!;
+      const checkIcon = btn.querySelector('.check-icon')!;
+      copyIcon.classList.add('hidden');
+      checkIcon.classList.remove('hidden');
+
+      setTimeout(() => {
+        copyIcon.classList.remove('hidden');
+        checkIcon.classList.add('hidden');
+      }, 2000);
+    });
+  });
+</script>

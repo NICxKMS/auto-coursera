@@ -1,0 +1,32 @@
+---
+// OSDetector — client-side only, no props needed.
+// Detects the user's OS and sets data-os on <body>.
+// Dispatches a "os-detected" CustomEvent with { detail: { os } }.
+---
+
+<script>
+  (function detectOS() {
+    const ua = navigator.userAgent || '';
+    const platform =
+      (navigator as any).userAgentData?.platform || navigator.platform || '';
+
+    let os: 'windows' | 'macos' | 'linux' | 'unknown' = 'unknown';
+
+    if (/Win/i.test(platform) || /Windows/i.test(ua)) {
+      os = 'windows';
+    } else if (/Mac/i.test(platform) || /Macintosh/i.test(ua)) {
+      os = 'macos';
+    } else if (/Linux/i.test(platform) || /Linux/i.test(ua)) {
+      os = 'linux';
+    }
+
+    document.body.dataset.os = os;
+
+    document.dispatchEvent(
+      new CustomEvent('os-detected', {
+        detail: { os },
+        bubbles: true,
+      }),
+    );
+  })();
+</script>

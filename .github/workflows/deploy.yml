@@ -1,0 +1,257 @@
+# =============================================================================
+# deploy.yml — Main Orchestration: Build, Sign, Upload, Deploy
+# =============================================================================
+# Triggers:
+#   - push to main  → deploy website only
+#   - push tag v*   → full release pipeline (extension + installers + website + worker)
+#
+# Required Secrets:
+#   CF_ACCOUNT_ID, CF_API_TOKEN, EXTENSION_PRIVATE_KEY, EXTENSION_ID
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20'
+  GO_VERSION: '1.22'
+  PNPM_VERSION: '9'
+
+# Cancel in-progress runs for the same ref
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ===========================================================================
+  # BUILD EXTENSION — Sign and upload CRX (tags only)
+  # ===========================================================================
+  build-extension:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install extension dependencies
+        run: cd extension && pnpm install --frozen-lockfile
+
+      - name: Build extension (production)
+        run: cd extension && pnpm build:prod
+
+      - name: Write signing key
+        run: echo "${{ secrets.EXTENSION_PRIVATE_KEY }}" > extension-key.pem
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
+
+      - name: Package CRX
+        run: |
+          ./scripts/package-crx.sh \
+            -v "${{ steps.version.outputs.VERSION }}" \
+            -k extension-key.pem \
+            -s extension/dist
+
+      - name: Generate updates.xml
+        run: |
+          ./scripts/generate-updates-xml.sh \
+            -i "${{ secrets.EXTENSION_ID }}" \
+            -v "${{ steps.version.outputs.VERSION }}" \
+            -u "https://cdn.autocr.nicx.app/releases/auto_coursera_${{ steps.version.outputs.VERSION }}.crx" \
+            -o updates.xml
+
+      - name: Upload CRX to R2
+        run: |
+          npx wrangler r2 object put \
+            "extensions-bucket/releases/auto_coursera_${{ steps.version.outputs.VERSION }}.crx" \
+            --file="auto_coursera_${{ steps.version.outputs.VERSION }}.crx"
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+
+      - name: Upload updates.xml to R2
+        run: |
+          npx wrangler r2 object put \
+            "extensions-bucket/updates.xml" \
+            --file=updates.xml
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+
+      - name: Upload checksum to R2
+        run: |
+          npx wrangler r2 object put \
+            "extensions-bucket/releases/auto_coursera_${{ steps.version.outputs.VERSION }}.crx.sha256" \
+            --file="auto_coursera_${{ steps.version.outputs.VERSION }}.crx.sha256"
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+
+      - name: Cleanup signing key
+        if: always()
+        run: rm -f extension-key.pem
+
+      - name: Upload CRX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crx-package
+          path: |
+            auto_coursera_${{ steps.version.outputs.VERSION }}.crx
+            auto_coursera_${{ steps.version.outputs.VERSION }}.crx.sha256
+            updates.xml
+          retention-days: 90
+
+  # ===========================================================================
+  # BUILD INSTALLERS — Cross-compile Go binaries (tags only)
+  # ===========================================================================
+  build-installers:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build all platforms
+        run: cd installer && make build-all
+
+      - name: Generate checksums
+        run: cd installer/dist && sha256sum * > checksums.sha256
+
+      - name: Upload binaries to R2
+        run: |
+          for file in installer/dist/*; do
+            filename=$(basename "$file")
+            echo "Uploading $filename..."
+            npx wrangler r2 object put \
+              "releases-bucket/${filename}" \
+              --file="$file"
+          done
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+
+      - name: Upload installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers
+          path: installer/dist/
+          retention-days: 90
+
+  # ===========================================================================
+  # DEPLOY WEBSITE (main branch) — No dependencies
+  # ===========================================================================
+  deploy-website-main:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install website dependencies
+        run: cd website && pnpm install --frozen-lockfile
+
+      - name: Build website
+        run: cd website && pnpm build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: pages deploy website/dist --project-name=auto-coursera
+
+  # ===========================================================================
+  # DEPLOY WEBSITE (release tag) — After extension + installers
+  # ===========================================================================
+  deploy-website-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-extension, build-installers]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install website dependencies
+        run: cd website && pnpm install --frozen-lockfile
+
+      - name: Build website
+        run: cd website && pnpm build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: pages deploy website/dist --project-name=auto-coursera
+
+  # ===========================================================================
+  # DEPLOY WORKER — Production Cloudflare Worker (tags only)
+  # ===========================================================================
+  deploy-worker:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-extension]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install worker dependencies
+        run: cd workers && npm ci
+
+      - name: Deploy worker to production
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: deploy --env production
+          workingDirectory: workers

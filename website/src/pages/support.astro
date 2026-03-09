@@ -1,0 +1,163 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Base title="Support" description="Frequently asked questions and help resources for Auto-Coursera Assistant.">
+  <Header />
+
+  <main class="py-16 sm:py-24 px-4">
+    <div class="max-w-3xl mx-auto">
+      <!-- Title -->
+      <div class="text-center mb-16 animate-fade-in">
+        <p class="section-label">Support</p>
+        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Help &amp; FAQ</h1>
+        <p class="text-lg text-surface-400 max-w-xl mx-auto">
+          Find answers to common questions about Auto-Coursera Assistant.
+        </p>
+      </div>
+
+      <!-- ═══════════════════ FAQ ═══════════════════ -->
+      <section class="mb-20 space-y-3 animate-slide-up delay-100">
+        <!-- FAQ 1 -->
+        <details class="faq-item group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span>How do I install the extension?</span>
+            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
+            <p>Visit the <a href="/install">Install page</a> and download the installer for your operating system. The installer automatically configures browser policies and installs the extension. After installation, restart your browser and the extension will appear.</p>
+          </div>
+        </details>
+
+        <!-- FAQ 2 -->
+        <details class="faq-item group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span>Which browsers are supported?</span>
+            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
+            <p>Auto-Coursera Assistant works on all Chromium-based browsers including Google Chrome, Microsoft Edge, Brave, and Chromium. Firefox and Safari are not supported as they use different extension APIs.</p>
+          </div>
+        </details>
+
+        <!-- FAQ 3 -->
+        <details class="faq-item group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span>How does the extension work?</span>
+            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
+            <p>The extension detects quiz pages on Coursera, extracts question text and answer options, then sends them to your configured AI provider. The AI analyzes the question and returns the best answer. Your API key is stored locally — the extension communicates directly with the AI provider.</p>
+          </div>
+        </details>
+
+        <!-- FAQ 4 -->
+        <details class="faq-item group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span>Is my data safe?</span>
+            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
+            <p>Yes. The extension collects zero personal data and has zero tracking. Your API keys are stored in Chrome's local storage on your device and are never transmitted to our servers. Questions are sent directly from your browser to the AI provider you choose.</p>
+          </div>
+        </details>
+
+        <!-- FAQ 5 -->
+        <details class="faq-item group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span>Extension not showing after install?</span>
+            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
+            <p>Make sure you've completely restarted your browser (close all windows, not just tabs). Check <code>chrome://policy</code> to verify the policy is applied. If the policy isn't showing, try running the installer again with administrator/sudo privileges. See the <a href="/docs/troubleshoot">Troubleshooting guide</a> for more details.</p>
+          </div>
+        </details>
+
+        <!-- FAQ 6 -->
+        <details class="faq-item group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span>How do I update the extension?</span>
+            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
+            <p>The extension updates automatically. The browser checks for updates using the configured update URL. You don't need to do anything — new versions are installed silently in the background.</p>
+          </div>
+        </details>
+
+        <!-- FAQ 7 -->
+        <details class="faq-item group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span>How do I uninstall?</span>
+            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
+            <p>Download and run the uninstall script for your OS from the <a href="/downloads">Downloads page</a>. On Windows, run <code>uninstall.ps1</code> in PowerShell. On Linux and macOS, run <code>uninstall.sh</code>. This removes the browser policy and the extension.</p>
+          </div>
+        </details>
+
+        <!-- FAQ 8 -->
+        <details class="faq-item group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span>Which AI providers are supported?</span>
+            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
+            <p>The extension supports <strong class="text-white">OpenRouter</strong>, <strong class="text-white">Google Gemini</strong>, <strong class="text-white">Groq</strong>, <strong class="text-white">Cerebras</strong>, and <strong class="text-white">NVIDIA NIM</strong>. Each provider has free tiers or free models available. You can switch between providers at any time from the extension popup.</p>
+          </div>
+        </details>
+      </section>
+
+      <!-- ═══════════════════ GET HELP ═══════════════════ -->
+      <section class="animate-slide-up delay-200">
+        <div class="glass-strong p-8 md:p-10 relative overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-br from-primary-600/5 to-transparent" aria-hidden="true"></div>
+          <div class="relative">
+            <h2 class="text-xl font-semibold text-white mb-6">Still need help?</h2>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <!-- GitHub Issues -->
+              <a href="https://github.com/nicx/auto-coursera/issues" target="_blank" rel="noopener noreferrer" class="card-interactive flex items-center gap-4">
+                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-surface-200 font-medium">Report a Bug</p>
+                  <p class="text-xs text-surface-500">Open an issue on GitHub</p>
+                </div>
+              </a>
+
+              <!-- Security -->
+              <a href="mailto:security@nicx.app" class="card-interactive flex items-center gap-4">
+                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-surface-200 font-medium">Security Issue</p>
+                  <p class="text-xs text-surface-500">security@nicx.app</p>
+                </div>
+              </a>
+            </div>
+
+            <p class="text-surface-500 text-sm mt-6">
+              When reporting a bug, include your OS, browser version, extension version, and steps to reproduce the issue.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>
+
+<style>
+  .faq-item[open] summary {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+</style>

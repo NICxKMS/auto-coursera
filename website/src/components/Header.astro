@@ -1,0 +1,243 @@
+---
+interface NavItem {
+	label: string;
+	href: string;
+}
+
+const navItems: NavItem[] = [
+	{ label: 'Home', href: '/' },
+	{ label: 'Install', href: '/install' },
+	{ label: 'Docs', href: '/docs' },
+	{ label: 'Releases', href: '/releases' },
+	{ label: 'Support', href: '/support' },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<header
+  id="site-header"
+  class="fixed top-0 inset-x-0 z-50 transition-all duration-300"
+>
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <nav
+      class="flex items-center justify-between h-16 lg:h-18"
+      aria-label="Main navigation"
+    >
+      <!-- Logo -->
+      <a
+        href="/"
+        class="flex items-center gap-2.5 text-white hover:text-white group shrink-0"
+      >
+        <div
+          class="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-lg shadow-primary-600/25 group-hover:shadow-primary-500/40 transition-shadow duration-300"
+        >
+          <svg
+            class="w-[18px] h-[18px] text-white"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+          </svg>
+        </div>
+        <span class="text-lg font-bold tracking-tight hidden sm:inline">
+          <span class="text-gradient">Auto</span>Coursera
+        </span>
+      </a>
+
+      <!-- Desktop Nav -->
+      <ul class="hidden md:flex items-center gap-1" role="menubar">
+        {
+          navItems.map((item) => {
+            const isActive =
+              currentPath === item.href ||
+              (item.href !== '/' && currentPath.startsWith(item.href));
+            return (
+              <li role="none">
+                <a
+                  href={item.href}
+                  role="menuitem"
+                  class:list={[
+                    'nav-link relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                    isActive
+                      ? 'text-white'
+                      : 'text-surface-400 hover:text-white',
+                  ]}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {item.label}
+                  <span
+                    class:list={[
+                      'absolute bottom-0.5 left-1/2 -translate-x-1/2 h-[2px] rounded-full bg-primary-400 transition-all duration-300',
+                      isActive ? 'w-4' : 'w-0 group-hover:w-4',
+                    ]}
+                    aria-hidden="true"
+                  />
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+
+      <!-- CTA + Mobile Toggle -->
+      <div class="flex items-center gap-3">
+        <a
+          href="/install"
+          class="hidden sm:inline-flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-lg bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-glow hover:shadow-glow-lg hover:from-primary-500 hover:to-primary-400 transition-all duration-200"
+        >
+          Get Started
+          <svg
+            class="w-3.5 h-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 12h14"></path>
+            <path d="m12 5 7 7-7 7"></path>
+          </svg>
+        </a>
+
+        <!-- Mobile menu button -->
+        <button
+          id="mobile-menu-toggle"
+          type="button"
+          class="md:hidden flex items-center justify-center w-10 h-10 rounded-lg text-surface-400 hover:text-white hover:bg-white/[0.05] transition-all duration-200"
+          aria-expanded="false"
+          aria-controls="mobile-menu"
+          aria-label="Toggle navigation menu"
+        >
+          <svg
+            id="menu-icon-open"
+            class="w-5 h-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+          </svg>
+          <svg
+            id="menu-icon-close"
+            class="w-5 h-5 hidden"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div
+    id="mobile-menu"
+    class="md:hidden hidden animate-slide-down"
+    role="menu"
+  >
+    <div class="mx-4 mt-1 p-4 rounded-xl glass-strong space-y-1">
+      {
+        navItems.map((item) => {
+          const isActive =
+            currentPath === item.href ||
+            (item.href !== '/' && currentPath.startsWith(item.href));
+          return (
+            <a
+              href={item.href}
+              role="menuitem"
+              class:list={[
+                'block px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+                isActive
+                  ? 'text-white bg-white/[0.06]'
+                  : 'text-surface-400 hover:text-white hover:bg-white/[0.03]',
+              ]}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              {item.label}
+            </a>
+          );
+        })
+      }
+      <div class="pt-2">
+        <a
+          href="/install"
+          class="block text-center px-4 py-3 rounded-lg text-sm font-medium bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-glow"
+        >
+          Get Started →
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Spacer to offset fixed header -->
+<div class="h-16 lg:h-18" aria-hidden="true"></div>
+
+<style>
+  .nav-link:hover span {
+    width: 1rem;
+  }
+</style>
+
+<script>
+  const header = document.getElementById('site-header')!;
+  const toggle = document.getElementById('mobile-menu-toggle')!;
+  const menu = document.getElementById('mobile-menu')!;
+  const iconOpen = document.getElementById('menu-icon-open')!;
+  const iconClose = document.getElementById('menu-icon-close')!;
+
+  let ticking = false;
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        if (window.scrollY > 10) {
+          header.classList.add(
+            'bg-surface-950/80',
+            'backdrop-blur-xl',
+            'border-b',
+            'border-white/5',
+          );
+        } else {
+          header.classList.remove(
+            'bg-surface-950/80',
+            'backdrop-blur-xl',
+            'border-b',
+            'border-white/5',
+          );
+        }
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  toggle.addEventListener('click', () => {
+    const isOpen = menu.classList.contains('hidden');
+    menu.classList.toggle('hidden', !isOpen);
+    iconOpen.classList.toggle('hidden', isOpen);
+    iconClose.classList.toggle('hidden', !isOpen);
+    toggle.setAttribute('aria-expanded', String(isOpen));
+  });
+</script>

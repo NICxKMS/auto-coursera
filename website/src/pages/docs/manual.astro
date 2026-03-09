@@ -1,0 +1,197 @@
+---
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+---
+
+<Base title="Manual Installation" description="Step-by-step manual installation guide for Auto-Coursera Assistant on Windows, Linux, and macOS.">
+  <Header />
+
+  <main class="py-16 sm:py-24 px-4">
+    <div class="max-w-3xl mx-auto">
+      <!-- Title -->
+      <div class="text-center mb-16 animate-fade-in">
+        <p class="section-label">Docs</p>
+        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Manual Installation</h1>
+        <p class="text-lg text-surface-400 max-w-xl mx-auto">
+          Configure browser policies by hand if you prefer full control over the process.
+        </p>
+      </div>
+
+      <!-- Info banner -->
+      <div class="glass p-5 mb-10 flex gap-4 items-start animate-slide-up">
+        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-500/15 text-primary-400 shrink-0 mt-0.5">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        </div>
+        <div class="text-sm text-surface-400 leading-relaxed">
+          <strong class="text-surface-200">Prefer automatic installation?</strong> Use the <a href="/install" class="text-primary-400 hover:text-primary-300">one-click installer</a> instead — it handles all of this automatically.
+        </div>
+      </div>
+
+      <!-- ═══════════════════ WINDOWS ═══════════════════ -->
+      <section class="mb-12 animate-slide-up delay-100">
+        <details class="group glass overflow-hidden" open>
+          <summary class="flex items-center gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-semibold text-lg hover:bg-white/[0.02] transition-colors">
+            <svg class="w-6 h-6 text-surface-400" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12V6.5l8-1.1V12H3zm0 .5h8v6.6l-8-1.1V12.5zM11.5 12V5.3l9.5-1.3V12h-9.5zm0 .5H21v7.5l-9.5-1.3v-6.2z"/></svg>
+            <span>Windows</span>
+            <svg class="w-5 h-5 text-surface-500 ml-auto transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+
+          <div class="px-6 pb-6 space-y-6 border-t border-white/[0.04]">
+            <div class="pt-6">
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 1 — Open Registry Editor</h3>
+              <p class="text-sm text-surface-400 mb-3">Press <kbd class="px-1.5 py-0.5 rounded bg-surface-800 text-surface-300 font-mono text-xs">Win + R</kbd>, type <code>regedit</code>, and press Enter.</p>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 2 — Create the policy key</h3>
+              <p class="text-sm text-surface-400 mb-3">Navigate to or create the following registry key:</p>
+              <div class="glass-strong p-4 overflow-x-auto">
+                <code class="text-sm font-mono text-surface-200 whitespace-nowrap">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist</code>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 3 — Add the extension entry</h3>
+              <p class="text-sm text-surface-400 mb-3">Create a new String Value (<code>REG_SZ</code>) with name <code>1</code> and value:</p>
+              <div class="glass-strong p-4 overflow-x-auto">
+                <code class="text-sm font-mono text-surface-200 whitespace-nowrap">EXTENSION_ID_PLACEHOLDER;https://cdn.autocr.nicx.app/updates.xml</code>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 4 — For Edge (optional)</h3>
+              <p class="text-sm text-surface-400 mb-3">Use the same value at this registry path instead:</p>
+              <div class="glass-strong p-4 overflow-x-auto">
+                <code class="text-sm font-mono text-surface-200 whitespace-nowrap">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist</code>
+              </div>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <!-- ═══════════════════ LINUX ═══════════════════ -->
+      <section class="mb-12 animate-slide-up delay-200">
+        <details class="group glass overflow-hidden">
+          <summary class="flex items-center gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-semibold text-lg hover:bg-white/[0.02] transition-colors">
+            <svg class="w-6 h-6 text-surface-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.311.004-.466.013a7.18 7.18 0 0 0-.375.031c-.625.063-1.15.218-1.578.465-.844.49-1.316 1.297-1.512 2.18a6.73 6.73 0 0 0-.117.875 8.59 8.59 0 0 0 .004.965c.03.434.09.852.18 1.242.094.39.21.75.344 1.074.094.227.199.437.312.625.094.155.203.3.32.441.086.102.152.168.152.168l.008.008c.082.07.168.137.258.2.219.153.468.27.742.352.262.078.547.117.848.117s.586-.04.848-.117c.274-.082.523-.2.742-.352.09-.063.176-.13.258-.2l.008-.008s.066-.066.152-.168c.117-.14.227-.286.32-.441.114-.188.219-.398.313-.625.133-.324.25-.684.344-1.074.09-.39.148-.808.18-1.242a8.59 8.59 0 0 0 .003-.965 6.73 6.73 0 0 0-.117-.875c-.196-.883-.668-1.69-1.512-2.18a3.76 3.76 0 0 0-1.578-.465 7.95 7.95 0 0 0-.375-.031A5.7 5.7 0 0 0 12.504 0z"/></svg>
+            <span>Linux</span>
+            <svg class="w-5 h-5 text-surface-500 ml-auto transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+
+          <div class="px-6 pb-6 space-y-6 border-t border-white/[0.04]">
+            <div class="pt-6">
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 1 — Create the policy directory</h3>
+              <div class="glass-strong p-4 overflow-x-auto">
+                <code class="text-sm font-mono text-surface-200">sudo mkdir -p /etc/opt/chrome/policies/managed</code>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 2 — Create the policy file</h3>
+              <p class="text-sm text-surface-400 mb-3">Create <code>/etc/opt/chrome/policies/managed/auto_coursera_policy.json</code> with:</p>
+              <div class="glass-strong p-4 overflow-x-auto">
+                <pre class="text-sm font-mono text-surface-200 leading-relaxed">{`{
+  "ExtensionInstallForcelist": [
+    "EXTENSION_ID_PLACEHOLDER;https://cdn.autocr.nicx.app/updates.xml"
+  ]
+}`}</pre>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 3 — Set file permissions</h3>
+              <div class="glass-strong p-4 overflow-x-auto">
+                <code class="text-sm font-mono text-surface-200">sudo chmod 644 /etc/opt/chrome/policies/managed/auto_coursera_policy.json</code>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">For Chromium (optional)</h3>
+              <p class="text-sm text-surface-400 mb-3">Use the directory <code>/etc/chromium/policies/managed/</code> instead.</p>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <!-- ═══════════════════ MACOS ═══════════════════ -->
+      <section class="mb-12 animate-slide-up delay-300">
+        <details class="group glass overflow-hidden">
+          <summary class="flex items-center gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-semibold text-lg hover:bg-white/[0.02] transition-colors">
+            <svg class="w-6 h-6 text-surface-400" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            <span>macOS</span>
+            <svg class="w-5 h-5 text-surface-500 ml-auto transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+
+          <div class="px-6 pb-6 space-y-6 border-t border-white/[0.04]">
+            <div class="pt-6">
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 1 — Write the policy using defaults</h3>
+              <p class="text-sm text-surface-400 mb-3">Open Terminal and run:</p>
+              <div class="glass-strong p-4 overflow-x-auto">
+                <pre class="text-sm font-mono text-surface-200 leading-relaxed">{`defaults write com.google.Chrome ExtensionInstallForcelist -array-add \\
+  "EXTENSION_ID_PLACEHOLDER;https://cdn.autocr.nicx.app/updates.xml"`}</pre>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 2 — For Edge (optional)</h3>
+              <div class="glass-strong p-4 overflow-x-auto">
+                <pre class="text-sm font-mono text-surface-200 leading-relaxed">{`defaults write com.microsoft.Edge ExtensionInstallForcelist -array-add \\
+  "EXTENSION_ID_PLACEHOLDER;https://cdn.autocr.nicx.app/updates.xml"`}</pre>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 3 — Restart the browser</h3>
+              <p class="text-sm text-surface-400">Quit Chrome completely (Cmd + Q) and reopen it. The extension will be installed on next launch.</p>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <!-- ═══════════════════ VERIFICATION ═══════════════════ -->
+      <section class="animate-slide-up delay-400">
+        <div class="glass-strong p-8 relative overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-br from-emerald-600/5 to-transparent" aria-hidden="true"></div>
+          <div class="relative">
+            <h2 class="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+              <svg class="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              Verify Installation
+            </h2>
+
+            <ol class="space-y-4 text-surface-300 text-sm">
+              <li class="flex gap-3">
+                <span class="text-emerald-400 font-mono font-semibold shrink-0">1.</span>
+                <span>Open <code>chrome://policy</code> in your browser</span>
+              </li>
+              <li class="flex gap-3">
+                <span class="text-emerald-400 font-mono font-semibold shrink-0">2.</span>
+                <span>Click <strong class="text-white">"Reload policies"</strong></span>
+              </li>
+              <li class="flex gap-3">
+                <span class="text-emerald-400 font-mono font-semibold shrink-0">3.</span>
+                <span>Look for <code>ExtensionInstallForcelist</code> in the policy table</span>
+              </li>
+              <li class="flex gap-3">
+                <span class="text-emerald-400 font-mono font-semibold shrink-0">4.</span>
+                <span>The value should contain <code>EXTENSION_ID_PLACEHOLDER</code></span>
+              </li>
+              <li class="flex gap-3">
+                <span class="text-emerald-400 font-mono font-semibold shrink-0">5.</span>
+                <span>Open <code>chrome://extensions</code> and confirm the extension is listed</span>
+              </li>
+            </ol>
+
+            <p class="mt-6 text-surface-500 text-sm">
+              If the policy doesn't appear, see the <a href="/docs/troubleshoot" class="text-primary-400 hover:text-primary-300">Troubleshooting guide</a>.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

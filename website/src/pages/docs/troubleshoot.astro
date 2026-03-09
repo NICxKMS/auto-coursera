@@ -1,0 +1,206 @@
+---
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+---
+
+<Base title="Troubleshooting" description="Common issues and solutions for Auto-Coursera Assistant installation and usage.">
+  <Header />
+
+  <main class="py-16 sm:py-24 px-4">
+    <div class="max-w-3xl mx-auto">
+      <!-- Title -->
+      <div class="text-center mb-16 animate-fade-in">
+        <p class="section-label">Docs</p>
+        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Troubleshooting</h1>
+        <p class="text-lg text-surface-400 max-w-xl mx-auto">
+          Common issues and how to fix them.
+        </p>
+      </div>
+
+      <!-- ═══════════════════ ISSUES ═══════════════════ -->
+      <div class="space-y-3 animate-slide-up delay-100">
+
+        <!-- Issue 1 -->
+        <details class="group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">1</span>
+              Extension not appearing after install
+            </span>
+            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
+            <p><strong class="text-surface-200">Cause:</strong> The browser hasn't reloaded its policies.</p>
+            <p><strong class="text-surface-200">Solution:</strong></p>
+            <ol class="list-decimal pl-5 space-y-1.5">
+              <li>Close <strong class="text-white">all browser windows</strong> completely (check the system tray on Windows).</li>
+              <li>Reopen the browser and go to <code>chrome://extensions</code>.</li>
+              <li>If still missing, go to <code>chrome://policy</code> and click <strong class="text-white">"Reload policies"</strong>.</li>
+              <li>If the policy is missing too, re-run the installer with admin/sudo privileges.</li>
+            </ol>
+          </div>
+        </details>
+
+        <!-- Issue 2 -->
+        <details class="group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">2</span>
+              Script blocked by antivirus
+            </span>
+            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
+            <p><strong class="text-surface-200">Cause:</strong> Some antivirus tools flag PowerShell scripts or downloaded executables.</p>
+            <p><strong class="text-surface-200">Solution:</strong></p>
+            <ul class="list-disc pl-5 space-y-1.5">
+              <li>Temporarily disable real-time protection while running the installer.</li>
+              <li>Add an exception for the installer file or script path.</li>
+              <li>Alternatively, use the <a href="/docs/manual" class="text-primary-400 hover:text-primary-300">manual installation</a> method to apply the policy directly.</li>
+            </ul>
+          </div>
+        </details>
+
+        <!-- Issue 3 -->
+        <details class="group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">3</span>
+              PowerShell execution policy error
+            </span>
+            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
+            <p><strong class="text-surface-200">Cause:</strong> Windows PowerShell execution policy restricts running scripts.</p>
+            <p><strong class="text-surface-200">Solution:</strong> Run this command in an elevated PowerShell window first:</p>
+            <div class="glass-strong p-3 overflow-x-auto">
+              <code class="text-sm font-mono text-surface-200">Set-ExecutionPolicy Bypass -Scope Process -Force</code>
+            </div>
+            <p>Then run the install command again. The <code>-Scope Process</code> flag means this only affects the current session.</p>
+          </div>
+        </details>
+
+        <!-- Issue 4 -->
+        <details class="group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">4</span>
+              Permission errors on Linux
+            </span>
+            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
+            <p><strong class="text-surface-200">Cause:</strong> The installer needs root privileges to write to <code>/etc/opt/chrome/policies/managed/</code>.</p>
+            <p><strong class="text-surface-200">Solution:</strong> Run the install script with <code>sudo</code>:</p>
+            <div class="glass-strong p-3 overflow-x-auto">
+              <code class="text-sm font-mono text-surface-200">curl -fsSL https://autocr.nicx.app/scripts/install.sh | sudo bash</code>
+            </div>
+            <p>If you ran the native installer, re-run it with <code>sudo ./installer</code>.</p>
+          </div>
+        </details>
+
+        <!-- Issue 5 -->
+        <details class="group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">5</span>
+              Browser not detecting policy
+            </span>
+            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
+            <p><strong class="text-surface-200">Cause:</strong> The policy file may be in the wrong location or have incorrect permissions.</p>
+            <p><strong class="text-surface-200">Solution:</strong></p>
+            <ul class="list-disc pl-5 space-y-1.5">
+              <li><strong class="text-surface-200">Windows:</strong> Verify the registry key exists at <code>HKLM\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist</code></li>
+              <li><strong class="text-surface-200">Linux:</strong> Check that the JSON file is at <code>/etc/opt/chrome/policies/managed/</code> with <code>644</code> permissions</li>
+              <li><strong class="text-surface-200">macOS:</strong> Run <code>defaults read com.google.Chrome</code> and look for <code>ExtensionInstallForcelist</code></li>
+            </ul>
+          </div>
+        </details>
+
+        <!-- Issue 6 -->
+        <details class="group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">6</span>
+              "Managed by organization" not showing
+            </span>
+            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
+            <p><strong class="text-surface-200">Cause:</strong> The policy hasn't been recognized by the browser yet.</p>
+            <p><strong class="text-surface-200">Solution:</strong></p>
+            <ol class="list-decimal pl-5 space-y-1.5">
+              <li>Open <code>chrome://policy</code> and click <strong class="text-white">"Reload policies"</strong>.</li>
+              <li>If no policies appear, the policy file isn't being read. Double-check the file path and format.</li>
+              <li>On macOS, you may need to log out and back in for <code>defaults write</code> changes to take effect.</li>
+              <li>On Windows, try running <code>gpupdate /force</code> in an admin Command Prompt.</li>
+            </ol>
+          </div>
+        </details>
+
+        <!-- Issue 7 -->
+        <details class="group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">7</span>
+              Extension installed but not working
+            </span>
+            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
+            <p><strong class="text-surface-200">Cause:</strong> The extension is installed but not configured, or permissions are missing.</p>
+            <p><strong class="text-surface-200">Solution:</strong></p>
+            <ol class="list-decimal pl-5 space-y-1.5">
+              <li>Click the extension icon in the toolbar and ensure you've entered a valid API key.</li>
+              <li>Select an AI provider from the dropdown (e.g., OpenRouter, Gemini, Groq).</li>
+              <li>Navigate to a Coursera quiz page and check if the extension activates.</li>
+              <li>Open the browser console (<kbd class="px-1.5 py-0.5 rounded bg-surface-800 text-surface-300 font-mono text-xs">F12</kbd> → Console) and look for any extension error messages.</li>
+            </ol>
+          </div>
+        </details>
+
+        <!-- Issue 8 -->
+        <details class="group glass overflow-hidden">
+          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
+            <span class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">8</span>
+              How to check if policy is applied
+            </span>
+            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </summary>
+          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
+            <p><strong class="text-surface-200">Steps to verify:</strong></p>
+            <ol class="list-decimal pl-5 space-y-1.5">
+              <li>Open <code>chrome://policy</code> in your browser's address bar.</li>
+              <li>Click the <strong class="text-white">"Reload policies"</strong> button.</li>
+              <li>Look for <code>ExtensionInstallForcelist</code> in the table.</li>
+              <li>The value should contain <code>EXTENSION_ID_PLACEHOLDER</code> followed by the update URL.</li>
+              <li>If the status shows <strong class="text-white">"OK"</strong>, the policy is active and working.</li>
+              <li>If the status shows an error, check the policy file format for syntax issues.</li>
+            </ol>
+          </div>
+        </details>
+      </div>
+
+      <!-- ═══════════════════ STILL STUCK ═══════════════════ -->
+      <div class="mt-12 text-center glass p-8 animate-slide-up delay-200">
+        <h2 class="text-lg font-semibold text-white mb-3">Still stuck?</h2>
+        <p class="text-surface-400 text-sm mb-6">If none of the solutions above work, open an issue on GitHub with your OS, browser version, and the error you're seeing.</p>
+        <div class="flex flex-wrap justify-center gap-3">
+          <a href="https://github.com/nicx/auto-coursera/issues/new" target="_blank" rel="noopener noreferrer" class="btn-primary text-sm px-6 py-2.5 gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            Open GitHub Issue
+          </a>
+          <a href="/support" class="btn-secondary text-sm px-6 py-2.5">
+            View FAQ
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

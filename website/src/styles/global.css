@@ -1,0 +1,217 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+html {
+scroll-behavior: smooth;
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+
+body {
+@apply bg-surface-950 text-surface-300 font-sans;
+min-height: 100vh;
+background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
+}
+
+::selection {
+@apply bg-primary-500/30 text-white;
+}
+
+/* Thin custom scrollbar */
+::-webkit-scrollbar {
+width: 6px;
+}
+
+::-webkit-scrollbar-track {
+@apply bg-surface-950;
+}
+
+::-webkit-scrollbar-thumb {
+@apply bg-surface-700 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+@apply bg-surface-600;
+}
+
+* {
+scrollbar-width: thin;
+scrollbar-color: #3f3f46 #09090b;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+@apply text-white font-semibold tracking-tight;
+}
+
+a {
+@apply text-primary-400 hover:text-primary-300 transition-colors;
+}
+
+code {
+@apply text-xs font-mono bg-surface-800 px-1.5 py-0.5 rounded text-surface-300;
+}
+
+:focus-visible {
+@apply outline-2 outline-offset-2 outline-primary-500;
+}
+}
+
+@layer components {
+/* ── Glass morphism ─────────────────────────────────── */
+.glass {
+@apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.06] rounded-xl;
+}
+
+.glass-strong {
+@apply bg-white/[0.06] backdrop-blur-2xl border border-white/[0.08] rounded-xl;
+}
+
+/* ── Buttons ─────────────────────────────────────────── */
+.btn-primary {
+@apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-medium text-white
+           bg-gradient-to-r from-primary-600 to-primary-500
+           shadow-glow hover:shadow-glow-lg
+           hover:from-primary-500 hover:to-primary-400
+           transform hover:-translate-y-0.5 active:translate-y-0
+           transition-all duration-200 ease-out
+           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500;
+}
+
+.btn-secondary {
+@apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-medium
+           text-surface-200 bg-white/[0.05] border border-white/[0.1]
+           hover:bg-white/[0.08] hover:border-white/[0.15]
+           transform hover:-translate-y-0.5 active:translate-y-0
+           transition-all duration-200 ease-out
+           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500;
+}
+
+.btn-ghost {
+@apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium
+           text-surface-400 hover:text-white hover:bg-white/[0.05]
+           transition-all duration-200;
+}
+
+/* ── Cards ────────────────────────────────────────────── */
+.card {
+@apply glass p-6;
+}
+
+.card-interactive {
+@apply glass p-6 transition-all duration-300
+           hover:bg-white/[0.05] hover:border-white/[0.1] hover:shadow-glow
+           hover:-translate-y-1;
+}
+
+/* Compat alias used in pages */
+.card-hover {
+@apply relative bg-white/[0.02] border border-white/[0.06] rounded-xl p-6
+           transition-all duration-300 ease-out
+           hover:bg-white/[0.04] hover:border-white/[0.1]
+           hover:-translate-y-1 hover:shadow-lg hover:shadow-primary-500/[0.05];
+}
+
+/* ── Typography ───────────────────────────────────────── */
+.text-gradient {
+@apply bg-clip-text text-transparent bg-gradient-to-r from-primary-400 via-primary-300 to-indigo-400;
+}
+
+.section-label {
+@apply text-primary-400 text-sm font-semibold uppercase tracking-widest mb-3;
+}
+
+/* ── Dividers ─────────────────────────────────────────── */
+.divider {
+@apply h-px bg-gradient-to-r from-transparent via-white/10 to-transparent;
+}
+
+.divider-glow {
+@apply h-px bg-gradient-to-r from-transparent via-primary-500/30 to-transparent;
+}
+
+/* ── Badges ───────────────────────────────────────────── */
+.badge {
+@apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+           bg-primary-500/10 text-primary-400 border border-primary-500/20;
+}
+
+.badge-glow {
+@apply badge animate-glow-pulse;
+}
+
+/* ── Shimmer ──────────────────────────────────────────── */
+.shimmer {
+@apply bg-gradient-to-r from-transparent via-white/5 to-transparent bg-[length:200%_100%] animate-shimmer;
+}
+
+/* ── Glow box ─────────────────────────────────────────── */
+.glow-box {
+@apply relative;
+}
+
+.glow-box::before {
+content: "";
+@apply absolute -inset-px rounded-xl opacity-0
+               bg-gradient-to-r from-primary-500/20 via-primary-400/10 to-indigo-500/20
+               transition-opacity duration-500;
+z-index: -1;
+}
+
+.glow-box:hover::before {
+@apply opacity-100;
+}
+}
+
+@layer utilities {
+.delay-100 {
+animation-delay: 100ms;
+}
+
+.delay-200 {
+animation-delay: 200ms;
+}
+
+.delay-300 {
+animation-delay: 300ms;
+}
+
+.delay-400 {
+animation-delay: 400ms;
+}
+
+.delay-500 {
+animation-delay: 500ms;
+}
+
+.text-balance {
+text-wrap: balance;
+}
+
+/* Compat aliases used in existing pages */
+.animate-delay-100 {
+animation-delay: 0.1s;
+}
+
+.animate-delay-200 {
+animation-delay: 0.2s;
+}
+
+.animate-delay-300 {
+animation-delay: 0.3s;
+}
+
+.animate-delay-400 {
+animation-delay: 0.4s;
+}
+
+.animate-delay-500 {
+animation-delay: 0.5s;
+}
+}

@@ -1,0 +1,470 @@
+# Setup Guide
+
+> Step-by-step instructions to deploy the Auto-Coursera Assistant distribution platform from scratch.
+
+---
+
+## Table of Contents
+
+- [Prerequisites](#1-prerequisites)
+- [Clone Repository](#2-clone-repository)
+- [Generate Extension Signing Key](#3-generate-extension-signing-key)
+- [Configure Extension ID](#4-configure-extension-id)
+- [Create Cloudflare Account](#5-create-cloudflare-account)
+- [Create R2 Buckets](#6-create-r2-buckets)
+- [Configure R2 Custom Domains](#7-configure-r2-custom-domains)
+- [Create Cloudflare Pages Project](#8-create-cloudflare-pages-project)
+- [Configure Custom Domain for Pages](#9-configure-custom-domain-for-pages)
+- [Deploy Worker](#10-deploy-worker)
+- [Configure GitHub Secrets](#11-configure-github-secrets)
+- [Update Configuration Variables](#12-update-configuration-variables)
+- [First Deployment](#13-first-deployment)
+- [Verification](#14-verification)
+
+---
+
+## 1. Prerequisites
+
+Install these tools before proceeding:
+
+| Tool | Minimum Version | Purpose | Install |
+|---|---|---|---|
+| **Node.js** | 20+ | Website build, CRX packaging | [nodejs.org](https://nodejs.org/) |
+| **pnpm** | 9+ | Package manager | `npm install -g pnpm` |
+| **Go** | 1.22+ | Native installer build | [go.dev/dl](https://go.dev/dl/) |
+| **openssl** | 3.x | Key generation, CRX signing | Pre-installed on most systems |
+| **xxd** | any | Hex conversion for extension ID | Usually bundled with `vim` |
+| **Wrangler** | 3+ | Cloudflare Workers/R2 CLI | `pnpm install -g wrangler` |
+| **Git** | 2.x | Version control | [git-scm.com](https://git-scm.com/) |
+
+Verify all tools are available:
+
+```bash
+node --version       # v20.x.x or higher
+pnpm --version       # 9.x.x or higher
+go version           # go1.22.x or higher
+openssl version      # OpenSSL 3.x.x
+xxd -v               # xxd V1.x
+wrangler --version   # 3.x.x
+git --version        # git version 2.x
+```
+
+You also need:
+
+- A **Cloudflare account** (free tier works)
+- A **domain** added to Cloudflare DNS (this guide uses `nicx.app`)
+- A **GitHub account** with the repository pushed
+
+---
+
+## 2. Clone Repository
+
+```bash
+git clone https://github.com/nicx/auto-coursera.git
+cd auto-coursera
+```
+
+Install extension dependencies (needed for CRX packaging):
+
+```bash
+cd extension && pnpm install && cd ..
+```
+
+---
+
+## 3. Generate Extension Signing Key
+
+The extension needs an RSA 2048 private key for CRX3 signing. This key **determines the extension ID** — the same key always produces the same ID.
+
+```bash
+bash scripts/generate-key.sh
+```
+
+This will:
+
+1. Generate `extension-key.pem` in the project root
+2. Print the derived **extension ID** (32 lowercase letters a–p)
+
+```
+✓ Private key generated: /path/to/auto-coursera/extension-key.pem
+✓ Extension ID: abcdefghijklmnopabcdefghijklmnop
+```
+
+**Save both values.** You need them for the next step and for GitHub Secrets later.
+
+To re-derive the extension ID from an existing key at any time:
+
+```bash
+bash scripts/derive-extension-id.sh extension-key.pem
+```
+
+> ⚠️ **Never commit `extension-key.pem` to the repository.** It is already in `.gitignore`. Store it in a secure location and back it up. If the key is lost, the extension ID changes and all deployed policies become invalid.
+
+---
+
+## 4. Configure Extension ID
+
+Replace the placeholder `EXTENSION_ID_PLACEHOLDER` with your actual extension ID across the entire project.
+
+Using `sed` (Linux/macOS):
+
+```bash
+EXTENSION_ID="your-actual-extension-id-here"
+
+# Find all occurrences first (dry run)
+grep -rn "EXTENSION_ID_PLACEHOLDER" --include="*.go" --include="*.ts" --include="*.sh" --include="*.ps1" --include="*.toml" --include="*.json" --include="*.mjs" --include="*.astro" .
+
+# Replace everywhere
+find . -type f \( \
+  -name "*.go" -o -name "*.ts" -o -name "*.sh" -o -name "*.ps1" \
+  -o -name "*.toml" -o -name "*.json" -o -name "*.mjs" -o -name "*.astro" \
+  \) -not -path "*/node_modules/*" -not -path "*/.git/*" \
+  -exec sed -i "s/EXTENSION_ID_PLACEHOLDER/${EXTENSION_ID}/g" {} +
+```
+
+**Files that contain `EXTENSION_ID_PLACEHOLDER`:**
+
+| File | Context |
+|---|---|
+| `installer/config.go` | `ExtensionID` constant |
+| `workers/wrangler.toml` | `EXTENSION_ID` env var |
+| `website/public/scripts/install.ps1` | `$EXTENSION_ID` variable |
+| `website/public/scripts/install.sh` | `EXTENSION_ID` variable |
+| `website/public/scripts/install-mac.sh` | `EXTENSION_ID` variable |
+| `website/public/scripts/uninstall.ps1` | `$EXTENSION_ID` variable |
+| `website/public/scripts/uninstall.sh` | `EXTENSION_ID` variable |
+
+After replacing, verify no placeholders remain:
+
+```bash
+grep -rn "EXTENSION_ID_PLACEHOLDER" . --include="*.go" --include="*.ts" --include="*.sh" --include="*.ps1" --include="*.toml" --include="*.json"
+# Should return no results
+```
+
+---
+
+## 5. Create Cloudflare Account
+
+1. Go to [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up) and create an account
+2. Add your domain (e.g., `nicx.app`) to Cloudflare
+3. Update your domain registrar's nameservers to Cloudflare's (shown after adding the domain)
+4. Wait for DNS propagation (usually 5–30 minutes, can take up to 24 hours)
+
+---
+
+## 6. Create R2 Buckets
+
+Two R2 buckets are needed:
+
+### extensions-bucket
+
+Stores CRX extension files and `updates.xml`.
+
+```bash
+wrangler r2 bucket create extensions-bucket
+```
+
+### releases-bucket
+
+Stores native installer binaries.
+
+```bash
+wrangler r2 bucket create releases-bucket
+```
+
+Verify both buckets exist:
+
+```bash
+wrangler r2 bucket list
+```
+
+You should see:
+
+```
+extensions-bucket
+releases-bucket
+```
+
+---
+
+## 7. Configure R2 Custom Domains
+
+The `extensions-bucket` needs a custom domain so browsers can fetch `updates.xml` and CRX files from a stable URL.
+
+1. Go to **Cloudflare Dashboard** → **R2** → **extensions-bucket** → **Settings**
+2. Under **Custom domains**, click **Connect domain**
+3. Enter: `cdn.autocr.nicx.app`
+4. Cloudflare will automatically create the required DNS CNAME record
+5. Wait for SSL certificate provisioning (usually < 2 minutes)
+
+Verify it works:
+
+```bash
+curl -I https://cdn.autocr.nicx.app/
+# Should return a Cloudflare response (404 is expected — bucket is empty)
+```
+
+The `releases-bucket` does **not** need a custom domain. Installer downloads are proxied through the Workers API (`api.autocr.nicx.app/api/download/:os`), which reads from the bucket via its R2 binding.
+
+---
+
+## 8. Create Cloudflare Pages Project
+
+The website can be deployed via GitHub integration or direct upload.
+
+### Option A: GitHub integration (recommended)
+
+1. Go to **Cloudflare Dashboard** → **Workers & Pages** → **Create**
+2. Select **Pages** → **Connect to Git**
+3. Select the `nicx/auto-coursera` repository
+4. Configure build settings:
+
+| Setting | Value |
+|---|---|
+| **Project name** | `auto-coursera` |
+| **Production branch** | `main` |
+| **Framework preset** | Astro |
+| **Build command** | `cd website && pnpm install && pnpm build` |
+| **Build output directory** | `website/dist` |
+
+5. Click **Save and Deploy**
+
+### Option B: Direct upload via Wrangler
+
+```bash
+cd website
+pnpm install
+pnpm build
+wrangler pages deploy dist --project-name auto-coursera
+```
+
+---
+
+## 9. Configure Custom Domain for Pages
+
+1. Go to **Cloudflare Dashboard** → **Workers & Pages** → **auto-coursera** → **Custom domains**
+2. Click **Set up a custom domain**
+3. Enter: `autocr.nicx.app`
+4. Cloudflare will add the required DNS record (CNAME to the Pages project)
+5. SSL certificate is provisioned automatically
+
+Verify:
+
+```bash
+curl -I https://autocr.nicx.app/
+# Should return 200 with the website content
+```
+
+---
+
+## 10. Deploy Worker
+
+The Workers API serves version info, release listings, and proxied installer downloads.
+
+```bash
+cd workers
+pnpm install
+```
+
+Login to Cloudflare (if not already):
+
+```bash
+wrangler login
+```
+
+Deploy to production:
+
+```bash
+pnpm run deploy
+```
+
+This deploys the Worker. Next, configure the route so it responds on `api.autocr.nicx.app`:
+
+1. Go to **Cloudflare Dashboard** → **Workers & Pages** → **auto-coursera-api**
+2. Go to **Settings** → **Triggers** → **Routes**
+3. Add route: `api.autocr.nicx.app/*` → zone: `nicx.app`
+
+Alternatively, the `[env.production]` section in `wrangler.toml` already defines this:
+
+```toml
+[env.production]
+routes = [
+  { pattern = "api.autocr.nicx.app/*", zone_name = "nicx.app" }
+]
+```
+
+Deploy with the production environment:
+
+```bash
+wrangler deploy --env production
+```
+
+Verify:
+
+```bash
+curl https://api.autocr.nicx.app/api/latest-version
+# Should return JSON with version info
+```
+
+---
+
+## 11. Configure GitHub Secrets
+
+Go to **GitHub** → **nicx/auto-coursera** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
+
+Add these four secrets:
+
+| Secret Name | Value | How to get it |
+|---|---|---|
+| `CF_ACCOUNT_ID` | Cloudflare account ID | Dashboard → any R2/Workers page → URL contains account ID, or **Account Home** → **Account ID** in the sidebar |
+| `CF_API_TOKEN` | API token string | See [token creation](#create-cloudflare-api-token) below |
+| `EXTENSION_PRIVATE_KEY` | Full PEM key content | `cat extension-key.pem` — copy everything including `-----BEGIN` and `-----END` lines |
+| `EXTENSION_ID` | 32-character extension ID | Output from step 3, or run `bash scripts/derive-extension-id.sh extension-key.pem` |
+
+### Create Cloudflare API Token
+
+1. Go to [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
+2. Click **Create Token**
+3. Use **Custom token** template
+4. Configure permissions:
+
+| Scope | Resource | Permission |
+|---|---|---|
+| Account | Cloudflare Pages | Edit |
+| Account | Workers R2 Storage | Edit |
+| Account | Workers Scripts | Edit |
+
+5. Under **Account Resources**, select your account
+6. Under **Zone Resources**, select your zone (`nicx.app`)
+7. Click **Continue to summary** → **Create Token**
+8. Copy the token immediately (it's shown only once)
+
+---
+
+## 12. Update Configuration Variables
+
+Beyond `EXTENSION_ID_PLACEHOLDER`, verify these values are correct across the project:
+
+| Variable | Expected Value | Files |
+|---|---|---|
+| Domain: website | `autocr.nicx.app` | `website/_headers`, `website/_redirects`, install scripts, website pages |
+| Domain: extensions | `cdn.autocr.nicx.app` | `installer/config.go`, install scripts, `workers/src/routes/` |
+| Domain: API | `api.autocr.nicx.app` | `website/_redirects`, `workers/wrangler.toml`, website pages |
+| R2 bucket names | `extensions-bucket`, `releases-bucket` | `workers/wrangler.toml` |
+| GitHub repo | `nicx/auto-coursera` | `installer/go.mod`, CI workflow files |
+| Extension name | `Auto-Coursera Assistant` | `installer/config.go`, install scripts |
+
+These are already set to their correct production values. If you forked the project or use different domains, update them accordingly.
+
+---
+
+## 13. First Deployment
+
+### Deploy website (push to main)
+
+```bash
+git add .
+git commit -m "Initial platform setup"
+git push origin main
+```
+
+If GitHub integration is configured for Pages, this triggers a website build and deploy.
+
+### Trigger full release (push a tag)
+
+```bash
+# Build the extension first
+cd extension && pnpm build && cd ..
+
+# Tag and push
+git tag v1.7.5
+git push origin v1.7.5
+```
+
+This triggers the full CI/CD pipeline:
+
+1. `build-extension` — packages CRX, uploads to R2, generates `updates.xml`
+2. `build-installers` — compiles Go binaries for all platforms, uploads to R2
+3. `deploy-website` — rebuilds and deploys Cloudflare Pages
+4. `deploy-worker` — deploys the Workers API
+
+---
+
+## 14. Verification
+
+After deployment completes, verify each component:
+
+### Website
+
+```bash
+curl -s -o /dev/null -w "%{http_code}" https://autocr.nicx.app/
+# Expected: 200
+```
+
+### API
+
+```bash
+curl -s https://api.autocr.nicx.app/api/latest-version | jq .
+# Expected: { "version": "1.7.5", "extensionId": "...", ... }
+
+curl -s https://api.autocr.nicx.app/api/releases | jq .
+# Expected: { "releases": [...] }
+
+curl -s https://api.autocr.nicx.app/api/stats | jq .
+# Expected: { "totalReleases": 1, "latestVersion": "1.7.5", ... }
+```
+
+### Extension files in R2
+
+```bash
+curl -I https://cdn.autocr.nicx.app/updates.xml
+# Expected: 200, Content-Type: application/xml
+
+curl -I https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx
+# Expected: 200, Content-Type: application/x-chrome-extension (or octet-stream)
+```
+
+### Installer downloads
+
+```bash
+curl -sI https://api.autocr.nicx.app/api/download/linux
+# Expected: 200, Content-Disposition: attachment; filename="installer-linux-amd64"
+
+curl -sI https://api.autocr.nicx.app/api/download/windows
+# Expected: 200, Content-Disposition: attachment; filename="installer-windows-amd64.exe"
+
+curl -sI https://api.autocr.nicx.app/api/download/macos
+# Expected: 200, Content-Disposition: attachment; filename="installer-macos-arm64"
+```
+
+### Install scripts
+
+```bash
+curl -s https://autocr.nicx.app/scripts/install.sh | head -5
+# Expected: #!/usr/bin/env bash ...
+
+curl -s https://autocr.nicx.app/scripts/install.ps1 | head -5
+# Expected: <# .SYNOPSIS ...
+```
+
+### Browser policy (end-to-end)
+
+After running the installer or a script on a test machine:
+
+1. Open the browser
+2. Navigate to `chrome://policy` (or `edge://policy`, `brave://policy`)
+3. Look for `ExtensionInstallForcelist` in the policy list
+4. Verify the value matches `<your-extension-id>;https://cdn.autocr.nicx.app/updates.xml`
+5. Navigate to `chrome://extensions`
+6. The extension should appear as installed (may require a browser restart)
+
+---
+
+### Troubleshooting first deployment
+
+If something fails, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues. The most frequent first-deployment problems:
+
+- **GitHub Actions fails** — secrets not set or token permissions insufficient
+- **R2 403 Forbidden** — custom domain not configured or SSL not provisioned yet
+- **updates.xml 404** — CRX build hasn't run yet (needs a `v*` tag push)
+- **API CORS error** — `ALLOWED_ORIGIN` in `wrangler.toml` doesn't match actual website domain
