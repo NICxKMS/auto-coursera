@@ -1,14 +1,14 @@
 ---
-import Base from '../layouts/Base.astro';
-import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
 import VersionBadge from '../components/VersionBadge.astro';
+import Base from '../layouts/Base.astro';
 ---
 
 <Base title="Auto-Coursera Assistant" description="AI-powered answer assistant for e-learning platforms. Get instant, accurate answers on Coursera with multiple AI providers.">
   <Header />
 
-  <main>
+  <main id="main-content">
     <!-- ═══════════════════ HERO ═══════════════════ -->
     <section class="min-h-screen flex items-center justify-center relative px-4 -mt-16 lg:-mt-18">
       <div class="text-center max-w-4xl mx-auto">
@@ -31,7 +31,7 @@ import VersionBadge from '../components/VersionBadge.astro';
         <div class="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up delay-200">
           <a href="/install" class="btn-primary text-lg px-8 py-4">Get Started →</a>
           <a
-            href="https://github.com/nicx/auto-coursera"
+            href="https://github.com/nicxkms/auto-coursera"
             class="btn-secondary text-lg px-8 py-4 gap-2.5"
             target="_blank"
             rel="noopener noreferrer"
@@ -62,28 +62,28 @@ import VersionBadge from '../components/VersionBadge.astro';
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           <!-- Feature 1 -->
           <div class="card-interactive animate-slide-up delay-100">
-            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 text-2xl mb-4">🧠</div>
+            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 text-2xl mb-4" aria-hidden="true">🧠</div>
             <h3 class="text-lg font-semibold text-white mb-2">AI-Powered</h3>
             <p class="text-sm text-surface-400 leading-relaxed">Multiple AI providers: OpenRouter, Gemini, Groq, Cerebras, and NVIDIA NIM. Choose the best model for you.</p>
           </div>
 
           <!-- Feature 2 -->
           <div class="card-interactive animate-slide-up delay-200">
-            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 text-2xl mb-4">⚡</div>
+            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 text-2xl mb-4" aria-hidden="true">⚡</div>
             <h3 class="text-lg font-semibold text-white mb-2">Lightning Fast</h3>
             <p class="text-sm text-surface-400 leading-relaxed">Sub-second responses with smart rate limiting and circuit breakers. Answers appear before you blink.</p>
           </div>
 
           <!-- Feature 3 -->
           <div class="card-interactive animate-slide-up delay-300">
-            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 text-2xl mb-4">🔒</div>
+            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 text-2xl mb-4" aria-hidden="true">🔒</div>
             <h3 class="text-lg font-semibold text-white mb-2">Privacy First</h3>
             <p class="text-sm text-surface-400 leading-relaxed">API keys stay local. Zero data collection, zero tracking. Your learning stays private.</p>
           </div>
 
           <!-- Feature 4 -->
           <div class="card-interactive animate-slide-up delay-400">
-            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 text-2xl mb-4">🎯</div>
+            <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 text-2xl mb-4" aria-hidden="true">🎯</div>
             <h3 class="text-lg font-semibold text-white mb-2">Smart Detection</h3>
             <p class="text-sm text-surface-400 leading-relaxed">Auto-detects quiz questions, multiple choice, and assignments. Just open a quiz page and let it work.</p>
           </div>

@@ -1,0 +1,1 @@
+>Always update important changes in the documentation files. This includes `README.md`, `CHANGELOG.md`, and any relevant files in the `docs/` directory. Keeping documentation up-to-date ensures that users and contributors have accurate information about the project, its features, and how to use it effectively.

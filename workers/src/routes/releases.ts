@@ -43,7 +43,7 @@ export async function handleReleases(env: Env): Promise<Response> {
 
 		const versionPattern = /auto_coursera_([\d.]+)\.crx$/;
 
-		const releases: Release[] = objects.objects
+		const releases: Release[] = objects
 			.map((obj) => {
 				const match = obj.key.match(versionPattern);
 				if (!match) return null;
@@ -56,7 +56,7 @@ export async function handleReleases(env: Env): Promise<Response> {
 					file: filename,
 					size: obj.size,
 					date: obj.uploaded.toISOString(),
-					url: `https://cdn.autocr.nicx.app/${obj.key}`,
+					url: `${env.CDN_BASE_URL}/${obj.key}`,
 				};
 			})
 			.filter((release): release is Release => release !== null)
@@ -64,7 +64,10 @@ export async function handleReleases(env: Env): Promise<Response> {
 
 		return jsonResponse({ releases });
 	} catch (error) {
-		console.error('Failed to list releases:', error);
+		console.error(
+			'Failed to list releases:',
+			error instanceof Error ? error.message : String(error),
+		);
 		return errorResponse('Failed to retrieve releases', 500);
 	}
 }

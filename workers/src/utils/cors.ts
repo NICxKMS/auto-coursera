@@ -9,12 +9,10 @@ export function getCorsHeaders(origin: string, allowedOrigin: string): Headers {
 
 	if (origin === allowedOrigin) {
 		headers.set('Access-Control-Allow-Origin', origin);
-	} else {
-		headers.set('Access-Control-Allow-Origin', allowedOrigin);
 	}
 
 	headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-	headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+	headers.set('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With');
 	headers.set('Access-Control-Max-Age', '86400');
 
 	return headers;
@@ -26,6 +24,7 @@ export function getCorsHeaders(origin: string, allowedOrigin: string): Headers {
 export function handleOptions(request: Request, allowedOrigin: string): Response {
 	const origin = request.headers.get('Origin') ?? '';
 	const headers = getCorsHeaders(origin, allowedOrigin);
+	headers.set('X-Content-Type-Options', 'nosniff');
 
 	return new Response(null, { status: 204, headers });
 }

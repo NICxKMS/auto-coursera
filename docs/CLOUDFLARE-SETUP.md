@@ -246,7 +246,7 @@ compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-EXTENSION_ID = "EXTENSION_ID_PLACEHOLDER"
+EXTENSION_ID = "alojpdnpiddmekflpagdblmaehbdfcge"
 CURRENT_VERSION = "1.7.5"
 ALLOWED_ORIGIN = "https://autocr.nicx.app"
 
@@ -296,9 +296,9 @@ All DNS records should be in Cloudflare DNS for `nicx.app`. The following record
 
 | Type | Name | Target | Proxy | Notes |
 |---|---|---|---|---|
-| CNAME | `install` | `auto-coursera.pages.dev` | ☁️ Proxied | Cloudflare Pages custom domain (auto-created) |
-| CNAME | `extensions` | *(R2 custom domain target)* | ☁️ Proxied | R2 bucket custom domain (auto-created) |
-| — | `api` | *(Worker route, no DNS record needed)* | — | Worker route handles this via zone routing |
+| CNAME | `autocr` | `auto-coursera.pages.dev` | ☁️ Proxied | Cloudflare Pages custom domain (auto-created) |
+| CNAME | `cdn.autocr` | *(R2 custom domain target)* | ☁️ Proxied | R2 bucket custom domain (auto-created) |
+| — | `api.autocr` | *(Worker route, no DNS record needed)* | — | Worker route handles this via zone routing |
 
 ### How each subdomain resolves
 

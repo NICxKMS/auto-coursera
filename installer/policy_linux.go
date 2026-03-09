@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // policyFileName is the name of the managed-policy JSON file the installer
@@ -16,6 +17,18 @@ const policyFileName = "auto_coursera.json"
 // policyDocument models the JSON structure Chrome reads from managed policy files.
 type policyDocument struct {
 	ExtensionInstallForcelist []string `json:"ExtensionInstallForcelist"`
+}
+
+// validatePolicyDir ensures the policy directory is an absolute path under /etc/.
+func validatePolicyDir(dir string) error {
+	if !filepath.IsAbs(dir) {
+		return fmt.Errorf("policy directory must be an absolute path: %s", dir)
+	}
+	cleaned := filepath.Clean(dir)
+	if !strings.HasPrefix(cleaned, "/etc/") {
+		return fmt.Errorf("policy directory must be under /etc/: %s", dir)
+	}
+	return nil
 }
 
 // policyFilePath returns the full path to the policy file for a browser.
@@ -56,6 +69,10 @@ func writePolicyFile(path string, doc *policyDocument) error {
 // WritePolicy creates the browser's managed-policy directory (if needed) and
 // adds PolicyValue to the ExtensionInstallForcelist array, avoiding duplicates.
 func WritePolicy(browser BrowserConfig) error {
+	if err := validatePolicyDir(browser.LinuxPolicyDir); err != nil {
+		return err
+	}
+
 	if err := os.MkdirAll(browser.LinuxPolicyDir, 0755); err != nil {
 		return fmt.Errorf("failed to create policy dir %s: %w", browser.LinuxPolicyDir, err)
 	}
@@ -80,6 +97,10 @@ func WritePolicy(browser BrowserConfig) error {
 // RemovePolicy removes PolicyValue from the browser's policy file.  If the
 // forcelist becomes empty the file is deleted.
 func RemovePolicy(browser BrowserConfig) error {
+	if err := validatePolicyDir(browser.LinuxPolicyDir); err != nil {
+		return err
+	}
+
 	path := policyFilePath(browser)
 	doc, err := readPolicyFile(path)
 	if err != nil {

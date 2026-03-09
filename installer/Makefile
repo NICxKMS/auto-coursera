@@ -3,7 +3,7 @@
 BINARY  := installer
 LDFLAGS := -ldflags="-s -w"
 
-build-all: build-windows build-windows-arm build-macos build-macos-intel build-linux
+build-all: build-windows build-windows-arm build-macos build-macos-intel build-linux build-linux-arm64
 
 build-windows:
 	@mkdir -p dist
@@ -24,6 +24,10 @@ build-macos-intel:
 build-linux:
 	@mkdir -p dist
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY)-linux-amd64 .
+
+build-linux-arm64:
+	@mkdir -p dist
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY)-linux-arm64 .
 
 clean:
 	rm -rf dist

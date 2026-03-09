@@ -42,7 +42,7 @@ const { version } = Astro.props;
           const textEl = badge.querySelector('.version-text');
           if (textEl) {
             textEl.classList.remove('shimmer');
-            textEl.innerHTML = `v${ver}`;
+            textEl.textContent = `v${ver}`;
           }
         });
       })
@@ -51,7 +51,7 @@ const { version } = Astro.props;
           const textEl = badge.querySelector('.version-text');
           if (textEl) {
             textEl.classList.remove('shimmer');
-            textEl.innerHTML = 'v1.7.5';
+            textEl.textContent = 'v1.7.5';
           }
         });
       });

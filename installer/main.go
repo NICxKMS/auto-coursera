@@ -11,6 +11,7 @@ func main() {
 	browserFlag := flag.String("browser", "all", "target a specific browser (chrome, edge, brave, chromium) or \"all\"")
 	uninstallFlag := flag.Bool("uninstall", false, "remove extension policies instead of installing")
 	quietFlag := flag.Bool("quiet", false, "minimal output, skip confirmation prompts")
+	versionFlag := flag.Bool("version", false, "print version and exit")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
 		fmt.Fprintln(os.Stderr, "Options:")
@@ -23,6 +24,17 @@ func main() {
 		fmt.Fprintln(os.Stderr, "  installer --quiet            # non-interactive install")
 	}
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("installer v%s\n", AppVersion)
+		os.Exit(0)
+	}
+
+	// ── Privilege check ─────────────────────────────────────────────────
+	if err := CheckPrivilege(); err != nil {
+		PrintError(err.Error())
+		os.Exit(1)
+	}
 
 	const totalSteps = 5
 

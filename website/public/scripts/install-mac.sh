@@ -20,7 +20,7 @@ set -euo pipefail
 # ── Configuration ────────────────────────────────────────────────────────────
 
 EXTENSION_NAME="Auto-Coursera Assistant"
-EXTENSION_ID="EXTENSION_ID_PLACEHOLDER"
+EXTENSION_ID="alojpdnpiddmekflpagdblmaehbdfcge"
 UPDATE_URL="https://cdn.autocr.nicx.app/updates.xml"
 POLICY_VALUE="${EXTENSION_ID};${UPDATE_URL}"
 PLIST_KEY="ExtensionInstallForcelist"
@@ -295,7 +295,7 @@ fi
 echo ""
 
 # Process browsers
-declare -A RESULTS
+RESULTS=()
 
 for i in "${!BROWSER_KEYS[@]}"; do
     key="${BROWSER_KEYS[$i]}"
@@ -311,7 +311,7 @@ for i in "${!BROWSER_KEYS[@]}"; do
     fi
 
     status=$(echo "$result" | tail -n1)
-    RESULTS[$key]="$status"
+    RESULTS[$i]="$status"
 done
 
 # ── Summary ──────────────────────────────────────────────────────────────────
@@ -326,11 +326,11 @@ for i in "${!BROWSER_KEYS[@]}"; do
     key="${BROWSER_KEYS[$i]}"
     name="${BROWSER_NAMES[$i]}"
 
-    if [[ -z "${RESULTS[$key]+x}" ]]; then
+    if [[ -z "${RESULTS[$i]+x}" ]]; then
         continue
     fi
 
-    status="${RESULTS[$key]}"
+    status="${RESULTS[$i]}"
 
     case "$status" in
         installed)

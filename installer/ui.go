@@ -95,7 +95,7 @@ func PromptYesNo(question string) bool {
 	reader := bufio.NewReader(os.Stdin)
 	input, err := reader.ReadString('\n')
 	if err != nil {
-		return true
+		return false
 	}
 	input = strings.TrimSpace(strings.ToLower(input))
 	return input == "" || input == "y" || input == "yes"

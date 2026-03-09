@@ -44,8 +44,8 @@ usage() {
     echo "  $0 -v 1.7.5 -k extension-key.pem -s extension/dist -o releases/"
     echo ""
     echo -e "${BOLD}Output:${NC}"
-    echo "  <output-dir>/auto-coursera_<version>.crx"
-    echo "  <output-dir>/auto-coursera_<version>.crx.sha256"
+    echo "  <output-dir>/auto_coursera_<version>.crx"
+    echo "  <output-dir>/auto_coursera_<version>.crx.sha256"
 }
 
 log_info() {
@@ -162,7 +162,7 @@ mkdir -p "$OUTPUT_DIR"
 
 # ── Packaging ────────────────────────────────────────────────────────────────
 
-CRX_FILENAME="auto-coursera_${VERSION}.crx"
+CRX_FILENAME="auto_coursera_${VERSION}.crx"
 CRX_PATH="${OUTPUT_DIR}/${CRX_FILENAME}"
 SHA256_PATH="${CRX_PATH}.sha256"
 
@@ -187,20 +187,22 @@ MANIFEST_FILE="${TEMP_DIR}/manifest.json"
 if command -v python3 &>/dev/null; then
     python3 -c "
 import json, sys
-with open('${MANIFEST_FILE}', 'r') as f:
+with open(sys.argv[1], 'r') as f:
     manifest = json.load(f)
-manifest['version'] = '${VERSION}'
-with open('${MANIFEST_FILE}', 'w') as f:
+manifest['version'] = sys.argv[2]
+with open(sys.argv[1], 'w') as f:
     json.dump(manifest, f, indent=2)
     f.write('\n')
-"
+" "$MANIFEST_FILE" "$VERSION"
 elif command -v node &>/dev/null; then
     node -e "
 const fs = require('fs');
-const manifest = JSON.parse(fs.readFileSync('${MANIFEST_FILE}', 'utf8'));
-manifest.version = '${VERSION}';
-fs.writeFileSync('${MANIFEST_FILE}', JSON.stringify(manifest, null, 2) + '\n');
-"
+const path = process.argv[1];
+const version = process.argv[2];
+const manifest = JSON.parse(fs.readFileSync(path, 'utf8'));
+manifest.version = version;
+fs.writeFileSync(path, JSON.stringify(manifest, null, 2) + '\n');
+" "$MANIFEST_FILE" "$VERSION"
 else
     # Fallback: sed-based replacement (less safe but works)
     sed -i "s/\"version\": *\"[^\"]*\"/\"version\": \"${VERSION}\"/" "$MANIFEST_FILE"
@@ -262,6 +264,6 @@ echo -e "  ${BOLD}Version:${NC}     ${VERSION}"
 echo ""
 echo -e "${CYAN}Next steps:${NC}"
 echo "  1. Verify:  bash scripts/verify-crx.sh ${CRX_PATH}"
-echo "  2. Upload:  Upload to https://cdn.autocr.nicx.app/auto-coursera/"
+echo "  2. Upload:  Upload to https://cdn.autocr.nicx.app/releases/"
 echo "  3. Update:  bash scripts/generate-updates-xml.sh -i <ext-id> -v ${VERSION} -u <crx-url>"
 echo ""

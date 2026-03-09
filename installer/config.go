@@ -1,11 +1,11 @@
 package main
 
 const (
-	ExtensionID   = "EXTENSION_ID_PLACEHOLDER"
+	ExtensionID   = "alojpdnpiddmekflpagdblmaehbdfcge"
 	UpdateURL     = "https://cdn.autocr.nicx.app/updates.xml"
 	ExtensionName = "Auto-Coursera Assistant"
 	PolicyValue   = ExtensionID + ";" + UpdateURL
-	AppVersion    = "1.0.0"
+	AppVersion    = "1.7.5"
 )
 
 // BrowserConfig holds platform-specific configuration for a supported browser.

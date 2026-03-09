@@ -13,7 +13,7 @@ export function handleVersion(env: Env): Response {
 	return jsonResponse({
 		version,
 		extensionId,
-		updateUrl: 'https://cdn.autocr.nicx.app/updates.xml',
-		downloadUrl: `https://cdn.autocr.nicx.app/releases/auto_coursera_${version}.crx`,
+		updateUrl: `${env.CDN_BASE_URL}/updates.xml`,
+		downloadUrl: `${env.CDN_BASE_URL}/releases/auto_coursera_${version}.crx`,
 	});
 }

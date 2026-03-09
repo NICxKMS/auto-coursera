@@ -4,41 +4,24 @@ A complete browser extension distribution platform for **Auto-Coursera Assistant
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                        Distribution Pipeline                         │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌────────────┐    ┌───────────────┐    ┌─────────────────────────┐  │
-│  │  Extension  │───▶│ CRX Packaging │───▶│  Cloudflare R2 Storage  │  │
-│  │  (src/)     │    │  (scripts/)   │    │  cdn.autocr.nicx.app    │  │
-│  └────────────┘    └───────────────┘    └───────────┬─────────────┘  │
-│                                                     │                │
-│                           ┌─────────────────────────┤                │
-│                           │                         │                │
-│                           ▼                         ▼                │
-│                    ┌─────────────┐          ┌──────────────┐         │
-│                    │ updates.xml │          │   Website    │         │
-│                    │ (auto-update│          │ install.nicx │         │
-│                    │  manifest)  │          │    .app      │         │
-│                    └──────┬──────┘          └──────┬───────┘         │
-│                           │                        │                 │
-│                           ▼                        ▼                 │
-│                    ┌─────────────────────────────────────┐           │
-│                    │    Browser Policy Install / Update   │           │
-│                    │    (Enterprise or self-hosted CRX)   │           │
-│                    └─────────────────────────────────────┘           │
-│                                                                      │
-├──────────────────────────────────────────────────────────────────────┤
-│  CI/CD: GitHub Actions → Build → Package → Upload → Deploy          │
-└──────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    EXT["Extension\n(src/)"] --> CRX["CRX Packaging\n(scripts/)"]
+    CRX --> R2["Cloudflare R2\ncdn.autocr.nicx.app"]
+    R2 --> XML["updates.xml\n(auto-update manifest)"]
+    R2 --> WEB["Website\nautocr.nicx.app"]
+    XML --> BROWSER["Browser Policy\nInstall / Update"]
+    WEB --> BROWSER
+    CICD["CI/CD\nGitHub Actions"] -.->|"Build + Package"| CRX
+    CICD -.->|"Upload"| R2
+    CICD -.->|"Deploy"| WEB
 ```
 
 ## Quick Start
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/nicx/auto-coursera.git
+git clone https://github.com/nicxkms/auto-coursera.git
 cd auto-coursera
 
 # 2. Install extension dependencies
@@ -124,17 +107,19 @@ pnpm build        # Production build
 
 ```bash
 cd installer
-go build -o dist/installer ./cmd/installer
-go test ./...
+go build -o dist/installer .
+
+# Build all platforms
+make build-all
 ```
 
 ## Deployment
 
 Deployment guides are available in the `docs/` directory:
 
-- **`docs/deployment.md`** — Full deployment walkthrough
-- **`docs/architecture.md`** — System architecture details
-- **`docs/operations.md`** — Monitoring, rollbacks, troubleshooting
+- **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — System architecture details
+- **[`docs/SETUP.md`](docs/SETUP.md)** — Full deployment walkthrough
+- **[`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md)** — Troubleshooting common issues
 
 ### Quick Deployment Summary
 
@@ -150,7 +135,7 @@ Deployment guides are available in the `docs/` directory:
 |------------------------|-----------------------------|-------------------------------------|
 | `PROJECT_NAME`         | `auto-coursera`             | Repository and project name         |
 | `EXTENSION_NAME`       | `Auto-Coursera Assistant`   | Chrome extension display name       |
-| `EXTENSION_ID`         | `EXTENSION_ID_PLACEHOLDER`  | Chrome extension ID (from key)      |
+| `EXTENSION_ID`         | `alojpdnpiddmekflpagdblmaehbdfcge`  | Chrome extension ID (from key)      |
 | `DOMAIN_WEBSITE`       | `autocr.nicx.app`          | Landing page domain                 |
 | `DOMAIN_EXTENSIONS`    | `cdn.autocr.nicx.app`       | CRX hosting domain (R2)            |
 | `DOMAIN_API`           | `api.autocr.nicx.app`              | API worker domain                   |

@@ -18,7 +18,7 @@ set -euo pipefail
 # ── Configuration ────────────────────────────────────────────────────────────
 
 EXTENSION_NAME="Auto-Coursera Assistant"
-EXTENSION_ID="EXTENSION_ID_PLACEHOLDER"
+EXTENSION_ID="alojpdnpiddmekflpagdblmaehbdfcge"
 UPDATE_URL="https://cdn.autocr.nicx.app/updates.xml"
 POLICY_VALUE="${EXTENSION_ID};${UPDATE_URL}"
 POLICY_FILENAME="auto_coursera_policy.json"
@@ -106,12 +106,12 @@ read_forcelist() {
             "$json_tool" -c "
 import json, sys
 try:
-    data = json.load(open('$file'))
+    data = json.load(open(sys.argv[1]))
     for item in data.get('ExtensionInstallForcelist', []):
         print(item)
 except Exception:
     pass
-" 2>/dev/null || true
+" "$file" 2>/dev/null || true
             ;;
         none)
             # Fallback: grep-based extraction (handles simple single-line arrays)
@@ -142,16 +142,14 @@ write_policy_file() {
             echo "{\"ExtensionInstallForcelist\": ${json_array}}" | jq '.' > "$file"
             ;;
         python3|python)
-            local entries_arg
-            entries_arg=$(printf '%s\n' "${entries[@]}")
-            "$json_tool" -c "
+            printf '%s\n' "${entries[@]}" | "$json_tool" -c "
 import json, sys
-entries = [line.strip() for line in '''${entries_arg}'''.strip().split('\n') if line.strip()]
+entries = [line.strip() for line in sys.stdin if line.strip()]
 data = {'ExtensionInstallForcelist': entries}
-with open('$file', 'w') as f:
+with open(sys.argv[1], 'w') as f:
     json.dump(data, f, indent=4)
     f.write('\n')
-" 2>/dev/null
+" "$file" 2>/dev/null
             ;;
         none)
             # Manual JSON construction

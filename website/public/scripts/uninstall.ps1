@@ -19,7 +19,7 @@ param()
 # ── Configuration ─────────────────────────────────────────────────────────────
 
 $EXTENSION_NAME = "Auto-Coursera Assistant"
-$EXTENSION_ID   = "EXTENSION_ID_PLACEHOLDER"
+$EXTENSION_ID   = "alojpdnpiddmekflpagdblmaehbdfcge"
 
 # ── Browser Policy Paths ─────────────────────────────────────────────────────
 

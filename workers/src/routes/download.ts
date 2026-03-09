@@ -5,16 +5,14 @@ import { errorResponse } from '../utils/response';
 /** Map an OS identifier to the corresponding installer filename. */
 const INSTALLER_MAP: Record<string, string> = {
 	windows: 'installer-windows-amd64.exe',
+	'windows-arm64': 'installer-windows-arm64.exe',
 	macos: 'installer-macos-arm64',
+	'macos-intel': 'installer-macos-amd64',
 	linux: 'installer-linux-amd64',
+	'linux-arm64': 'installer-linux-arm64',
 };
 
-/** Map an OS identifier to the correct Content-Type. */
-const CONTENT_TYPE_MAP: Record<string, string> = {
-	windows: 'application/octet-stream',
-	macos: 'application/octet-stream',
-	linux: 'application/octet-stream',
-};
+const SUPPORTED_PLATFORMS = Object.keys(INSTALLER_MAP).join(', ');
 
 /**
  * GET /api/download/:os
@@ -26,20 +24,22 @@ export async function handleDownload(os: string, env: Env): Promise<Response> {
 	const filename = INSTALLER_MAP[os.toLowerCase()];
 
 	if (!filename) {
-		return errorResponse(`Unsupported OS: ${os}. Supported: windows, macos, linux`, 404);
+		return errorResponse(`Unsupported platform. Supported values: ${SUPPORTED_PLATFORMS}`, 404);
 	}
 
 	try {
 		const object = await getObject(env.RELEASES_BUCKET, filename);
 
 		if (!object) {
-			return errorResponse(`Installer not found for ${os}`, 404);
+			return errorResponse('Installer not found', 404);
 		}
 
 		const headers = new Headers();
-		headers.set('Content-Type', CONTENT_TYPE_MAP[os] ?? 'application/octet-stream');
+		headers.set('Content-Type', 'application/octet-stream');
 		headers.set('Content-Disposition', `attachment; filename="${filename}"`);
 		headers.set('Content-Length', object.size.toString());
+		headers.set('Cache-Control', 'public, max-age=86400, immutable');
+		headers.set('X-Content-Type-Options', 'nosniff');
 
 		if (object.etag) {
 			headers.set('ETag', object.etag);
@@ -47,7 +47,10 @@ export async function handleDownload(os: string, env: Env): Promise<Response> {
 
 		return new Response(object.body, { status: 200, headers });
 	} catch (error) {
-		console.error(`Failed to download installer for ${os}:`, error);
+		console.error(
+			'Failed to download installer:',
+			error instanceof Error ? error.message : String(error),
+		);
 		return errorResponse('Failed to retrieve installer', 500);
 	}
 }

@@ -67,27 +67,13 @@ The 32-character extension ID (e.g., `abcdefghijklmnopabcdefghijklmnop`) is deri
 
 ### Algorithm
 
-```
-Private Key
-    │
-    ▼
-Extract public key in DER (binary) format
-    │  openssl rsa -in key.pem -pubout -outform DER
-    │
-    ▼
-Compute SHA-256 hash of the DER bytes
-    │  openssl dgst -sha256 -binary
-    │
-    ▼
-Take the first 32 hexadecimal characters (16 bytes)
-    │  xxd -p | head -c 32
-    │
-    ▼
-Convert each hex digit to a–p encoding
-    │  0→a, 1→b, 2→c, ..., 9→j, a→k, b→l, c→m, d→n, e→o, f→p
-    │
-    ▼
-32-character extension ID
+```mermaid
+flowchart TD
+    A["Private Key (PEM)"] --> B["Extract public key in DER format\nopenssl rsa -in key.pem -pubout -outform DER"]
+    B --> C["Compute SHA-256 hash\nopenssl dgst -sha256 -binary"]
+    C --> D["Take first 32 hex characters\nxxd -p | head -c 32"]
+    D --> E["Convert hex → a–p encoding\n0→a, 1→b, 2→c, ... 9→j, a→k, b→l, ... f→p"]
+    E --> F["32-character Extension ID"]
 ```
 
 ### Example
@@ -234,27 +220,23 @@ In CI/CD, this is generated automatically and uploaded to the `extensions-bucket
 
 A CRX3 file is a binary container. The format is:
 
+```mermaid
+block-beta
+    columns 1
+    A["Magic number: 'Cr24' — 4 bytes"]
+    B["Version: 3 — 4 bytes, little-endian"]
+    C["Header length — 4 bytes, little-endian"]
+    D["Protobuf header — variable length\n(RSA signature, Public key DER, Signature algorithm ID)"]
+    E["ZIP payload — remainder of file\n(manifest.json, background.js, content.js, popup.html, assets/)"]
 ```
-┌─────────────────────────────────────────┐
-│  Magic number: "Cr24" (4 bytes)         │  Identifies this as a CRX file
-├─────────────────────────────────────────┤
-│  Version: 3 (4 bytes, little-endian)    │  CRX format version
-├─────────────────────────────────────────┤
-│  Header length (4 bytes, little-endian) │  Size of the protobuf header
-├─────────────────────────────────────────┤
-│  Protobuf header (variable length)      │  Contains:
-│    • Signed data (SHA-256 of ZIP)       │    - RSA signature
-│    • Proof of key ownership             │    - Public key (DER)
-│    • Signature algorithm ID             │
-├─────────────────────────────────────────┤
-│  ZIP payload (remainder of file)        │  The extension source code
-│    • manifest.json                      │  Standard ZIP archive
-│    • background.js                      │
-│    • content.js                         │
-│    • popup.html, options.html, etc.     │
-│    • assets/                            │
-└─────────────────────────────────────────┘
-```
+
+| Section | Size | Description |
+|---|---|---|
+| Magic number | 4 bytes | `Cr24` — identifies this as a CRX file |
+| Version | 4 bytes (LE) | CRX format version (3) |
+| Header length | 4 bytes (LE) | Size of the protobuf header |
+| Protobuf header | Variable | RSA signature + Public key (DER) + Algorithm ID |
+| ZIP payload | Remainder | Standard ZIP archive of extension source |
 
 ### Verification
 

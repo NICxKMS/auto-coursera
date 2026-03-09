@@ -3,6 +3,9 @@ export default {
 	content: ['./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}'],
 	theme: {
 		extend: {
+			spacing: {
+				18: '4.5rem',
+			},
 			colors: {
 				primary: {
 					50: '#f5f3ff',

@@ -1,13 +1,13 @@
 ---
-import Base from '../layouts/Base.astro';
-import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import Base from '../layouts/Base.astro';
 ---
 
 <Base title="Releases" description="Release history for Auto-Coursera Assistant. Download previous versions and see what's changed.">
   <Header />
 
-  <main class="py-16 sm:py-24 px-4">
+  <main id="main-content" class="py-16 sm:py-24 px-4">
     <div class="max-w-3xl mx-auto">
       <!-- Title -->
       <div class="text-center mb-16 animate-fade-in">
@@ -97,6 +97,12 @@ import Footer from '../components/Footer.astro';
   const emptyEl = document.getElementById('releases-empty')!;
   const retryBtn = document.getElementById('releases-retry')!;
 
+  function escapeHtml(str: string): string {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
   function formatDate(dateStr: string): string {
     try {
       const d = new Date(dateStr);
@@ -107,19 +113,23 @@ import Footer from '../components/Footer.astro';
   }
 
   function renderRelease(release: ReleaseData, isLatest: boolean): string {
-    const dateFormatted = formatDate(release.date);
+    const dateFormatted = escapeHtml(formatDate(release.date));
+    const version = escapeHtml(release.version);
+    const dateAttr = escapeHtml(release.date);
+    const downloadUrl = escapeHtml(release.downloadUrl);
+    const size = release.size ? escapeHtml(release.size) : '';
     return `
       <article class="card-interactive relative overflow-hidden animate-slide-up">
         <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary-500 via-primary-400/50 to-transparent" aria-hidden="true"></div>
         <div class="flex items-start justify-between gap-4">
           <div class="flex flex-col gap-2 pl-2">
             <div class="flex items-center gap-3">
-              <h3 class="text-xl font-bold text-white font-mono tracking-tight">v${release.version}</h3>
+              <h3 class="text-xl font-bold text-white font-mono tracking-tight">v${version}</h3>
               ${isLatest ? '<span class="badge text-[11px]">Latest</span>' : ''}
             </div>
-            <time datetime="${release.date}" class="text-sm text-surface-400">${dateFormatted}</time>
+            <time datetime="${dateAttr}" class="text-sm text-surface-400">${dateFormatted}</time>
           </div>
-          <a href="${release.downloadUrl}" class="btn-secondary shrink-0 gap-2 px-5 py-2.5 text-sm">
+          <a href="${downloadUrl}" class="btn-secondary shrink-0 gap-2 px-5 py-2.5 text-sm">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
@@ -128,14 +138,14 @@ import Footer from '../components/Footer.astro';
             Download
           </a>
         </div>
-        ${release.size ? `
+        ${size ? `
         <div class="mt-4 pt-4 border-t border-white/[0.04] pl-2">
           <span class="text-xs text-surface-500 flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
             </svg>
-            ${release.size}
+            ${size}
           </span>
         </div>` : ''}
       </article>

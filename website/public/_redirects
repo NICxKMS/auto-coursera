@@ -1,0 +1,4 @@
+# Platform download shortcuts
+/download/windows-arm64  https://api.autocr.nicx.app/api/download/windows-arm64  302
+/download/linux-arm64    https://api.autocr.nicx.app/api/download/linux-arm64    302
+/download/macos-intel    https://api.autocr.nicx.app/api/download/macos-intel    302

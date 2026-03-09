@@ -1,13 +1,13 @@
 ---
-import Base from '../layouts/Base.astro';
-import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import Base from '../layouts/Base.astro';
 ---
 
 <Base title="Downloads" description="Download Auto-Coursera Assistant native installers and install scripts for Windows, macOS, and Linux.">
   <Header />
 
-  <main class="py-16 sm:py-24 px-4">
+  <main id="main-content" class="py-16 sm:py-24 px-4">
     <div class="max-w-5xl mx-auto">
       <!-- Title -->
       <div class="text-center mb-16 animate-fade-in">
@@ -207,13 +207,13 @@ import Footer from '../components/Footer.astro';
         const ver = data.version || 'unknown';
         autoBadges.forEach((badge) => {
           const textEl = badge.querySelector('.version-text');
-          if (textEl) { textEl.classList.remove('shimmer'); textEl.innerHTML = `v${ver}`; }
+          if (textEl) { textEl.classList.remove('shimmer'); textEl.textContent = `v${ver}`; }
         });
       })
       .catch(() => {
         autoBadges.forEach((badge) => {
           const textEl = badge.querySelector('.version-text');
-          if (textEl) { textEl.classList.remove('shimmer'); textEl.innerHTML = 'v1.7.5'; }
+          if (textEl) { textEl.classList.remove('shimmer'); textEl.textContent = 'v1.7.5'; }
         });
       });
   }

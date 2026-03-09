@@ -14,7 +14,7 @@ export async function handleStats(env: Env): Promise<Response> {
 
 		const versionPattern = /auto_coursera_([\d.]+)\.crx$/;
 
-		const releases = objects.objects
+		const releases = objects
 			.map((obj) => {
 				const match = obj.key.match(versionPattern);
 				if (!match) return null;
@@ -42,7 +42,10 @@ export async function handleStats(env: Env): Promise<Response> {
 			lastUpdated: latest.uploaded.toISOString(),
 		});
 	} catch (error) {
-		console.error('Failed to compute stats:', error);
+		console.error(
+			'Failed to compute stats:',
+			error instanceof Error ? error.message : String(error),
+		);
 		return errorResponse('Failed to retrieve stats', 500);
 	}
 }

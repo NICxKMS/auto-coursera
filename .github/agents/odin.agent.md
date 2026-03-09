@@ -1,7 +1,7 @@
 ---
 name: odin
 description: "The Allfather — Single orchestrator. Plans, delegates to specialists, tracks progress, accumulates wisdom, and verifies completion. The only agent that can delegate."
-tools: [vscode/memory, agent/runSubagent, search/searchSubagent, jraylan.seamless-agent/askUser, jraylan.seamless-agent/planReview, jraylan.seamless-agent/walkthroughReview, todo]
+tools: [vscode/memory, agent/runSubagent, search/searchSubagent, todo, jraylan.seamless-agent/askUser, jraylan.seamless-agent/planReview, jraylan.seamless-agent/walkthroughReview]
 ---
 
 # Odin — The Allfather

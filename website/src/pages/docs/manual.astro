@@ -1,13 +1,13 @@
 ---
-import Base from '../../layouts/Base.astro';
-import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import Base from '../../layouts/Base.astro';
 ---
 
 <Base title="Manual Installation" description="Step-by-step manual installation guide for Auto-Coursera Assistant on Windows, Linux, and macOS.">
   <Header />
 
-  <main class="py-16 sm:py-24 px-4">
+  <main id="main-content" class="py-16 sm:py-24 px-4">
     <div class="max-w-3xl mx-auto">
       <!-- Title -->
       <div class="text-center mb-16 animate-fade-in">
@@ -55,7 +55,7 @@ import Footer from '../../components/Footer.astro';
               <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 3 — Add the extension entry</h3>
               <p class="text-sm text-surface-400 mb-3">Create a new String Value (<code>REG_SZ</code>) with name <code>1</code> and value:</p>
               <div class="glass-strong p-4 overflow-x-auto">
-                <code class="text-sm font-mono text-surface-200 whitespace-nowrap">EXTENSION_ID_PLACEHOLDER;https://cdn.autocr.nicx.app/updates.xml</code>
+                <code class="text-sm font-mono text-surface-200 whitespace-nowrap">alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.app/updates.xml</code>
               </div>
             </div>
 
@@ -93,7 +93,7 @@ import Footer from '../../components/Footer.astro';
               <div class="glass-strong p-4 overflow-x-auto">
                 <pre class="text-sm font-mono text-surface-200 leading-relaxed">{`{
   "ExtensionInstallForcelist": [
-    "EXTENSION_ID_PLACEHOLDER;https://cdn.autocr.nicx.app/updates.xml"
+    "alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.app/updates.xml"
   ]
 }`}</pre>
               </div>
@@ -129,7 +129,7 @@ import Footer from '../../components/Footer.astro';
               <p class="text-sm text-surface-400 mb-3">Open Terminal and run:</p>
               <div class="glass-strong p-4 overflow-x-auto">
                 <pre class="text-sm font-mono text-surface-200 leading-relaxed">{`defaults write com.google.Chrome ExtensionInstallForcelist -array-add \\
-  "EXTENSION_ID_PLACEHOLDER;https://cdn.autocr.nicx.app/updates.xml"`}</pre>
+  "alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.app/updates.xml"`}</pre>
               </div>
             </div>
 
@@ -137,7 +137,7 @@ import Footer from '../../components/Footer.astro';
               <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 2 — For Edge (optional)</h3>
               <div class="glass-strong p-4 overflow-x-auto">
                 <pre class="text-sm font-mono text-surface-200 leading-relaxed">{`defaults write com.microsoft.Edge ExtensionInstallForcelist -array-add \\
-  "EXTENSION_ID_PLACEHOLDER;https://cdn.autocr.nicx.app/updates.xml"`}</pre>
+  "alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.app/updates.xml"`}</pre>
               </div>
             </div>
 
@@ -176,7 +176,7 @@ import Footer from '../../components/Footer.astro';
               </li>
               <li class="flex gap-3">
                 <span class="text-emerald-400 font-mono font-semibold shrink-0">4.</span>
-                <span>The value should contain <code>EXTENSION_ID_PLACEHOLDER</code></span>
+                <span>The value should contain <code>alojpdnpiddmekflpagdblmaehbdfcge</code></span>
               </li>
               <li class="flex gap-3">
                 <span class="text-emerald-400 font-mono font-semibold shrink-0">5.</span>

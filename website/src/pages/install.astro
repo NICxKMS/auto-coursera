@@ -1,17 +1,17 @@
 ---
-import Base from '../layouts/Base.astro';
-import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import OSDetector from '../components/OSDetector.astro';
+import Header from '../components/Header.astro';
 import InstallButton from '../components/InstallButton.astro';
+import OSDetector from '../components/OSDetector.astro';
 import ScriptBlock from '../components/ScriptBlock.astro';
+import Base from '../layouts/Base.astro';
 ---
 
 <Base title="Install" description="Download and install Auto-Coursera Assistant for your operating system. One-click installers for Windows, macOS, and Linux.">
   <Header />
   <OSDetector />
 
-  <main class="py-16 sm:py-24 px-4">
+  <main id="main-content" class="py-16 sm:py-24 px-4">
     <div class="max-w-4xl mx-auto">
       <!-- ═══════════════════ TITLE ═══════════════════ -->
       <div class="text-center mb-16 animate-fade-in">

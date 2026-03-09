@@ -5,7 +5,7 @@ AI-powered answer assistant for e-learning platforms. Detects quiz questions on 
 ## Features
 
 - **Automatic Question Detection** — MutationObserver monitors for quiz questions in real-time
-- **Multi-Provider AI** — OpenRouter (100+ models) + NVIDIA NIM (vision) with automatic fallback
+- **Multi-Provider AI** — OpenRouter, Gemini, Groq, Cerebras, NVIDIA NIM with automatic fallback
 - **Image Support** — Extracts and processes image-based questions via vision models
 - **Smart Answer Selection** — Confidence-based auto-click or highlight-only mode
 - **Encrypted Storage** — API keys encrypted with AES-256-GCM at rest
@@ -23,13 +23,13 @@ AI-powered answer assistant for e-learning platforms. Detects quiz questions on 
 
 ### Prerequisites
 - Node.js 18+
-- npm or pnpm
+- pnpm 9+
 
 ### Install & Build
 
 ```bash
-npm install
-npm run build
+pnpm install
+pnpm build
 ```
 
 ### Load in Chrome
@@ -51,11 +51,12 @@ npm run build
 ## Development
 
 ```bash
-npm run dev        # Watch mode (auto-rebuild on changes)
-npm run build      # Production build
-npm run typecheck  # TypeScript type checking
-npm run test       # Run unit tests
-npm run lint       # ESLint
+pnpm dev        # Watch mode (auto-rebuild on changes)
+pnpm build      # Production build
+pnpm typecheck  # TypeScript type checking
+pnpm test       # Run unit tests
+pnpm lint       # ESLint
+pnpm format     # Biome format
 ```
 
 ## Project Structure
@@ -69,13 +70,17 @@ src/
 │   ├── content.ts    # Entry point, bootstraps modules
 │   ├── detector.ts   # MutationObserver question detection
 │   ├── extractor.ts  # DOM data extraction (text, options, images)
-│   ├── selector.ts   # Answer click simulation
-│   └── dom-utils.ts  # DOM helper utilities
+│   └── selector.ts   # Answer click simulation
 ├── services/         # AI provider integrations
 │   ├── ai-provider.ts    # Strategy pattern provider manager
+│   ├── base-provider.ts  # Abstract base class for providers
 │   ├── openrouter.ts     # OpenRouter API client
+│   ├── gemini.ts         # Google Gemini API client
+│   ├── groq.ts           # Groq API client
+│   ├── cerebras.ts       # Cerebras API client
 │   ├── nvidia-nim.ts     # NVIDIA NIM API client
 │   ├── prompt-engine.ts  # Question-type-specific prompts
+│   ├── response-parser.ts # AI response parsing and extraction
 │   └── image-pipeline.ts # CORS-aware image processing
 ├── popup/            # Extension popup UI
 │   ├── popup.html/css/ts
@@ -87,20 +92,20 @@ src/
 │   ├── questions.ts  # Question/answer types
 │   └── settings.ts   # App settings types
 └── utils/            # Shared utilities
-    ├── constants.ts  # Selectors, URLs, error codes
-    ├── logger.ts     # Structured logging with sanitization
-    ├── rate-limiter.ts # Token-bucket rate limiter
-    └── storage.ts    # AES-GCM encrypted storage
+    ├── constants.ts      # Selectors, URLs, error codes
+    ├── logger.ts         # Structured logging with sanitization
+    ├── circuit-breaker.ts # Circuit breaker for API resilience
+    ├── rate-limiter.ts   # Token-bucket rate limiter
+    └── storage.ts        # AES-GCM encrypted storage
 ```
 
 ## Architecture
 
-```
-[Coursera Page] ← MutationObserver → [Content Script]
-                                          ↕ chrome.runtime.sendMessage
-                                    [Service Worker]
-                                          ↕ fetch()
-                              [OpenRouter / NVIDIA NIM API]
+```mermaid
+flowchart LR
+    A["Coursera Page"] <-->|"MutationObserver"| B["Content Script"]
+    B <-->|"chrome.runtime.sendMessage"| C["Service Worker"]
+    C <-->|"fetch()"| D["AI Provider APIs\n(OpenRouter / Gemini / Groq\nCerebras / NVIDIA NIM)"]
 ```
 
 All API calls originate from the service worker (bypasses page CSP). Content scripts only interact with the DOM.

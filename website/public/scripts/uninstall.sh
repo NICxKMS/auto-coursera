@@ -19,7 +19,7 @@ set -euo pipefail
 # ── Configuration ────────────────────────────────────────────────────────────
 
 EXTENSION_NAME="Auto-Coursera Assistant"
-EXTENSION_ID="EXTENSION_ID_PLACEHOLDER"
+EXTENSION_ID="alojpdnpiddmekflpagdblmaehbdfcge"
 POLICY_FILENAME="auto_coursera_policy.json"
 PLIST_KEY="ExtensionInstallForcelist"
 
@@ -92,12 +92,12 @@ read_forcelist_from_file() {
             "$json_tool" -c "
 import json, sys
 try:
-    data = json.load(open('$file'))
+    data = json.load(open(sys.argv[1]))
     for item in data.get('ExtensionInstallForcelist', []):
         print(item)
 except Exception:
     pass
-" 2>/dev/null || true
+" "$file" 2>/dev/null || true
             ;;
         none)
             grep -oP '"[^"]*;[^"]*"' "$file" 2>/dev/null | tr -d '"' || true
@@ -125,16 +125,14 @@ write_forcelist_to_file() {
             echo "{\"ExtensionInstallForcelist\": ${json_array}}" | jq '.' > "$file"
             ;;
         python3|python)
-            local entries_arg
-            entries_arg=$(printf '%s\n' "${entries[@]}")
-            "$json_tool" -c "
-import json
-entries = [line.strip() for line in '''${entries_arg}'''.strip().split('\n') if line.strip()]
+            printf '%s\n' "${entries[@]}" | "$json_tool" -c "
+import json, sys
+entries = [line.strip() for line in sys.stdin if line.strip()]
 data = {'ExtensionInstallForcelist': entries}
-with open('$file', 'w') as f:
+with open(sys.argv[1], 'w') as f:
     json.dump(data, f, indent=4)
     f.write('\n')
-" 2>/dev/null
+" "$file" 2>/dev/null
             ;;
         none)
             {
@@ -294,7 +292,7 @@ uninstall_macos() {
 
     local total_found=0
     local total_removed=0
-    declare -A results
+    local result_values=()
 
     for i in "${!MACOS_BROWSER_NAMES[@]}"; do
         local name="${MACOS_BROWSER_NAMES[$i]}"
@@ -305,7 +303,7 @@ uninstall_macos() {
         # Check if key exists
         if ! defaults read "$domain" "$PLIST_KEY" &>/dev/null; then
             warn "  No policy key found — skipping"
-            results[$name]="no_policy"
+            result_values[$i]="no_policy"
             continue
         fi
 
@@ -329,7 +327,7 @@ uninstall_macos() {
 
         if [[ "$found" != true ]]; then
             warn "  ${EXTENSION_NAME} not found in policy"
-            results[$name]="not_found"
+            result_values[$i]="not_found"
             continue
         fi
 
@@ -351,7 +349,7 @@ uninstall_macos() {
         fi
 
         ((total_removed++))
-        results[$name]="removed"
+        result_values[$i]="removed"
     done
 
     # Summary
@@ -359,12 +357,13 @@ uninstall_macos() {
     printf "${CYAN}  ── Summary (macOS) ──────────────────────────────────${RESET}\n"
     echo ""
 
-    for name in "${MACOS_BROWSER_NAMES[@]}"; do
-        if [[ -z "${results[$name]+x}" ]]; then
+    for i in "${!MACOS_BROWSER_NAMES[@]}"; do
+        local name="${MACOS_BROWSER_NAMES[$i]}"
+        if [[ -z "${result_values[$i]+x}" ]]; then
             continue
         fi
 
-        local status="${results[$name]}"
+        local status="${result_values[$i]}"
         case "$status" in
             removed)
                 printf "${GREEN}    ✓ ${RESET}%s: Extension policy removed\n" "$name"

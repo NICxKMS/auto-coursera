@@ -12,7 +12,7 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     tags: ['v*']
 
 permissions:
@@ -35,6 +35,7 @@ jobs:
   build-extension:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,15 +44,17 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: 'extension/pnpm-lock.yaml'
 
       - name: Install extension dependencies
         run: cd extension && pnpm install --frozen-lockfile
@@ -59,8 +62,17 @@ jobs:
       - name: Build extension (production)
         run: cd extension && pnpm build:prod
 
+      - name: Guard against placeholder values
+        run: |
+          if grep -rq 'EXTENSION_ID_PLACEHOLDER' extension/dist/; then
+            echo "::error::Placeholder EXTENSION_ID_PLACEHOLDER found in build output"
+            exit 1
+          fi
+
       - name: Write signing key
-        run: echo "${{ secrets.EXTENSION_PRIVATE_KEY }}" > extension-key.pem
+        run: echo "$SIGNING_KEY" > extension-key.pem
+        env:
+          SIGNING_KEY: ${{ secrets.EXTENSION_PRIVATE_KEY }}
 
       - name: Make scripts executable
         run: chmod +x scripts/*.sh
@@ -127,6 +139,7 @@ jobs:
   build-installers:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -135,6 +148,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: 'installer/go.sum'
 
       - name: Build all platforms
         run: cd installer && make build-all
@@ -166,21 +180,24 @@ jobs:
   # DEPLOY WEBSITE (main branch) — No dependencies
   # ===========================================================================
   deploy-website-main:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: 'website/pnpm-lock.yaml'
 
       - name: Install website dependencies
         run: cd website && pnpm install --frozen-lockfile
@@ -202,19 +219,22 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [build-extension, build-installers]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: 'website/pnpm-lock.yaml'
 
       - name: Install website dependencies
         run: cd website && pnpm install --frozen-lockfile
@@ -236,17 +256,25 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [build-extension]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: 'workers/pnpm-lock.yaml'
 
       - name: Install worker dependencies
-        run: cd workers && npm ci
+        run: cd workers && pnpm install --frozen-lockfile
 
       - name: Deploy worker to production
         uses: cloudflare/wrangler-action@v3

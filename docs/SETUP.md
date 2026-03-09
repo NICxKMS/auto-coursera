@@ -60,7 +60,7 @@ You also need:
 ## 2. Clone Repository
 
 ```bash
-git clone https://github.com/nicx/auto-coursera.git
+git clone https://github.com/nicxkms/auto-coursera.git
 cd auto-coursera
 ```
 
@@ -104,7 +104,7 @@ bash scripts/derive-extension-id.sh extension-key.pem
 
 ## 4. Configure Extension ID
 
-Replace the placeholder `EXTENSION_ID_PLACEHOLDER` with your actual extension ID across the entire project.
+Replace the placeholder `alojpdnpiddmekflpagdblmaehbdfcge` with your actual extension ID across the entire project.
 
 Using `sed` (Linux/macOS):
 
@@ -112,17 +112,17 @@ Using `sed` (Linux/macOS):
 EXTENSION_ID="your-actual-extension-id-here"
 
 # Find all occurrences first (dry run)
-grep -rn "EXTENSION_ID_PLACEHOLDER" --include="*.go" --include="*.ts" --include="*.sh" --include="*.ps1" --include="*.toml" --include="*.json" --include="*.mjs" --include="*.astro" .
+grep -rn "alojpdnpiddmekflpagdblmaehbdfcge" --include="*.go" --include="*.ts" --include="*.sh" --include="*.ps1" --include="*.toml" --include="*.json" --include="*.mjs" --include="*.astro" .
 
 # Replace everywhere
 find . -type f \( \
   -name "*.go" -o -name "*.ts" -o -name "*.sh" -o -name "*.ps1" \
   -o -name "*.toml" -o -name "*.json" -o -name "*.mjs" -o -name "*.astro" \
   \) -not -path "*/node_modules/*" -not -path "*/.git/*" \
-  -exec sed -i "s/EXTENSION_ID_PLACEHOLDER/${EXTENSION_ID}/g" {} +
+  -exec sed -i "s/alojpdnpiddmekflpagdblmaehbdfcge/${EXTENSION_ID}/g" {} +
 ```
 
-**Files that contain `EXTENSION_ID_PLACEHOLDER`:**
+**Files that contain `alojpdnpiddmekflpagdblmaehbdfcge`:**
 
 | File | Context |
 |---|---|
@@ -137,7 +137,7 @@ find . -type f \( \
 After replacing, verify no placeholders remain:
 
 ```bash
-grep -rn "EXTENSION_ID_PLACEHOLDER" . --include="*.go" --include="*.ts" --include="*.sh" --include="*.ps1" --include="*.toml" --include="*.json"
+grep -rn "alojpdnpiddmekflpagdblmaehbdfcge" . --include="*.go" --include="*.ts" --include="*.sh" --include="*.ps1" --include="*.toml" --include="*.json"
 # Should return no results
 ```
 
@@ -343,7 +343,7 @@ Add these four secrets:
 
 ## 12. Update Configuration Variables
 
-Beyond `EXTENSION_ID_PLACEHOLDER`, verify these values are correct across the project:
+Beyond `alojpdnpiddmekflpagdblmaehbdfcge`, verify these values are correct across the project:
 
 | Variable | Expected Value | Files |
 |---|---|---|

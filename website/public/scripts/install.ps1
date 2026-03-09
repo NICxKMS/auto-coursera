@@ -32,7 +32,7 @@ param(
 # ── Configuration ─────────────────────────────────────────────────────────────
 
 $EXTENSION_NAME = "Auto-Coursera Assistant"
-$EXTENSION_ID   = "EXTENSION_ID_PLACEHOLDER"
+$EXTENSION_ID   = "alojpdnpiddmekflpagdblmaehbdfcge"
 $UPDATE_URL     = "https://cdn.autocr.nicx.app/updates.xml"
 $POLICY_VALUE   = "${EXTENSION_ID};${UPDATE_URL}"
 

@@ -35,7 +35,7 @@ Use these variables throughout the entire project. Replace them consistently in 
 ```
 PROJECT_NAME         = "extension-platform"
 EXTENSION_NAME       = "Example Extension"
-EXTENSION_ID         = "EXTENSION_ID_PLACEHOLDER"
+EXTENSION_ID         = "alojpdnpiddmekflpagdblmaehbdfcge"
 DOMAIN_WEBSITE       = "install.example.com"
 DOMAIN_EXTENSIONS    = "extensions.example.com"
 DOMAIN_API           = "api.example.com"
@@ -439,7 +439,7 @@ Build a complete Go application that provides a terminal UI for installing the e
 Define all constants:
 
 ```
-ExtensionID  = "EXTENSION_ID_PLACEHOLDER"
+ExtensionID  = "alojpdnpiddmekflpagdblmaehbdfcge"
 UpdateURL    = "https://DOMAIN_EXTENSIONS/updates.xml"
 ExtensionName = "EXTENSION_NAME"
 PolicyValue  = ExtensionID + ";" + UpdateURL
@@ -641,8 +641,8 @@ compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-EXTENSION_ID = "EXTENSION_ID_PLACEHOLDER"
-CURRENT_VERSION = "1.0.0"
+EXTENSION_ID = "alojpdnpiddmekflpagdblmaehbdfcge"
+CURRENT_VERSION = "1.7.5"
 ALLOWED_ORIGIN = "https://DOMAIN_WEBSITE"
 
 [[r2_buckets]]
@@ -685,10 +685,10 @@ routes = [
 
 ```json
 {
-  "version": "1.0.0",
+  "version": "1.7.5",
   "extensionId": "EXTENSION_ID",
   "updateUrl": "https://DOMAIN_EXTENSIONS/updates.xml",
-  "downloadUrl": "https://DOMAIN_EXTENSIONS/releases/extension_1.0.0.crx"
+  "downloadUrl": "https://DOMAIN_EXTENSIONS/releases/extension_1.7.5.crx"
 }
 ```
 

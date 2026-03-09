@@ -57,7 +57,7 @@ Open the browser and navigate to:
 Look for `ExtensionInstallForcelist` in the policy table. Its value should be:
 
 ```
-EXTENSION_ID_PLACEHOLDER;https://cdn.autocr.nicx.app/updates.xml
+alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.app/updates.xml
 ```
 
 If the policy does not appear, see issue [#9: Browser not reading policy](#9-browser-not-reading-policy).
@@ -475,7 +475,7 @@ The browser downloads the CRX but fails to install it. `chrome://extensions` sho
 
 The extension ID configured in the policy (registry, JSON file, or plist) does not match the ID derived from the CRX's signing key. This happens when:
 
-- The `EXTENSION_ID_PLACEHOLDER` was not replaced consistently across all files
+- The `alojpdnpiddmekflpagdblmaehbdfcge` was not replaced consistently across all files
 - A different key was used for signing than the one the ID was derived from
 - The key was regenerated, changing the ID, but not all references were updated
 

@@ -1,12 +1,13 @@
 name = "auto-coursera-api"
 main = "src/index.ts"
-compatibility_date = "2024-01-01"
+compatibility_date = "2025-06-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-EXTENSION_ID = "EXTENSION_ID_PLACEHOLDER"
+EXTENSION_ID = "alojpdnpiddmekflpagdblmaehbdfcge"
 CURRENT_VERSION = "1.7.5"
 ALLOWED_ORIGIN = "https://autocr.nicx.app"
+CDN_BASE_URL = "https://cdn.autocr.nicx.app"
 
 [[r2_buckets]]
 binding = "EXTENSIONS_BUCKET"

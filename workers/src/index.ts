@@ -3,7 +3,7 @@ import { handleReleases } from './routes/releases';
 import { handleStats } from './routes/stats';
 import { handleVersion } from './routes/version';
 import { getCorsHeaders, handleOptions } from './utils/cors';
-import { errorResponse } from './utils/response';
+import { errorResponse, jsonResponse } from './utils/response';
 
 export interface Env {
 	EXTENSIONS_BUCKET: R2Bucket;
@@ -11,6 +11,7 @@ export interface Env {
 	CURRENT_VERSION: string;
 	EXTENSION_ID: string;
 	ALLOWED_ORIGIN: string;
+	CDN_BASE_URL: string;
 }
 
 export default {
@@ -30,6 +31,11 @@ export default {
 		try {
 			if (method !== 'GET') {
 				response = errorResponse('Method not allowed', 405);
+			} else if (pathname === '/api/health') {
+				response = jsonResponse({
+					status: 'ok',
+					timestamp: new Date().toISOString(),
+				});
 			} else if (pathname === '/api/latest-version') {
 				response = handleVersion(env);
 			} else if (pathname === '/api/releases') {
@@ -50,7 +56,7 @@ export default {
 				response = errorResponse('Not found', 404);
 			}
 		} catch (error) {
-			console.error('Unhandled error:', error);
+			console.error('Unhandled error:', error instanceof Error ? error.message : String(error));
 			response = errorResponse('Internal server error', 500);
 		}
 

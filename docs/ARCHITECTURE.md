@@ -45,48 +45,37 @@ The platform answers three questions:
 
 ## Component Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          GitHub Repository                              │
-│   nicx/auto-coursera                                                    │
-│                                                                         │
-│   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
-│   │extension/│  │installer/│  │ website/ │  │ workers/ │  │scripts/ │ │
-│   │ (MV3 TS) │  │  (Go)    │  │ (Astro)  │  │ (CF Wkr) │  │  (Bash) │ │
-│   └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬────┘ │
-│        │              │              │              │              │     │
-└────────┼──────────────┼──────────────┼──────────────┼──────────────┼─────┘
-         │              │              │              │              │
-    ┌────▼────┐    ┌────▼────┐    ┌────▼────┐    ┌────▼────┐   ┌────▼────┐
-    │ GitHub  │    │ GitHub  │    │ GitHub  │    │ GitHub  │   │ GitHub  │
-    │ Actions │    │ Actions │    │ Actions │    │ Actions │   │ Actions │
-    │ build-  │    │ build-  │    │ deploy  │    │ deploy- │   │ (used   │
-    │extension│    │installer│    │ website │    │ worker  │   │ by CI)  │
-    └────┬────┘    └────┬────┘    └────┬────┘    └────┬────┘   └─────────┘
-         │              │              │              │
-    ┌────▼────┐    ┌────▼────┐    ┌────▼──────┐  ┌───▼──────┐
-    │   R2    │    │   R2    │    │ Cloudflare│  │Cloudflare│
-    │extensions│   │releases │    │   Pages   │  │ Workers  │
-    │ -bucket │    │ -bucket │    └────┬──────┘  └───┬──────┘
-    └────┬────┘    └────┬────┘         │             │
-         │              │              │             │
-   ┌─────▼──────┐  ┌───▼──────┐  ┌────▼──────┐ ┌───▼──────┐
-   │extensions. │  │(accessed │  │ install.  │ │  api.    │
-   │ nicx.app   │  │ via API) │  │ nicx.app  │ │ nicx.app │
-   └─────┬──────┘  └──────────┘  └─────┬─────┘ └───┬──────┘
-         │                              │            │
-         │     ┌────────────────────────▼────────────▼───┐
-         │     │               End User                   │
-         │     │  1. Visits autocr.nicx.app              │
-         │     │  2. Downloads installer OR runs script   │
-         │     │  3. Browser policy configured            │
-         │     └─────────────────┬────────────────────────┘
-         │                       │
-         │     ┌─────────────────▼────────────────────────┐
-         │     │         Chromium-based Browser            │
-         └────►│  Reads policy → fetches updates.xml      │
-               │  → downloads CRX → installs extension    │
-               └──────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph repo["GitHub Repository — nicx/auto-coursera"]
+        ext["extension/ (MV3 TS)"]
+        inst["installer/ (Go)"]
+        web["website/ (Astro)"]
+        wkr["workers/ (CF Worker)"]
+        scr["scripts/ (Bash)"]
+    end
+
+    ext --> ci1["CI: build-extension"]
+    inst --> ci2["CI: build-installers"]
+    web --> ci3["CI: deploy website"]
+    wkr --> ci4["CI: deploy-worker"]
+    scr -.->|"used by"| ci1
+
+    ci1 --> r2e["R2\nextensions-bucket"]
+    ci2 --> r2r["R2\nreleases-bucket"]
+    ci3 --> pages["Cloudflare Pages"]
+    ci4 --> workers["Cloudflare Workers"]
+
+    r2e --> cdn["cdn.autocr.nicx.app"]
+    r2r -.->|"via API"| api
+    pages --> site["autocr.nicx.app"]
+    workers --> api["api.autocr.nicx.app"]
+
+    site --> user["End User"]
+    api --> user
+
+    user -->|"1. Visits autocr.nicx.app\n2. Downloads installer OR runs script\n3. Browser policy configured"| browser["Chromium-based Browser"]
+    cdn -->|"Reads policy → fetches updates.xml\n→ downloads CRX → installs"| browser
 ```
 
 ---
@@ -227,7 +216,7 @@ The API provides endpoints the website calls to display version info, release li
 
 | Variable | Value |
 |---|---|
-| `EXTENSION_ID` | `EXTENSION_ID_PLACEHOLDER` |
+| `EXTENSION_ID` | `alojpdnpiddmekflpagdblmaehbdfcge` |
 | `CURRENT_VERSION` | `1.7.5` |
 | `ALLOWED_ORIGIN` | `https://autocr.nicx.app` |
 
@@ -293,95 +282,71 @@ See [SIGNING.md](./SIGNING.md) for the full cryptographic details.
 
 ### Install Flow
 
-```
-User visits autocr.nicx.app
-│
-├─ Option A: Download native installer
-│  │
-│  ├─ Website calls api.autocr.nicx.app/api/download/windows (or macos/linux)
-│  ├─ Workers streams binary from R2 releases-bucket
-│  ├─ User runs installer
-│  ├─ Installer detects OS + installed browsers
-│  ├─ Installer writes ExtensionInstallForcelist policy:
-│  │   ├─ Windows: HKLM registry key
-│  │   ├─ Linux:   /etc/opt/<browser>/policies/managed/auto_coursera.json
-│  │   └─ macOS:   defaults write <plist-domain> ExtensionInstallForcelist
-│  ├─ User restarts browser
-│  ├─ Browser reads policy on startup
-│  ├─ Browser fetches https://cdn.autocr.nicx.app/updates.xml
-│  ├─ Browser downloads CRX from URL in updates.xml
-│  └─ Extension installed and active
-│
-└─ Option B: Run terminal one-liner
-   │
-   ├─ User runs: curl ... | sudo bash  (or irm ... | iex)
-   ├─ Script downloaded from autocr.nicx.app/scripts/
-   ├─ Script writes ExtensionInstallForcelist policy (same as above)
-   ├─ User restarts browser
-   └─ (same as above from browser policy read onward)
+```mermaid
+flowchart TD
+    START["User visits autocr.nicx.app"] --> CHOICE{"Install method?"}
+
+    CHOICE -->|"Option A: Native installer"| DL["Website calls\napi.autocr.nicx.app/api/download/:os"]
+    DL --> STREAM["Worker streams binary\nfrom R2 releases-bucket"]
+    STREAM --> RUN["User runs installer"]
+    RUN --> DETECT["Installer detects OS +\ninstalled browsers"]
+    DETECT --> WRITE_A["Writes ExtensionInstallForcelist policy"]
+
+    CHOICE -->|"Option B: Terminal one-liner"| CURL["curl/irm downloads script\nfrom autocr.nicx.app/scripts/"]
+    CURL --> WRITE_B["Script writes\nExtensionInstallForcelist policy"]
+
+    WRITE_A --> POLICY["Policy written"]
+    WRITE_B --> POLICY
+
+    POLICY --> RESTART["User restarts browser"]
+    RESTART --> READ["Browser reads policy on startup"]
+    READ --> FETCH["Fetches cdn.autocr.nicx.app/updates.xml"]
+    FETCH --> DOWNLOAD["Downloads CRX from URL\nin updates.xml"]
+    DOWNLOAD --> INSTALLED["Extension installed and active"]
+
+    WRITE_A -.- |"Windows: HKLM registry\nLinux: /etc/opt/.../managed/*.json\nmacOS: defaults write plist"| POLICY
 ```
 
 ### Release Flow
 
-```
-Developer pushes git tag v1.8.0
-│
-├─ GitHub Actions: build-extension
-│  ├─ Checkout code
-│  ├─ Extract version from tag (strip "v" prefix → 1.8.0)
-│  ├─ Update manifest.json version to 1.8.0
-│  ├─ Write EXTENSION_PRIVATE_KEY secret to temp file
-│  ├─ Run scripts/package-crx.sh -v 1.8.0 -k /tmp/key.pem
-│  │   └─ Produces auto-coursera_1.8.0.crx + .sha256
-│  ├─ Run scripts/generate-updates-xml.sh
-│  │   └─ Produces updates.xml with version 1.8.0
-│  ├─ Upload CRX to R2 extensions-bucket/releases/
-│  ├─ Upload updates.xml to R2 extensions-bucket/
-│  └─ Clean up temp key file
-│
-├─ GitHub Actions: build-installers
-│  ├─ Checkout code
-│  ├─ Setup Go 1.22
-│  ├─ Run make build-all in installer/
-│  │   └─ Produces 5 binaries in installer/dist/
-│  ├─ Generate SHA256 checksums for all binaries
-│  └─ Upload all binaries + checksums to R2 releases-bucket/
-│
-├─ GitHub Actions: deploy-website
-│  ├─ Build Astro site
-│  └─ Deploy to Cloudflare Pages (autocr.nicx.app)
-│
-├─ GitHub Actions: deploy-worker
-│  └─ Deploy Workers API via wrangler (api.autocr.nicx.app)
-│
-└─ Browsers auto-update
-   ├─ Browser checks cdn.autocr.nicx.app/updates.xml (periodic)
-   ├─ Finds version 1.8.0 > installed version
-   ├─ Downloads auto-coursera_1.8.0.crx
-   └─ Extension updated silently
+```mermaid
+flowchart TD
+    TAG["Developer pushes git tag v1.8.0"] --> BUILD["CI: build-extension"]
+    TAG --> INST["CI: build-installers"]
+    TAG --> DWEB["CI: deploy-website"]
+    TAG --> DWKR["CI: deploy-worker"]
+
+    BUILD --> VER["Extract version from tag → 1.8.0"]
+    VER --> CRX["package-crx.sh → auto-coursera_1.8.0.crx + .sha256"]
+    CRX --> XML["generate-updates-xml.sh → updates.xml v1.8.0"]
+    XML --> UP1["Upload CRX + updates.xml\nto R2 extensions-bucket"]
+
+    INST --> MAKE["make build-all → 5 binaries"]
+    MAKE --> SHA["Generate SHA256 checksums"]
+    SHA --> UP2["Upload binaries + checksums\nto R2 releases-bucket"]
+
+    DWEB --> PAGES["Build & deploy Astro site\nto Cloudflare Pages"]
+    DWKR --> WORKERS["Deploy Workers API\nvia wrangler"]
+
+    UP1 --> AUTO["Browsers auto-update"]
+    AUTO --> CHECK["Check cdn.autocr.nicx.app/updates.xml"]
+    CHECK --> NEWER["1.8.0 > installed version\n→ download CRX"]
+    NEWER --> UPDATED["Extension updated silently"]
 ```
 
 ### API Flow
 
-```
-Website (autocr.nicx.app)
-│
-├─ Fetches api.autocr.nicx.app/api/latest-version
-│  └─ Worker returns { version, extensionId, updateUrl, downloadUrl }
-│     (values from wrangler.toml env vars)
-│
-├─ Fetches api.autocr.nicx.app/api/releases
-│  └─ Worker lists R2 extensions-bucket/releases/*.crx
-│     → parses versions from filenames
-│     → sorts newest-first
-│     → returns [{ version, file, size, date, url }]
-│
-├─ Fetches api.autocr.nicx.app/api/stats
-│  └─ Worker counts releases, finds latest, returns summary
-│
-└─ Redirects to api.autocr.nicx.app/api/download/:os
-   └─ Worker streams binary from R2 releases-bucket
-      with Content-Disposition: attachment header
+```mermaid
+flowchart LR
+    WEB["Website\nautocr.nicx.app"] --> V["GET /api/latest-version"]
+    WEB --> R["GET /api/releases"]
+    WEB --> S["GET /api/stats"]
+    WEB --> D["GET /api/download/:os"]
+
+    V --> VR["{ version, extensionId,\nupdateUrl, downloadUrl }"]
+    R --> RR["List R2 extensions-bucket CRXs\nsorted newest-first"]
+    S --> SR["{ totalReleases,\nlatestVersion, lastUpdated }"]
+    D --> DR["Stream installer binary\nfrom R2 releases-bucket"]
 ```
 
 ---
@@ -417,7 +382,7 @@ The policy value format is:
 For this project:
 
 ```
-EXTENSION_ID_PLACEHOLDER;https://cdn.autocr.nicx.app/updates.xml
+alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.app/updates.xml
 ```
 
 Once the policy is set, the browser:
@@ -466,7 +431,7 @@ The installer writes `auto_coursera.json` (or `auto_coursera_policy.json` from s
 ```json
 {
     "ExtensionInstallForcelist": [
-        "EXTENSION_ID_PLACEHOLDER;https://cdn.autocr.nicx.app/updates.xml"
+        "alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.app/updates.xml"
     ]
 }
 ```
