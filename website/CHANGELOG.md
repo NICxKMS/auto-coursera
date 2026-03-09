@@ -27,4 +27,4 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Technical
 - Astro 4.x static site generator
 - Tailwind CSS 3.x for styling
-- Deployed to Cloudflare Pages at `autocr.nicx.app`
+- Deployed to Cloudflare Pages at `autocr.nicx.me`

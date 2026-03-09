@@ -52,7 +52,7 @@ git --version        # git version 2.x
 You also need:
 
 - A **Cloudflare account** (free tier works)
-- A **domain** added to Cloudflare DNS (this guide uses `nicx.app`)
+- A **domain** added to Cloudflare DNS (this guide uses `nicx.me`)
 - A **GitHub account** with the repository pushed
 
 ---
@@ -146,7 +146,7 @@ grep -rn "alojpdnpiddmekflpagdblmaehbdfcge" . --include="*.go" --include="*.ts" 
 ## 5. Create Cloudflare Account
 
 1. Go to [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up) and create an account
-2. Add your domain (e.g., `nicx.app`) to Cloudflare
+2. Add your domain (e.g., `nicx.me`) to Cloudflare
 3. Update your domain registrar's nameservers to Cloudflare's (shown after adding the domain)
 4. Wait for DNS propagation (usually 5–30 minutes, can take up to 24 hours)
 
@@ -193,18 +193,18 @@ The `extensions-bucket` needs a custom domain so browsers can fetch `updates.xml
 
 1. Go to **Cloudflare Dashboard** → **R2** → **extensions-bucket** → **Settings**
 2. Under **Custom domains**, click **Connect domain**
-3. Enter: `cdn.autocr.nicx.app`
+3. Enter: `cdn.autocr.nicx.me`
 4. Cloudflare will automatically create the required DNS CNAME record
 5. Wait for SSL certificate provisioning (usually < 2 minutes)
 
 Verify it works:
 
 ```bash
-curl -I https://cdn.autocr.nicx.app/
+curl -I https://cdn.autocr.nicx.me/
 # Should return a Cloudflare response (404 is expected — bucket is empty)
 ```
 
-The `releases-bucket` does **not** need a custom domain. Installer downloads are proxied through the Workers API (`api.autocr.nicx.app/api/download/:os`), which reads from the bucket via its R2 binding.
+The `releases-bucket` does **not** need a custom domain. Installer downloads are proxied through the Workers API (`api.autocr.nicx.me/api/download/:os`), which reads from the bucket via its R2 binding.
 
 ---
 
@@ -244,14 +244,14 @@ wrangler pages deploy dist --project-name auto-coursera
 
 1. Go to **Cloudflare Dashboard** → **Workers & Pages** → **auto-coursera** → **Custom domains**
 2. Click **Set up a custom domain**
-3. Enter: `autocr.nicx.app`
+3. Enter: `autocr.nicx.me`
 4. Cloudflare will add the required DNS record (CNAME to the Pages project)
 5. SSL certificate is provisioned automatically
 
 Verify:
 
 ```bash
-curl -I https://autocr.nicx.app/
+curl -I https://autocr.nicx.me/
 # Should return 200 with the website content
 ```
 
@@ -278,18 +278,18 @@ Deploy to production:
 pnpm run deploy
 ```
 
-This deploys the Worker. Next, configure the route so it responds on `api.autocr.nicx.app`:
+This deploys the Worker. Next, configure the route so it responds on `api.autocr.nicx.me`:
 
 1. Go to **Cloudflare Dashboard** → **Workers & Pages** → **auto-coursera-api**
 2. Go to **Settings** → **Triggers** → **Routes**
-3. Add route: `api.autocr.nicx.app/*` → zone: `nicx.app`
+3. Add route: `api.autocr.nicx.me/*` → zone: `nicx.me`
 
 Alternatively, the `[env.production]` section in `wrangler.toml` already defines this:
 
 ```toml
 [env.production]
 routes = [
-  { pattern = "api.autocr.nicx.app/*", zone_name = "nicx.app" }
+  { pattern = "api.autocr.nicx.me/*", zone_name = "nicx.me" }
 ]
 ```
 
@@ -302,7 +302,7 @@ wrangler deploy --env production
 Verify:
 
 ```bash
-curl https://api.autocr.nicx.app/api/latest-version
+curl https://api.autocr.nicx.me/api/latest-version
 # Should return JSON with version info
 ```
 
@@ -335,7 +335,7 @@ Add these four secrets:
 | Account | Workers Scripts | Edit |
 
 5. Under **Account Resources**, select your account
-6. Under **Zone Resources**, select your zone (`nicx.app`)
+6. Under **Zone Resources**, select your zone (`nicx.me`)
 7. Click **Continue to summary** → **Create Token**
 8. Copy the token immediately (it's shown only once)
 
@@ -347,9 +347,9 @@ Beyond `alojpdnpiddmekflpagdblmaehbdfcge`, verify these values are correct acros
 
 | Variable | Expected Value | Files |
 |---|---|---|
-| Domain: website | `autocr.nicx.app` | `website/_headers`, `website/_redirects`, install scripts, website pages |
-| Domain: extensions | `cdn.autocr.nicx.app` | `installer/config.go`, install scripts, `workers/src/routes/` |
-| Domain: API | `api.autocr.nicx.app` | `website/_redirects`, `workers/wrangler.toml`, website pages |
+| Domain: website | `autocr.nicx.me` | `website/_headers`, `website/_redirects`, install scripts, website pages |
+| Domain: extensions | `cdn.autocr.nicx.me` | `installer/config.go`, install scripts, `workers/src/routes/` |
+| Domain: API | `api.autocr.nicx.me` | `website/_redirects`, `workers/wrangler.toml`, website pages |
 | R2 bucket names | `extensions-bucket`, `releases-bucket` | `workers/wrangler.toml` |
 | GitHub repo | `nicx/auto-coursera` | `installer/go.mod`, CI workflow files |
 | Extension name | `Auto-Coursera Assistant` | `installer/config.go`, install scripts |
@@ -397,53 +397,53 @@ After deployment completes, verify each component:
 ### Website
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}" https://autocr.nicx.app/
+curl -s -o /dev/null -w "%{http_code}" https://autocr.nicx.me/
 # Expected: 200
 ```
 
 ### API
 
 ```bash
-curl -s https://api.autocr.nicx.app/api/latest-version | jq .
+curl -s https://api.autocr.nicx.me/api/latest-version | jq .
 # Expected: { "version": "1.7.5", "extensionId": "...", ... }
 
-curl -s https://api.autocr.nicx.app/api/releases | jq .
+curl -s https://api.autocr.nicx.me/api/releases | jq .
 # Expected: { "releases": [...] }
 
-curl -s https://api.autocr.nicx.app/api/stats | jq .
+curl -s https://api.autocr.nicx.me/api/stats | jq .
 # Expected: { "totalReleases": 1, "latestVersion": "1.7.5", ... }
 ```
 
 ### Extension files in R2
 
 ```bash
-curl -I https://cdn.autocr.nicx.app/updates.xml
+curl -I https://cdn.autocr.nicx.me/updates.xml
 # Expected: 200, Content-Type: application/xml
 
-curl -I https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx
+curl -I https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx
 # Expected: 200, Content-Type: application/x-chrome-extension (or octet-stream)
 ```
 
 ### Installer downloads
 
 ```bash
-curl -sI https://api.autocr.nicx.app/api/download/linux
+curl -sI https://api.autocr.nicx.me/api/download/linux
 # Expected: 200, Content-Disposition: attachment; filename="installer-linux-amd64"
 
-curl -sI https://api.autocr.nicx.app/api/download/windows
+curl -sI https://api.autocr.nicx.me/api/download/windows
 # Expected: 200, Content-Disposition: attachment; filename="installer-windows-amd64.exe"
 
-curl -sI https://api.autocr.nicx.app/api/download/macos
+curl -sI https://api.autocr.nicx.me/api/download/macos
 # Expected: 200, Content-Disposition: attachment; filename="installer-macos-arm64"
 ```
 
 ### Install scripts
 
 ```bash
-curl -s https://autocr.nicx.app/scripts/install.sh | head -5
+curl -s https://autocr.nicx.me/scripts/install.sh | head -5
 # Expected: #!/usr/bin/env bash ...
 
-curl -s https://autocr.nicx.app/scripts/install.ps1 | head -5
+curl -s https://autocr.nicx.me/scripts/install.ps1 | head -5
 # Expected: <# .SYNOPSIS ...
 ```
 
@@ -454,7 +454,7 @@ After running the installer or a script on a test machine:
 1. Open the browser
 2. Navigate to `chrome://policy` (or `edge://policy`, `brave://policy`)
 3. Look for `ExtensionInstallForcelist` in the policy list
-4. Verify the value matches `<your-extension-id>;https://cdn.autocr.nicx.app/updates.xml`
+4. Verify the value matches `<your-extension-id>;https://cdn.autocr.nicx.me/updates.xml`
 5. Navigate to `chrome://extensions`
 6. The extension should appear as installed (may require a browser restart)
 

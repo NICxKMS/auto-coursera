@@ -38,8 +38,8 @@ usage() {
     echo "  -h                  Show this help message"
     echo ""
     echo -e "${BOLD}Examples:${NC}"
-    echo "  $0 -i abcdefghijklmnopabcdefghijklmnop -v 1.7.5 -u https://cdn.autocr.nicx.app/auto-coursera/auto-coursera_1.7.5.crx"
-    echo "  $0 -i abcdefghijklmnopabcdefghijklmnop -v 1.7.5 -u https://cdn.autocr.nicx.app/auto-coursera/auto-coursera_1.7.5.crx -o updates.xml"
+    echo "  $0 -i abcdefghijklmnopabcdefghijklmnop -v 1.7.5 -u https://cdn.autocr.nicx.me/auto-coursera/auto-coursera_1.7.5.crx"
+    echo "  $0 -i abcdefghijklmnopabcdefghijklmnop -v 1.7.5 -u https://cdn.autocr.nicx.me/auto-coursera/auto-coursera_1.7.5.crx -o updates.xml"
     echo ""
     echo -e "${BOLD}Output format:${NC}"
     echo '  <?xml version="1.0" encoding="UTF-8"?>'

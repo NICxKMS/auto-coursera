@@ -10,7 +10,7 @@
 #
 # Author:  nicx
 # Project: Auto-Coursera Assistant
-# Website: https://autocr.nicx.app
+# Website: https://autocr.nicx.me
 # ─────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
@@ -19,7 +19,7 @@ set -euo pipefail
 
 EXTENSION_NAME="Auto-Coursera Assistant"
 EXTENSION_ID="alojpdnpiddmekflpagdblmaehbdfcge"
-UPDATE_URL="https://cdn.autocr.nicx.app/updates.xml"
+UPDATE_URL="https://cdn.autocr.nicx.me/updates.xml"
 POLICY_VALUE="${EXTENSION_ID};${UPDATE_URL}"
 POLICY_FILENAME="auto_coursera_policy.json"
 

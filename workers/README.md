@@ -2,7 +2,7 @@
 
 Cloudflare Workers API that serves version info, release listings, and proxied installer downloads for the Auto-Coursera Assistant distribution platform.
 
-**Production:** [api.autocr.nicx.app](https://api.autocr.nicx.app)
+**Production:** [api.autocr.nicx.me](https://api.autocr.nicx.me)
 
 ---
 
@@ -42,8 +42,8 @@ Returns the current extension version and related URLs.
 {
   "version": "1.7.5",
   "extensionId": "alojpdnpiddmekflpagdblmaehbdfcge",
-  "updateUrl": "https://cdn.autocr.nicx.app/updates.xml",
-  "downloadUrl": "https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx"
+  "updateUrl": "https://cdn.autocr.nicx.me/updates.xml",
+  "downloadUrl": "https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx"
 }
 ```
 
@@ -54,7 +54,7 @@ Lists all CRX releases from the R2 extensions-bucket.
 ```json
 {
   "releases": [
-    { "version": "1.7.5", "file": "auto_coursera_1.7.5.crx", "size": 123456, "date": "2026-03-01", "url": "https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx" }
+    { "version": "1.7.5", "file": "auto_coursera_1.7.5.crx", "size": 123456, "date": "2026-03-01", "url": "https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx" }
   ]
 }
 ```
@@ -109,7 +109,7 @@ workers/
 |---|---|---|
 | `EXTENSION_ID` | `alojpdnpiddmekflpagdblmaehbdfcge` | Chrome extension ID (from signing key) |
 | `CURRENT_VERSION` | `1.7.5` | Current extension version |
-| `ALLOWED_ORIGIN` | `https://autocr.nicx.app` | CORS allowed origin |
+| `ALLOWED_ORIGIN` | `https://autocr.nicx.me` | CORS allowed origin |
 
 ### R2 Bindings
 
@@ -123,7 +123,7 @@ workers/
 ```toml
 [env.production]
 routes = [
-  { pattern = "api.autocr.nicx.app/*", zone_name = "nicx.app" }
+  { pattern = "api.autocr.nicx.me/*", zone_name = "nicx.me" }
 ]
 ```
 
@@ -131,7 +131,7 @@ routes = [
 
 The Worker returns CORS headers allowing requests from the website origin:
 
-- `Access-Control-Allow-Origin: https://autocr.nicx.app`
+- `Access-Control-Allow-Origin: https://autocr.nicx.me`
 - `Access-Control-Allow-Methods: GET, OPTIONS`
 
 Preflight requests (`OPTIONS`) return `204 No Content` with CORS headers.
@@ -142,7 +142,7 @@ Preflight requests (`OPTIONS`) return `204 No Content` with CORS headers.
 # Standard deployment
 pnpm deploy
 
-# Production (with route mapping to api.autocr.nicx.app)
+# Production (with route mapping to api.autocr.nicx.me)
 pnpm deploy:prod
 ```
 

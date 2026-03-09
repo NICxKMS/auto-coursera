@@ -66,15 +66,15 @@ flowchart TD
     ci3 --> pages["Cloudflare Pages"]
     ci4 --> workers["Cloudflare Workers"]
 
-    r2e --> cdn["cdn.autocr.nicx.app"]
+    r2e --> cdn["cdn.autocr.nicx.me"]
     r2r -.->|"via API"| api
-    pages --> site["autocr.nicx.app"]
-    workers --> api["api.autocr.nicx.app"]
+    pages --> site["autocr.nicx.me"]
+    workers --> api["api.autocr.nicx.me"]
 
     site --> user["End User"]
     api --> user
 
-    user -->|"1. Visits autocr.nicx.app\n2. Downloads installer OR runs script\n3. Browser policy configured"| browser["Chromium-based Browser"]
+    user -->|"1. Visits autocr.nicx.me\n2. Downloads installer OR runs script\n3. Browser policy configured"| browser["Chromium-based Browser"]
     cdn -->|"Reads policy → fetches updates.xml\n→ downloads CRX → installs"| browser
 ```
 
@@ -86,7 +86,7 @@ flowchart TD
 
 | | |
 |---|---|
-| **Location** | `extension/` (source in `src/`) |
+| **Location** | `extension/` (source in `extension/src/`) |
 | **Stack** | Manifest V3, TypeScript, Webpack |
 | **Version** | 1.7.5 |
 
@@ -94,7 +94,7 @@ The extension is an AI-powered assistant for Coursera. It uses a background serv
 
 Key manifest fields for the distribution platform:
 
-- `update_url` — points to `https://cdn.autocr.nicx.app/updates.xml` so the browser knows where to check for updates (added during CRX packaging).
+- `update_url` — points to `https://cdn.autocr.nicx.me/updates.xml` so the browser knows where to check for updates (added during CRX packaging).
 - `version` — stamped by CI during the build.
 
 The extension source code is **not modified** by this platform. The platform wraps it for distribution.
@@ -107,7 +107,7 @@ The extension source code is **not modified** by this platform. The platform wra
 |---|---|
 | **Location** | `website/` |
 | **Stack** | Astro, Tailwind CSS, Cloudflare Pages adapter |
-| **Domain** | `autocr.nicx.app` |
+| **Domain** | `autocr.nicx.me` |
 | **Build** | `pnpm build` → static output in `website/dist/` |
 
 The website is the user-facing entry point. It provides:
@@ -168,17 +168,17 @@ A cross-platform CLI tool that configures browser policies to force-install the 
 | | |
 |---|---|
 | **Location** | `website/public/scripts/` |
-| **Served at** | `https://autocr.nicx.app/scripts/` |
+| **Served at** | `https://autocr.nicx.me/scripts/` |
 
 One-liner scripts for users who prefer the terminal over downloading a binary.
 
 | Script | Platform | Invocation |
 |---|---|---|
-| `install.ps1` | Windows (PowerShell) | `irm https://autocr.nicx.app/scripts/install.ps1 \| iex` |
-| `install.sh` | Linux (Bash) | `curl -fsSL https://autocr.nicx.app/scripts/install.sh \| sudo bash` |
-| `install-mac.sh` | macOS (Bash) | `curl -fsSL https://autocr.nicx.app/scripts/install-mac.sh \| bash` |
-| `uninstall.ps1` | Windows (PowerShell) | `irm https://autocr.nicx.app/scripts/uninstall.ps1 \| iex` |
-| `uninstall.sh` | Linux/macOS (Bash) | `curl -fsSL https://autocr.nicx.app/scripts/uninstall.sh \| sudo bash` |
+| `install.ps1` | Windows (PowerShell) | `irm https://autocr.nicx.me/scripts/install.ps1 \| iex` |
+| `install.sh` | Linux (Bash) | `curl -fsSL https://autocr.nicx.me/scripts/install.sh \| sudo bash` |
+| `install-mac.sh` | macOS (Bash) | `curl -fsSL https://autocr.nicx.me/scripts/install-mac.sh \| bash` |
+| `uninstall.ps1` | Windows (PowerShell) | `irm https://autocr.nicx.me/scripts/uninstall.ps1 \| iex` |
+| `uninstall.sh` | Linux/macOS (Bash) | `curl -fsSL https://autocr.nicx.me/scripts/uninstall.sh \| sudo bash` |
 
 Each script:
 
@@ -197,7 +197,7 @@ Each script:
 |---|---|
 | **Location** | `workers/` |
 | **Stack** | Cloudflare Workers, TypeScript, Wrangler |
-| **Domain** | `api.autocr.nicx.app` |
+| **Domain** | `api.autocr.nicx.me` |
 | **R2 bindings** | `EXTENSIONS_BUCKET`, `RELEASES_BUCKET` |
 
 The API provides endpoints the website calls to display version info, release lists, and serve installer downloads.
@@ -218,7 +218,7 @@ The API provides endpoints the website calls to display version info, release li
 |---|---|
 | `EXTENSION_ID` | `alojpdnpiddmekflpagdblmaehbdfcge` |
 | `CURRENT_VERSION` | `1.7.5` |
-| `ALLOWED_ORIGIN` | `https://autocr.nicx.app` |
+| `ALLOWED_ORIGIN` | `https://autocr.nicx.me` |
 
 **Download mapping** (`/api/download/:os`):
 
@@ -284,15 +284,15 @@ See [SIGNING.md](./SIGNING.md) for the full cryptographic details.
 
 ```mermaid
 flowchart TD
-    START["User visits autocr.nicx.app"] --> CHOICE{"Install method?"}
+    START["User visits autocr.nicx.me"] --> CHOICE{"Install method?"}
 
-    CHOICE -->|"Option A: Native installer"| DL["Website calls\napi.autocr.nicx.app/api/download/:os"]
+    CHOICE -->|"Option A: Native installer"| DL["Website calls\napi.autocr.nicx.me/api/download/:os"]
     DL --> STREAM["Worker streams binary\nfrom R2 releases-bucket"]
     STREAM --> RUN["User runs installer"]
     RUN --> DETECT["Installer detects OS +\ninstalled browsers"]
     DETECT --> WRITE_A["Writes ExtensionInstallForcelist policy"]
 
-    CHOICE -->|"Option B: Terminal one-liner"| CURL["curl/irm downloads script\nfrom autocr.nicx.app/scripts/"]
+    CHOICE -->|"Option B: Terminal one-liner"| CURL["curl/irm downloads script\nfrom autocr.nicx.me/scripts/"]
     CURL --> WRITE_B["Script writes\nExtensionInstallForcelist policy"]
 
     WRITE_A --> POLICY["Policy written"]
@@ -300,7 +300,7 @@ flowchart TD
 
     POLICY --> RESTART["User restarts browser"]
     RESTART --> READ["Browser reads policy on startup"]
-    READ --> FETCH["Fetches cdn.autocr.nicx.app/updates.xml"]
+    READ --> FETCH["Fetches cdn.autocr.nicx.me/updates.xml"]
     FETCH --> DOWNLOAD["Downloads CRX from URL\nin updates.xml"]
     DOWNLOAD --> INSTALLED["Extension installed and active"]
 
@@ -329,7 +329,7 @@ flowchart TD
     DWKR --> WORKERS["Deploy Workers API\nvia wrangler"]
 
     UP1 --> AUTO["Browsers auto-update"]
-    AUTO --> CHECK["Check cdn.autocr.nicx.app/updates.xml"]
+    AUTO --> CHECK["Check cdn.autocr.nicx.me/updates.xml"]
     CHECK --> NEWER["1.8.0 > installed version\n→ download CRX"]
     NEWER --> UPDATED["Extension updated silently"]
 ```
@@ -338,7 +338,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    WEB["Website\nautocr.nicx.app"] --> V["GET /api/latest-version"]
+    WEB["Website\nautocr.nicx.me"] --> V["GET /api/latest-version"]
     WEB --> R["GET /api/releases"]
     WEB --> S["GET /api/stats"]
     WEB --> D["GET /api/download/:os"]
@@ -353,19 +353,19 @@ flowchart LR
 
 ## Domain Structure
 
-All domains are subdomains of `nicx.app`, managed in Cloudflare DNS.
+All domains are subdomains of `nicx.me`, managed in Cloudflare DNS.
 
 | Domain | Service | Purpose |
 |---|---|---|
-| `autocr.nicx.app` | Cloudflare Pages | User-facing website. Landing page, install instructions, download links, documentation. Serves static install scripts from `/scripts/`. |
-| `cdn.autocr.nicx.app` | R2 custom domain | Hosts the CRX extension files and `updates.xml`. Browsers poll `updates.xml` to discover new versions. This is the URL embedded in browser policies. |
-| `api.autocr.nicx.app` | Cloudflare Workers | REST API. Provides version info, release listings, and proxied installer downloads from R2. Called by the website's JavaScript. |
+| `autocr.nicx.me` | Cloudflare Pages | User-facing website. Landing page, install instructions, download links, documentation. Serves static install scripts from `/scripts/`. |
+| `cdn.autocr.nicx.me` | R2 custom domain | Hosts the CRX extension files and `updates.xml`. Browsers poll `updates.xml` to discover new versions. This is the URL embedded in browser policies. |
+| `api.autocr.nicx.me` | Cloudflare Workers | REST API. Provides version info, release listings, and proxied installer downloads from R2. Called by the website's JavaScript. |
 
 **Why three separate subdomains?**
 
 - **Separation of concerns** — the website, extension files, and API are independent services that can be scaled, cached, and secured differently.
 - **Caching** — `updates.xml` needs a short TTL (5 min) while CRX files can be cached for 24 hours. Static website assets have their own cache rules.
-- **CORS** — the API allows requests only from `autocr.nicx.app`. Extension files are requested directly by the browser (no CORS needed).
+- **CORS** — the API allows requests only from `autocr.nicx.me`. Extension files are requested directly by the browser (no CORS needed).
 
 ---
 
@@ -382,7 +382,7 @@ The policy value format is:
 For this project:
 
 ```
-alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.app/updates.xml
+alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.me/updates.xml
 ```
 
 Once the policy is set, the browser:
@@ -431,7 +431,7 @@ The installer writes `auto_coursera.json` (or `auto_coursera_policy.json` from s
 ```json
 {
     "ExtensionInstallForcelist": [
-        "alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.app/updates.xml"
+        "alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.me/updates.xml"
     ]
 }
 ```
@@ -457,10 +457,10 @@ Commands used:
 
 ```bash
 # Create new policy array
-defaults write com.google.Chrome ExtensionInstallForcelist -array "EXTENSION_ID;https://cdn.autocr.nicx.app/updates.xml"
+defaults write com.google.Chrome ExtensionInstallForcelist -array "EXTENSION_ID;https://cdn.autocr.nicx.me/updates.xml"
 
 # Append to existing array
-defaults write com.google.Chrome ExtensionInstallForcelist -array-add "EXTENSION_ID;https://cdn.autocr.nicx.app/updates.xml"
+defaults write com.google.Chrome ExtensionInstallForcelist -array-add "EXTENSION_ID;https://cdn.autocr.nicx.me/updates.xml"
 
 # Read current policy
 defaults read com.google.Chrome ExtensionInstallForcelist

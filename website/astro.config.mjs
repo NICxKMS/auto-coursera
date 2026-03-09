@@ -5,5 +5,5 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
 	integrations: [tailwind(), sitemap()],
 	output: 'static',
-	site: 'https://autocr.nicx.app',
+	site: 'https://autocr.nicx.me',
 });

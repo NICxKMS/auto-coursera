@@ -57,7 +57,7 @@ Open the browser and navigate to:
 Look for `ExtensionInstallForcelist` in the policy table. Its value should be:
 
 ```
-alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.app/updates.xml
+alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.me/updates.xml
 ```
 
 If the policy does not appear, see issue [#9: Browser not reading policy](#9-browser-not-reading-policy).
@@ -66,7 +66,7 @@ If the policy does not appear, see issue [#9: Browser not reading policy](#9-bro
 
 Navigate to `chrome://extensions` (or the browser's equivalent). If the extension appears but is disabled or has errors, check for:
 
-- "Download error" — the browser could not reach `cdn.autocr.nicx.app` (see issue [#2](#2-crx-download-fails))
+- "Download error" — the browser could not reach `cdn.autocr.nicx.me` (see issue [#2](#2-crx-download-fails))
 - "CRX verification failed" — the CRX was signed with a different key than the extension ID in the policy (see issue [#8](#8-extension-id-mismatch))
 
 **Step 4: Wait.**
@@ -91,7 +91,7 @@ The browser shows the extension in `chrome://extensions` with a "Download error"
 The CRX file is not accessible at the URL specified in `updates.xml`. Possible reasons:
 
 - The `extensions-bucket` R2 bucket does not contain the CRX file
-- The custom domain `cdn.autocr.nicx.app` is not configured
+- The custom domain `cdn.autocr.nicx.me` is not configured
 - DNS has not propagated
 - SSL certificate is not provisioned
 
@@ -108,7 +108,7 @@ You should see files like `releases/auto_coursera_1.7.5.crx`.
 **Step 2: Check the custom domain.**
 
 ```bash
-curl -I https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx
+curl -I https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx
 ```
 
 Expected: `200 OK` with the file. If you get:
@@ -121,8 +121,8 @@ Expected: `200 OK` with the file. If you get:
 **Step 3: Verify the CORS configuration.**
 
 ```bash
-curl -I -H "Origin: https://autocr.nicx.app" \
-  https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx
+curl -I -H "Origin: https://autocr.nicx.me" \
+  https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx
 ```
 
 CORS headers should be present if configured (see [CLOUDFLARE-SETUP.md](./CLOUDFLARE-SETUP.md#4-r2-cors-configuration)).
@@ -130,7 +130,7 @@ CORS headers should be present if configured (see [CLOUDFLARE-SETUP.md](./CLOUDF
 **Step 4: Check updates.xml URL is correct.**
 
 ```bash
-curl https://cdn.autocr.nicx.app/updates.xml
+curl https://cdn.autocr.nicx.me/updates.xml
 ```
 
 Verify the `codebase` attribute points to the correct CRX URL and version.
@@ -138,7 +138,7 @@ Verify the `codebase` attribute points to the correct CRX URL and version.
 ### Verify
 
 ```bash
-curl -sI https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx | head -5
+curl -sI https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx | head -5
 # HTTP/2 200
 # content-type: application/octet-stream
 ```
@@ -149,7 +149,7 @@ curl -sI https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx | head -5
 
 ### Symptom
 
-Fetching `https://cdn.autocr.nicx.app/updates.xml` returns 404. The browser cannot discover extension updates.
+Fetching `https://cdn.autocr.nicx.me/updates.xml` returns 404. The browser cannot discover extension updates.
 
 ### Cause
 
@@ -171,7 +171,7 @@ The file should be at the bucket root: `updates.xml` (not `releases/updates.xml`
 bash scripts/generate-updates-xml.sh \
   -i YOUR_EXTENSION_ID \
   -v 1.7.5 \
-  -u https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx \
+  -u https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx \
   -o /tmp/updates.xml
 
 # Upload to bucket root
@@ -182,7 +182,7 @@ wrangler r2 object put extensions-bucket/updates.xml --file /tmp/updates.xml \
 **Step 3: Verify the custom domain resolves.**
 
 ```bash
-curl https://cdn.autocr.nicx.app/updates.xml
+curl https://cdn.autocr.nicx.me/updates.xml
 ```
 
 Should return valid XML with the extension ID and version.
@@ -194,7 +194,7 @@ The `build-extension` workflow should upload `updates.xml` after building the CR
 ### Verify
 
 ```bash
-curl -s https://cdn.autocr.nicx.app/updates.xml
+curl -s https://cdn.autocr.nicx.me/updates.xml
 ```
 
 Expected output:
@@ -203,7 +203,7 @@ Expected output:
 <?xml version="1.0" encoding="UTF-8"?>
 <gupdate xmlns="http://www.google.com/update2/response" protocol="2.0">
   <app appid="your-extension-id-here">
-    <updatecheck codebase="https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx" version="1.7.5"/>
+    <updatecheck codebase="https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx" version="1.7.5"/>
   </app>
 </gupdate>
 ```
@@ -217,8 +217,8 @@ Expected output:
 The website shows errors in the browser console like:
 
 ```
-Access to fetch at 'https://api.autocr.nicx.app/api/latest-version' from origin
-'https://autocr.nicx.app' has been blocked by CORS policy: No
+Access to fetch at 'https://api.autocr.nicx.me/api/latest-version' from origin
+'https://autocr.nicx.me' has been blocked by CORS policy: No
 'Access-Control-Allow-Origin' header is present on the requested resource.
 ```
 
@@ -236,7 +236,7 @@ The Workers API is not returning the correct CORS headers for the website's orig
 
 ```toml
 [vars]
-ALLOWED_ORIGIN = "https://autocr.nicx.app"
+ALLOWED_ORIGIN = "https://autocr.nicx.me"
 ```
 
 The value must exactly match the website origin — including the `https://` scheme and no trailing slash.
@@ -244,14 +244,14 @@ The value must exactly match the website origin — including the `https://` sch
 **Step 2: Verify the Worker returns CORS headers.**
 
 ```bash
-curl -sI -H "Origin: https://autocr.nicx.app" \
-  https://api.autocr.nicx.app/api/latest-version
+curl -sI -H "Origin: https://autocr.nicx.me" \
+  https://api.autocr.nicx.me/api/latest-version
 ```
 
 The response should include:
 
 ```
-Access-Control-Allow-Origin: https://autocr.nicx.app
+Access-Control-Allow-Origin: https://autocr.nicx.me
 Access-Control-Allow-Methods: GET, OPTIONS
 ```
 
@@ -261,9 +261,9 @@ If these headers are missing, the Worker is not applying CORS correctly.
 
 ```bash
 curl -sI -X OPTIONS \
-  -H "Origin: https://autocr.nicx.app" \
+  -H "Origin: https://autocr.nicx.me" \
   -H "Access-Control-Request-Method: GET" \
-  https://api.autocr.nicx.app/api/latest-version
+  https://api.autocr.nicx.me/api/latest-version
 ```
 
 Should return `204 No Content` with CORS headers.
@@ -331,7 +331,7 @@ Check the `zone_name` in `workers/wrangler.toml`:
 ```toml
 [env.production]
 routes = [
-  { pattern = "api.autocr.nicx.app/*", zone_name = "nicx.app" }
+  { pattern = "api.autocr.nicx.me/*", zone_name = "nicx.me" }
 ]
 ```
 
@@ -353,7 +353,7 @@ wrangler deploy --env production
 
 ### Symptom
 
-Accessing `https://cdn.autocr.nicx.app/updates.xml` returns `403 Forbidden` or an access denied XML error.
+Accessing `https://cdn.autocr.nicx.me/updates.xml` returns `403 Forbidden` or an access denied XML error.
 
 ### Cause
 
@@ -380,7 +380,7 @@ Go to **DNS** → **Records** and find the CNAME for `extensions`. Ensure:
 **Step 3: Check SSL.**
 
 ```bash
-curl -vI https://cdn.autocr.nicx.app/ 2>&1 | grep "SSL certificate"
+curl -vI https://cdn.autocr.nicx.me/ 2>&1 | grep "SSL certificate"
 ```
 
 If there is an SSL error, the certificate may not be provisioned yet. Edge Certificates in **SSL/TLS** → **Edge Certificates** should show the certificate.
@@ -389,14 +389,14 @@ If there is an SSL error, the certificate may not be provisioned yet. Edge Certi
 
 ```bash
 echo "test" | wrangler r2 object put extensions-bucket/test.txt --pipe
-curl https://cdn.autocr.nicx.app/test.txt
+curl https://cdn.autocr.nicx.me/test.txt
 wrangler r2 object delete extensions-bucket/test.txt
 ```
 
 ### Verify
 
 ```bash
-curl -s https://cdn.autocr.nicx.app/updates.xml | head -3
+curl -s https://cdn.autocr.nicx.me/updates.xml | head -3
 # Should return XML content, not an error page
 ```
 
@@ -496,7 +496,7 @@ bash scripts/derive-extension-id.sh extension-key.pem
 **Step 3: Check what ID is in updates.xml.**
 
 ```bash
-curl -s https://cdn.autocr.nicx.app/updates.xml | grep appid
+curl -s https://cdn.autocr.nicx.me/updates.xml | grep appid
 ```
 
 **Step 4: Check what ID is in wrangler.toml and the install scripts.**
@@ -516,7 +516,7 @@ All of the above must contain the same 32-character extension ID. See [SETUP.md 
 ```bash
 # All should return the same ID
 bash scripts/derive-extension-id.sh extension-key.pem
-curl -s https://cdn.autocr.nicx.app/updates.xml | grep -oP 'appid="\K[^"]+'
+curl -s https://cdn.autocr.nicx.me/updates.xml | grep -oP 'appid="\K[^"]+'
 grep EXTENSION_ID workers/wrangler.toml | head -1
 ```
 
@@ -576,7 +576,7 @@ If JSON validation fails, the file is malformed. Regenerate it:
 sudo bash -c 'cat > /etc/opt/chrome/policies/managed/auto_coursera_policy.json << EOF
 {
     "ExtensionInstallForcelist": [
-        "YOUR_EXTENSION_ID;https://cdn.autocr.nicx.app/updates.xml"
+        "YOUR_EXTENSION_ID;https://cdn.autocr.nicx.me/updates.xml"
     ]
 }
 EOF'
@@ -597,7 +597,7 @@ defaults read com.google.Chrome ExtensionInstallForcelist
 # If it returns an error ("does not exist"), the write failed
 # Re-write it:
 defaults write com.google.Chrome ExtensionInstallForcelist -array \
-  "YOUR_EXTENSION_ID;https://cdn.autocr.nicx.app/updates.xml"
+  "YOUR_EXTENSION_ID;https://cdn.autocr.nicx.me/updates.xml"
 
 # Force macOS to re-read preferences
 killall cfprefsd 2>/dev/null
@@ -680,7 +680,7 @@ Run with `sudo`:
 
 ```bash
 # One-liner install
-curl -fsSL https://autocr.nicx.app/scripts/install.sh | sudo bash
+curl -fsSL https://autocr.nicx.me/scripts/install.sh | sudo bash
 
 # If already downloaded
 sudo bash install.sh
@@ -728,7 +728,7 @@ The Go installer binary is not signed with an Apple Developer certificate. macOS
 The `install-mac.sh` script does not trigger Gatekeeper because `curl | bash` executes it as a shell command, not as a signed binary:
 
 ```bash
-curl -fsSL https://autocr.nicx.app/scripts/install-mac.sh | bash
+curl -fsSL https://autocr.nicx.me/scripts/install-mac.sh | bash
 ```
 
 **Option 2: Remove the quarantine attribute**

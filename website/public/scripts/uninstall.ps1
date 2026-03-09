@@ -9,7 +9,7 @@
 .NOTES
     Author: nicx
     Project: Auto-Coursera Assistant
-    Website: https://autocr.nicx.app
+    Website: https://autocr.nicx.me
     Requires: Administrator privileges
 #>
 

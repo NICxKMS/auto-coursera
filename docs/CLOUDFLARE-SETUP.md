@@ -31,7 +31,7 @@
 ### Add domain
 
 1. Go to **Websites** → **Add a site**
-2. Enter your domain: `nicx.app`
+2. Enter your domain: `nicx.me`
 3. Select the **Free** plan
 4. Cloudflare scans existing DNS records — review and confirm
 5. Cloudflare provides two nameservers (e.g., `ivy.ns.cloudflare.com`, `noah.ns.cloudflare.com`)
@@ -72,7 +72,7 @@ wrangler r2 bucket list
 
 | Bucket | Contents | Access |
 |---|---|---|
-| `extensions-bucket` | `updates.xml`, `releases/*.crx`, `releases/*.crx.sha256` | Public via custom domain (`cdn.autocr.nicx.app`) |
+| `extensions-bucket` | `updates.xml`, `releases/*.crx`, `releases/*.crx.sha256` | Public via custom domain (`cdn.autocr.nicx.me`) |
 | `releases-bucket` | `installer-windows-amd64.exe`, `installer-macos-arm64`, `installer-linux-amd64`, checksums | Private — accessed only via Workers R2 binding |
 
 ---
@@ -86,10 +86,10 @@ The `extensions-bucket` needs a public custom domain so browsers can fetch `upda
 1. Go to **R2 Object Storage** → **extensions-bucket** → **Settings**
 2. Scroll to **Custom Domains**
 3. Click **Connect Domain**
-4. Enter: `cdn.autocr.nicx.app`
+4. Enter: `cdn.autocr.nicx.me`
 5. Click **Continue**
 6. Cloudflare automatically:
-   - Creates a CNAME DNS record for `cdn.autocr.nicx.app`
+   - Creates a CNAME DNS record for `cdn.autocr.nicx.me`
    - Provisions an SSL certificate
    - Enables public access to the bucket via this domain
 7. Wait for status to show **Active** (usually under 2 minutes)
@@ -98,10 +98,10 @@ The `extensions-bucket` needs a public custom domain so browsers can fetch `upda
 
 ```bash
 # Should resolve to Cloudflare
-dig cdn.autocr.nicx.app CNAME
+dig cdn.autocr.nicx.me CNAME
 
 # Should return a Cloudflare response (403 or 404 is normal for empty bucket)
-curl -I https://cdn.autocr.nicx.app/
+curl -I https://cdn.autocr.nicx.me/
 ```
 
 ### Upload test file
@@ -110,7 +110,7 @@ curl -I https://cdn.autocr.nicx.app/
 echo "test" | wrangler r2 object put extensions-bucket/test.txt --pipe
 
 # Should return 200 with "test"
-curl https://cdn.autocr.nicx.app/test.txt
+curl https://cdn.autocr.nicx.me/test.txt
 
 # Clean up
 wrangler r2 object delete extensions-bucket/test.txt
@@ -122,7 +122,7 @@ wrangler r2 object delete extensions-bucket/test.txt
 
 ## 4. R2 CORS Configuration
 
-CORS must be configured on the `extensions-bucket` so the website at `autocr.nicx.app` can make cross-origin requests (e.g., to check if `updates.xml` exists or fetch CRX metadata).
+CORS must be configured on the `extensions-bucket` so the website at `autocr.nicx.me` can make cross-origin requests (e.g., to check if `updates.xml` exists or fetch CRX metadata).
 
 ### Via Dashboard
 
@@ -134,7 +134,7 @@ CORS must be configured on the `extensions-bucket` so the website at `autocr.nic
 ```json
 [
   {
-    "AllowedOrigins": ["https://autocr.nicx.app"],
+    "AllowedOrigins": ["https://autocr.nicx.me"],
     "AllowedMethods": ["GET", "HEAD"],
     "AllowedHeaders": ["*"],
     "MaxAgeSeconds": 86400
@@ -150,7 +150,7 @@ CORS must be configured on the `extensions-bucket` so the website at `autocr.nic
 cat > /tmp/cors.json << 'EOF'
 [
   {
-    "AllowedOrigins": ["https://autocr.nicx.app"],
+    "AllowedOrigins": ["https://autocr.nicx.me"],
     "AllowedMethods": ["GET", "HEAD"],
     "AllowedHeaders": ["*"],
     "MaxAgeSeconds": 86400
@@ -163,7 +163,7 @@ wrangler r2 bucket cors put extensions-bucket --file /tmp/cors.json
 
 ### What this allows
 
-- `GET` and `HEAD` requests from `https://autocr.nicx.app`
+- `GET` and `HEAD` requests from `https://autocr.nicx.me`
 - All request headers
 - Preflight response cached for 24 hours
 
@@ -204,7 +204,7 @@ When the browser downloads a CRX from `updates.xml`, it is **not** a cross-origi
 
 1. After project is created, go to project **Settings** → **Custom domains**
 2. Click **Set up a custom domain**
-3. Enter: `autocr.nicx.app`
+3. Enter: `autocr.nicx.me`
 4. Cloudflare creates the DNS record and provisions SSL
 5. Status should show **Active** within a few minutes
 
@@ -248,7 +248,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 EXTENSION_ID = "alojpdnpiddmekflpagdblmaehbdfcge"
 CURRENT_VERSION = "1.7.5"
-ALLOWED_ORIGIN = "https://autocr.nicx.app"
+ALLOWED_ORIGIN = "https://autocr.nicx.me"
 
 [[r2_buckets]]
 binding = "EXTENSIONS_BUCKET"
@@ -260,39 +260,39 @@ bucket_name = "releases-bucket"
 
 [env.production]
 routes = [
-  { pattern = "api.autocr.nicx.app/*", zone_name = "nicx.app" }
+  { pattern = "api.autocr.nicx.me/*", zone_name = "nicx.me" }
 ]
 ```
 
 ### Route setup
 
-The `[env.production]` block maps `api.autocr.nicx.app/*` to the Worker. When deploying with `--env production`, Wrangler creates the route automatically.
+The `[env.production]` block maps `api.autocr.nicx.me/*` to the Worker. When deploying with `--env production`, Wrangler creates the route automatically.
 
 If you need to add or verify routes manually:
 
 1. Go to **Workers & Pages** → **auto-coursera-api** → **Settings** → **Triggers**
-2. Under **Routes**, verify: `api.autocr.nicx.app/*` → zone `nicx.app`
+2. Under **Routes**, verify: `api.autocr.nicx.me/*` → zone `nicx.me`
 
 ### Verify endpoints
 
 ```bash
-curl -s https://api.autocr.nicx.app/api/latest-version | jq .
-curl -s https://api.autocr.nicx.app/api/releases | jq .
-curl -s https://api.autocr.nicx.app/api/stats | jq .
+curl -s https://api.autocr.nicx.me/api/latest-version | jq .
+curl -s https://api.autocr.nicx.me/api/releases | jq .
+curl -s https://api.autocr.nicx.me/api/stats | jq .
 
 # Test CORS preflight
 curl -s -X OPTIONS \
-  -H "Origin: https://autocr.nicx.app" \
+  -H "Origin: https://autocr.nicx.me" \
   -H "Access-Control-Request-Method: GET" \
-  -I https://api.autocr.nicx.app/api/latest-version
-# Should include Access-Control-Allow-Origin: https://autocr.nicx.app
+  -I https://api.autocr.nicx.me/api/latest-version
+# Should include Access-Control-Allow-Origin: https://autocr.nicx.me
 ```
 
 ---
 
 ## 7. DNS Configuration
 
-All DNS records should be in Cloudflare DNS for `nicx.app`. The following records are needed:
+All DNS records should be in Cloudflare DNS for `nicx.me`. The following records are needed:
 
 | Type | Name | Target | Proxy | Notes |
 |---|---|---|---|---|
@@ -302,31 +302,31 @@ All DNS records should be in Cloudflare DNS for `nicx.app`. The following record
 
 ### How each subdomain resolves
 
-**`autocr.nicx.app`** → Cloudflare Pages
+**`autocr.nicx.me`** → Cloudflare Pages
 
-- Pages custom domain creates a CNAME from `autocr.nicx.app` to `auto-coursera.pages.dev`
+- Pages custom domain creates a CNAME from `autocr.nicx.me` to `auto-coursera.pages.dev`
 - Cloudflare proxy handles SSL termination and caching
 
-**`cdn.autocr.nicx.app`** → R2 Bucket
+**`cdn.autocr.nicx.me`** → R2 Bucket
 
 - R2 custom domain creates a CNAME record automatically
 - Cloudflare proxy serves objects from the `extensions-bucket` R2 bucket
 - SSL is handled by Cloudflare
 
-**`api.autocr.nicx.app`** → Cloudflare Worker
+**`api.autocr.nicx.me`** → Cloudflare Worker
 
-- Worker routes map `api.autocr.nicx.app/*` to the `auto-coursera-api` Worker
+- Worker routes map `api.autocr.nicx.me/*` to the `auto-coursera-api` Worker
 - The Worker responds to requests matching this pattern
-- A DNS record for the zone root is required (the `nicx.app` A/AAAA record or a proxied placeholder); no separate `api` CNAME is needed when using Worker routes on a zone already in Cloudflare
+- A DNS record for the zone root is required (the `nicx.me` A/AAAA record or a proxied placeholder); no separate `api` CNAME is needed when using Worker routes on a zone already in Cloudflare
 
 ### Verify DNS resolution
 
 ```bash
-dig autocr.nicx.app CNAME +short
-dig cdn.autocr.nicx.app CNAME +short
+dig autocr.nicx.me CNAME +short
+dig cdn.autocr.nicx.me CNAME +short
 
 # API verification (should respond with JSON)
-curl -s https://api.autocr.nicx.app/api/stats
+curl -s https://api.autocr.nicx.me/api/stats
 ```
 
 ---
@@ -335,16 +335,16 @@ curl -s https://api.autocr.nicx.app/api/stats
 
 Proper caching ensures fast delivery while allowing timely updates.
 
-### R2 objects (cdn.autocr.nicx.app)
+### R2 objects (cdn.autocr.nicx.me)
 
-Configure cache rules for the `cdn.autocr.nicx.app` hostname in **Cloudflare Dashboard** → **Caching** → **Cache Rules**:
+Configure cache rules for the `cdn.autocr.nicx.me` hostname in **Cloudflare Dashboard** → **Caching** → **Cache Rules**:
 
 #### Rule 1: updates.xml — Short cache
 
 | Setting | Value |
 |---|---|
 | **Rule name** | R2 updates.xml short cache |
-| **When** | Hostname equals `cdn.autocr.nicx.app` AND URI Path equals `/updates.xml` |
+| **When** | Hostname equals `cdn.autocr.nicx.me` AND URI Path equals `/updates.xml` |
 | **Then** | Eligible for cache: Yes |
 | **Edge TTL** | 5 minutes (300 seconds) |
 | **Browser TTL** | 5 minutes (300 seconds) |
@@ -356,14 +356,14 @@ Configure cache rules for the `cdn.autocr.nicx.app` hostname in **Cloudflare Das
 | Setting | Value |
 |---|---|
 | **Rule name** | R2 CRX long cache |
-| **When** | Hostname equals `cdn.autocr.nicx.app` AND URI Path contains `.crx` |
+| **When** | Hostname equals `cdn.autocr.nicx.me` AND URI Path contains `.crx` |
 | **Then** | Eligible for cache: Yes |
 | **Edge TTL** | 24 hours (86400 seconds) |
 | **Browser TTL** | 24 hours (86400 seconds) |
 
 **Rationale:** CRX files are immutable — each version has a unique filename (`auto_coursera_1.7.5.crx`). They never change after upload, so long caching is safe.
 
-### API responses (api.autocr.nicx.app)
+### API responses (api.autocr.nicx.me)
 
 The Worker does not set `Cache-Control` headers by default, so responses are not cached at Cloudflare's edge. This is correct for the API — it always reads live data from R2.
 
@@ -371,7 +371,7 @@ If you want to cache API responses, add a Cache Rule:
 
 | Setting | Value |
 |---|---|
-| **When** | Hostname equals `api.autocr.nicx.app` AND URI Path starts with `/api/` |
+| **When** | Hostname equals `api.autocr.nicx.me` AND URI Path starts with `/api/` |
 | **Edge TTL** | 5 minutes |
 | **Browser TTL** | 1 minute |
 
@@ -381,7 +381,7 @@ If you want to cache API responses, add a Cache Rule:
 2. Click **Create rule**
 3. Name the rule (e.g., "R2 updates.xml short cache")
 4. Under **When incoming requests match...**, add field conditions:
-   - Field: **Hostname** → Operator: **equals** → Value: `cdn.autocr.nicx.app`
+   - Field: **Hostname** → Operator: **equals** → Value: `cdn.autocr.nicx.me`
    - AND Field: **URI Path** → Operator: **equals** → Value: `/updates.xml`
 5. Under **Then...**, set:
    - **Eligible for cache**: Check
@@ -405,7 +405,7 @@ Go to **Cloudflare Dashboard** → your domain → **Security** → **WAF** → 
 | Setting | Value |
 |---|---|
 | **Rule name** | Rate limit downloads |
-| **When** | Hostname equals `api.autocr.nicx.app` AND URI Path starts with `/api/download/` |
+| **When** | Hostname equals `api.autocr.nicx.me` AND URI Path starts with `/api/download/` |
 | **Characteristics** | IP address |
 | **Rate** | 10 requests per 1 minute |
 | **Action** | Block (returns 429) |
@@ -418,7 +418,7 @@ Go to **Cloudflare Dashboard** → your domain → **Security** → **WAF** → 
 | Setting | Value |
 |---|---|
 | **Rule name** | Rate limit API |
-| **When** | Hostname equals `api.autocr.nicx.app` AND URI Path starts with `/api/` |
+| **When** | Hostname equals `api.autocr.nicx.me` AND URI Path starts with `/api/` |
 | **Characteristics** | IP address |
 | **Rate** | 60 requests per 1 minute |
 | **Action** | Block (returns 429) |
@@ -431,7 +431,7 @@ Go to **Cloudflare Dashboard** → your domain → **Security** → **WAF** → 
 1. Go to **Security** → **WAF** → **Rate limiting rules**
 2. Click **Create rule**
 3. Configure the expression using the Builder:
-   - Field: **Hostname** → Operator: **equals** → Value: `api.autocr.nicx.app`
+   - Field: **Hostname** → Operator: **equals** → Value: `api.autocr.nicx.me`
    - AND Field: **URI Path** → Operator: **starts with** → Value: `/api/download/`
 4. Set **Counting expression characteristics**: IP address
 5. Set **Rate**: 10 requests per 1 minute
@@ -466,9 +466,9 @@ Go to **Cloudflare Dashboard** → your domain → **SSL/TLS**.
 
 | Domain | Certificate Source |
 |---|---|
-| `autocr.nicx.app` | Cloudflare Pages (automatic) |
-| `cdn.autocr.nicx.app` | R2 custom domain (automatic) |
-| `api.autocr.nicx.app` | Worker route on proxied zone (automatic) |
+| `autocr.nicx.me` | Cloudflare Pages (automatic) |
+| `cdn.autocr.nicx.me` | R2 custom domain (automatic) |
+| `api.autocr.nicx.me` | Worker route on proxied zone (automatic) |
 
 All certificates are managed by Cloudflare — no manual certificate configuration needed.
 
@@ -497,7 +497,7 @@ The CI/CD pipeline uses a single Cloudflare API token with these permissions:
    - Account → Workers R2 Storage → Edit
    - Account → Workers Scripts → Edit
 6. **Account Resources**: Include → your account
-7. **Zone Resources**: Include → Specific zone → `nicx.app`
+7. **Zone Resources**: Include → Specific zone → `nicx.me`
 8. **Client IP Address Filtering**: *(optional — leave empty unless you restrict CI runners)*
 9. **TTL**: *(optional — set an expiration if desired)*
 10. Click **Continue to summary**

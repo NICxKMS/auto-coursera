@@ -17,7 +17,7 @@
 .NOTES
     Author: nicx
     Project: Auto-Coursera Assistant
-    Website: https://autocr.nicx.app
+    Website: https://autocr.nicx.me
     Requires: Administrator privileges
 #>
 
@@ -33,7 +33,7 @@ param(
 
 $EXTENSION_NAME = "Auto-Coursera Assistant"
 $EXTENSION_ID   = "alojpdnpiddmekflpagdblmaehbdfcge"
-$UPDATE_URL     = "https://cdn.autocr.nicx.app/updates.xml"
+$UPDATE_URL     = "https://cdn.autocr.nicx.me/updates.xml"
 $POLICY_VALUE   = "${EXTENSION_ID};${UPDATE_URL}"
 
 # ── Browser Definitions ──────────────────────────────────────────────────────

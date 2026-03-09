@@ -171,7 +171,7 @@ When an extension is installed via browser policy, the browser periodically chec
 ### How it connects
 
 1. The installer writes a policy value: `<extension-id>;<update-url>`
-2. The `<update-url>` points to `https://cdn.autocr.nicx.app/updates.xml`
+2. The `<update-url>` points to `https://cdn.autocr.nicx.me/updates.xml`
 3. The browser fetches this URL on a schedule (approximately every few hours)
 4. The XML tells the browser which version is available and where to download the CRX
 
@@ -182,7 +182,7 @@ When an extension is installed via browser policy, the browser periodically chec
 <gupdate xmlns="http://www.google.com/update2/response" protocol="2.0">
   <app appid="abcdefghijklmnopabcdefghijklmnop">
     <updatecheck
-      codebase="https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx"
+      codebase="https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx"
       version="1.7.5"/>
   </app>
 </gupdate>
@@ -200,7 +200,7 @@ When an extension is installed via browser policy, the browser periodically chec
 bash scripts/generate-updates-xml.sh \
   -i abcdefghijklmnopabcdefghijklmnop \
   -v 1.7.5 \
-  -u https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx \
+  -u https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx \
   -o updates.xml
 ```
 

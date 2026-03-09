@@ -89,7 +89,7 @@ jobs:
           ./scripts/generate-updates-xml.sh \
             -i "${{ secrets.EXTENSION_ID }}" \
             -v "${{ steps.version.outputs.VERSION }}" \
-            -u "https://cdn.autocr.nicx.app/releases/auto_coursera_${{ steps.version.outputs.VERSION }}.crx" \
+            -u "https://cdn.autocr.nicx.me/releases/auto_coursera_${{ steps.version.outputs.VERSION }}.crx" \
             -o updates.xml
 
       - name: Upload CRX to R2

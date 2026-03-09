@@ -6,10 +6,10 @@ A complete browser extension distribution platform for **Auto-Coursera Assistant
 
 ```mermaid
 flowchart LR
-    EXT["Extension\n(src/)"] --> CRX["CRX Packaging\n(scripts/)"]
-    CRX --> R2["Cloudflare R2\ncdn.autocr.nicx.app"]
+    EXT["Extension\n(extension/src/)"] --> CRX["CRX Packaging\n(scripts/)"]
+    CRX --> R2["Cloudflare R2\ncdn.autocr.nicx.me"]
     R2 --> XML["updates.xml\n(auto-update manifest)"]
-    R2 --> WEB["Website\nautocr.nicx.app"]
+    R2 --> WEB["Website\nautocr.nicx.me"]
     XML --> BROWSER["Browser Policy\nInstall / Update"]
     WEB --> BROWSER
     CICD["CI/CD\nGitHub Actions"] -.->|"Build + Package"| CRX
@@ -53,11 +53,11 @@ bash scripts/package-crx.sh -v 1.7.5 -k extension-key.pem -s extension/dist
 | Component        | Path             | Description                                          |
 |------------------|------------------|------------------------------------------------------|
 | **Extension**    | `extension/`     | Chrome MV3 extension source (TypeScript, Webpack)    |
-| **Source**       | `src/`           | Extension TypeScript source files                    |
+| **Source**       | `extension/src/` | Extension TypeScript source files                    |
 | **Scripts**      | `scripts/`       | CRX packaging, key generation, update XML tools      |
-| **Website**      | `website/`       | Astro landing page at autocr.nicx.app               |
+| **Website**      | `website/`       | Astro landing page at autocr.nicx.me               |
 | **Installer**    | `installer/`     | Go-based installer service                           |
-| **Workers**      | `workers/`       | Cloudflare Workers API at api.autocr.nicx.app               |
+| **Workers**      | `workers/`       | Cloudflare Workers API at api.autocr.nicx.me               |
 | **Docs**         | `docs/`          | Architecture, deployment, and operations guides      |
 | **CI/CD**        | `.github/`       | GitHub Actions workflows and agent definitions       |
 
@@ -125,7 +125,7 @@ Deployment guides are available in the `docs/` directory:
 
 1. **Build extension** → `cd extension && pnpm build`
 2. **Package CRX** → `bash scripts/package-crx.sh -v <ver> -k extension-key.pem`
-3. **Upload to R2** → CI/CD uploads CRX + updates.xml to `cdn.autocr.nicx.app`
+3. **Upload to R2** → CI/CD uploads CRX + updates.xml to `cdn.autocr.nicx.me`
 4. **Deploy website** → Cloudflare Pages auto-deploys from `website/`
 5. **Deploy workers** → `cd workers && wrangler deploy`
 
@@ -136,9 +136,9 @@ Deployment guides are available in the `docs/` directory:
 | `PROJECT_NAME`         | `auto-coursera`             | Repository and project name         |
 | `EXTENSION_NAME`       | `Auto-Coursera Assistant`   | Chrome extension display name       |
 | `EXTENSION_ID`         | `alojpdnpiddmekflpagdblmaehbdfcge`  | Chrome extension ID (from key)      |
-| `DOMAIN_WEBSITE`       | `autocr.nicx.app`          | Landing page domain                 |
-| `DOMAIN_EXTENSIONS`    | `cdn.autocr.nicx.app`       | CRX hosting domain (R2)            |
-| `DOMAIN_API`           | `api.autocr.nicx.app`              | API worker domain                   |
+| `DOMAIN_WEBSITE`       | `autocr.nicx.me`          | Landing page domain                 |
+| `DOMAIN_EXTENSIONS`    | `cdn.autocr.nicx.me`       | CRX hosting domain (R2)            |
+| `DOMAIN_API`           | `api.autocr.nicx.me`              | API worker domain                   |
 | `R2_EXTENSIONS_BUCKET` | `extensions-bucket`         | R2 bucket for CRX files             |
 | `R2_RELEASES_BUCKET`   | `releases-bucket`           | R2 bucket for release metadata      |
 | `GITHUB_REPO`          | `nicx/auto-coursera`        | GitHub repository                   |

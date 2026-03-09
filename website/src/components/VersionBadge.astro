@@ -29,7 +29,7 @@ const { version } = Astro.props;
   const autoBadges = document.querySelectorAll<HTMLElement>('[data-version-auto]');
 
   if (autoBadges.length > 0) {
-    fetch('https://api.autocr.nicx.app/api/latest-version', {
+    fetch('https://api.autocr.nicx.me/api/latest-version', {
       signal: AbortSignal.timeout(5000),
     })
       .then((res) => {

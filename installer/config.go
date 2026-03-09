@@ -2,7 +2,7 @@ package main
 
 const (
 	ExtensionID   = "alojpdnpiddmekflpagdblmaehbdfcge"
-	UpdateURL     = "https://cdn.autocr.nicx.app/updates.xml"
+	UpdateURL     = "https://cdn.autocr.nicx.me/updates.xml"
 	ExtensionName = "Auto-Coursera Assistant"
 	PolicyValue   = ExtensionID + ";" + UpdateURL
 	AppVersion    = "1.7.5"

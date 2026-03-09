@@ -36,13 +36,13 @@ import Base from '../layouts/Base.astro';
 
         <div id="install-buttons" class="grid sm:grid-cols-3 gap-4">
           <div data-install-os="windows">
-            <InstallButton os="windows" label="Windows Installer" href="https://api.autocr.nicx.app/api/download/windows" size=".exe — ~8 MB" />
+            <InstallButton os="windows" label="Windows Installer" href="https://api.autocr.nicx.me/api/download/windows" size=".exe — ~8 MB" />
           </div>
           <div data-install-os="macos">
-            <InstallButton os="macos" label="macOS Installer" href="https://api.autocr.nicx.app/api/download/macos" size="Universal — ~8 MB" />
+            <InstallButton os="macos" label="macOS Installer" href="https://api.autocr.nicx.me/api/download/macos" size="Universal — ~8 MB" />
           </div>
           <div data-install-os="linux">
-            <InstallButton os="linux" label="Linux Installer" href="https://api.autocr.nicx.app/api/download/linux" size="x64 — ~8 MB" />
+            <InstallButton os="linux" label="Linux Installer" href="https://api.autocr.nicx.me/api/download/linux" size="x64 — ~8 MB" />
           </div>
         </div>
       </section>
@@ -60,13 +60,13 @@ import Base from '../layouts/Base.astro';
 
           <div id="script-blocks" class="space-y-6 pl-11">
             <div data-script-os="windows">
-              <ScriptBlock command="irm https://autocr.nicx.app/scripts/install.ps1 | iex" label="Windows (PowerShell)" />
+              <ScriptBlock command="irm https://autocr.nicx.me/scripts/install.ps1 | iex" label="Windows (PowerShell)" />
             </div>
             <div data-script-os="linux">
-              <ScriptBlock command="curl -fsSL https://autocr.nicx.app/scripts/install.sh | sudo bash" label="Linux" />
+              <ScriptBlock command="curl -fsSL https://autocr.nicx.me/scripts/install.sh | sudo bash" label="Linux" />
             </div>
             <div data-script-os="macos">
-              <ScriptBlock command="curl -fsSL https://autocr.nicx.app/scripts/install-mac.sh | bash" label="macOS" />
+              <ScriptBlock command="curl -fsSL https://autocr.nicx.me/scripts/install-mac.sh | bash" label="macOS" />
             </div>
           </div>
         </details>

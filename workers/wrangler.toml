@@ -6,8 +6,8 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 EXTENSION_ID = "alojpdnpiddmekflpagdblmaehbdfcge"
 CURRENT_VERSION = "1.7.5"
-ALLOWED_ORIGIN = "https://autocr.nicx.app"
-CDN_BASE_URL = "https://cdn.autocr.nicx.app"
+ALLOWED_ORIGIN = "https://autocr.nicx.me"
+CDN_BASE_URL = "https://cdn.autocr.nicx.me"
 
 [[r2_buckets]]
 binding = "EXTENSIONS_BUCKET"
@@ -19,5 +19,5 @@ bucket_name = "releases-bucket"
 
 [env.production]
 routes = [
-  { pattern = "api.autocr.nicx.app/*", zone_name = "nicx.app" }
+  { pattern = "api.autocr.nicx.me/*", zone_name = "nicx.me" }
 ]

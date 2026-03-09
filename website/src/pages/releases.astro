@@ -173,7 +173,7 @@ import Base from '../layouts/Base.astro';
     container.querySelectorAll('.release-card').forEach((el) => el.remove());
 
     try {
-      const res = await fetch('https://api.autocr.nicx.app/api/releases', {
+      const res = await fetch('https://api.autocr.nicx.me/api/releases', {
         signal: AbortSignal.timeout(10000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

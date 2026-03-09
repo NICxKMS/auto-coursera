@@ -95,7 +95,7 @@ Produces the `updates.xml` file Chrome checks for auto-updates.
 ./scripts/generate-updates-xml.sh \
   -i abcdefghijklmnopabcdefghijklmnop \
   -v 1.7.5 \
-  -u https://cdn.autocr.nicx.app/releases/auto_coursera_1.7.5.crx
+  -u https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx
 
 # Write to file
 ./scripts/generate-updates-xml.sh -i <id> -v 1.7.5 -u <url> -o updates.xml

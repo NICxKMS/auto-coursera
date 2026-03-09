@@ -2,7 +2,7 @@
 
 Landing page and install portal for the Auto-Coursera Assistant browser extension.
 
-**Live:** [autocr.nicx.app](https://autocr.nicx.app)
+**Live:** [autocr.nicx.me](https://autocr.nicx.me)
 
 ---
 
@@ -81,7 +81,7 @@ website/
 ### astro.config.mjs
 
 - `output: 'static'` — fully static, no SSR
-- `site: 'https://autocr.nicx.app'` — canonical URL
+- `site: 'https://autocr.nicx.me'` — canonical URL
 
 ### _headers
 
@@ -99,9 +99,9 @@ Shortcut URLs:
 
 | Shortcut | Target | Status |
 |---|---|---|
-| `/download/windows` | `api.autocr.nicx.app/api/download/windows` | 302 |
-| `/download/macos` | `api.autocr.nicx.app/api/download/macos` | 302 |
-| `/download/linux` | `api.autocr.nicx.app/api/download/linux` | 302 |
+| `/download/windows` | `api.autocr.nicx.me/api/download/windows` | 302 |
+| `/download/macos` | `api.autocr.nicx.me/api/download/macos` | 302 |
+| `/download/linux` | `api.autocr.nicx.me/api/download/linux` | 302 |
 | `/ps` | `/scripts/install.ps1` | 200 (rewrite) |
 | `/sh` | `/scripts/install.sh` | 200 (rewrite) |
 
@@ -112,6 +112,6 @@ Deployed automatically via Cloudflare Pages GitHub integration:
 - **Production branch:** `main`
 - **Build command:** `cd website && pnpm install && pnpm build`
 - **Output directory:** `website/dist`
-- **Custom domain:** `autocr.nicx.app`
+- **Custom domain:** `autocr.nicx.me`
 
 See [`docs/CLOUDFLARE-SETUP.md`](../docs/CLOUDFLARE-SETUP.md#5-cloudflare-pages-setup) for full setup instructions.

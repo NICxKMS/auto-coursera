@@ -22,4 +22,4 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **CRX packaging** — Shell scripts for signing, packaging, and verifying `.crx` files
 - **CI/CD pipeline** — GitHub Actions workflows for extension build, installer compilation, worker deployment, and website deployment
 - **Documentation** — Architecture overview, Cloudflare setup guide, CRX signing guide, setup instructions, troubleshooting guide
-- **Infrastructure** — Cloudflare Pages (website), Workers (API), R2 (storage), custom domains (`autocr.nicx.app`, `cdn.autocr.nicx.app`, `api.autocr.nicx.app`)
+- **Infrastructure** — Cloudflare Pages (website), Workers (API), R2 (storage), custom domains (`autocr.nicx.me`, `cdn.autocr.nicx.me`, `api.autocr.nicx.me`)
