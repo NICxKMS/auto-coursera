@@ -9,6 +9,8 @@ dist/
 extension-key.pem
 website/.astro/
 installer/dist/
+installer/installer
+installer/installer.exe
 sample.html
 sample.2.html
 *.js.map

@@ -1,6 +1,6 @@
 # Auto-Coursera Website
 
-Landing page and install portal for the Auto-Coursera Assistant browser extension.
+Installer-first landing page, download portal, and documentation hub for the Auto-Coursera Assistant browser extension.
 
 **Live:** [autocr.nicx.me](https://autocr.nicx.me)
 
@@ -28,13 +28,13 @@ pnpm preview      # Preview production build locally
 | Route | File | Description |
 |---|---|---|
 | `/` | `src/pages/index.astro` | Landing page — hero, features, CTA |
-| `/install` | `src/pages/install.astro` | OS detection, installer downloads, terminal one-liners |
-| `/downloads` | `src/pages/downloads.astro` | All binaries with version, size, checksums |
+| `/install` | `src/pages/install.astro` | OS detection, recommended installer downloads, advanced terminal one-liners |
+| `/downloads` | `src/pages/downloads.astro` | Native installers first, plus advanced scripts and direct download shortcuts |
 | `/releases` | `src/pages/releases.astro` | Version history fetched from API |
 | `/support` | `src/pages/support.astro` | Help and contact info |
 | `/privacy` | `src/pages/privacy.astro` | Privacy policy |
 | `/docs/` | `src/pages/docs/index.astro` | Documentation index |
-| `/docs/manual` | `src/pages/docs/manual.astro` | Manual installation steps |
+| `/docs/manual` | `src/pages/docs/manual.astro` | Advanced browser-policy installation steps |
 | `/docs/troubleshoot` | `src/pages/docs/troubleshoot.astro` | Troubleshooting guide |
 
 ## Components
@@ -46,7 +46,6 @@ pnpm preview      # Preview production build locally
 | `InstallButton.astro` | OS-specific download button |
 | `ScriptBlock.astro` | Copy-to-clipboard terminal one-liner |
 | `OSDetector.astro` | Client-side OS detection for smart defaults |
-| `ReleaseCard.astro` | Version release entry |
 | `VersionBadge.astro` | Fetches & displays current version from API |
 
 ## Project Structure
@@ -62,14 +61,14 @@ website/
 │   └── styles/
 │       └── global.css   # Global styles + Tailwind imports
 ├── public/
+│   ├── _headers         # Cloudflare Pages security headers
+│   ├── _redirects       # Cloudflare Pages redirect shortcuts
 │   └── scripts/         # Static install scripts (served as text/plain)
 │       ├── install.ps1
 │       ├── install.sh
 │       ├── install-mac.sh
 │       ├── uninstall.ps1
 │       └── uninstall.sh
-├── _headers             # Cloudflare Pages security headers (HSTS, CSP)
-├── _redirects           # Shortcut redirects (/download/windows → API)
 ├── astro.config.mjs     # Astro config (static output, site URL)
 ├── tailwind.config.mjs  # Tailwind theme + custom colors
 ├── tsconfig.json
@@ -83,7 +82,7 @@ website/
 - `output: 'static'` — fully static, no SSR
 - `site: 'https://autocr.nicx.me'` — canonical URL
 
-### _headers
+### public/_headers
 
 Security headers applied to all routes:
 
@@ -93,15 +92,15 @@ Security headers applied to all routes:
 
 Scripts under `/scripts/*` are served as `text/plain` so `curl` users see raw content.
 
-### _redirects
+### public/_redirects
 
 Shortcut URLs:
 
 | Shortcut | Target | Status |
 |---|---|---|
-| `/download/windows` | `api.autocr.nicx.me/api/download/windows` | 302 |
-| `/download/macos` | `api.autocr.nicx.me/api/download/macos` | 302 |
-| `/download/linux` | `api.autocr.nicx.me/api/download/linux` | 302 |
+| `/download/windows` | `autocr-api.nicx.me/api/download/windows` | 302 |
+| `/download/macos` | `autocr-api.nicx.me/api/download/macos` | 302 |
+| `/download/linux` | `autocr-api.nicx.me/api/download/linux` | 302 |
 | `/ps` | `/scripts/install.ps1` | 200 (rewrite) |
 | `/sh` | `/scripts/install.sh` | 200 (rewrite) |
 
@@ -109,9 +108,11 @@ Shortcut URLs:
 
 Deployed automatically via Cloudflare Pages GitHub integration:
 
-- **Production branch:** `main`
+- **Production branch:** `master`
 - **Build command:** `cd website && pnpm install && pnpm build`
 - **Output directory:** `website/dist`
 - **Custom domain:** `autocr.nicx.me`
 
-See [`docs/CLOUDFLARE-SETUP.md`](../docs/CLOUDFLARE-SETUP.md#5-cloudflare-pages-setup) for full setup instructions.
+See [`docs/CLOUDFLARE-SETUP.md`](../docs/CLOUDFLARE-SETUP.md#2-cloudflare-pages-setup) for full setup instructions.
+
+The website keeps native installers as the default path. Terminal scripts and `/docs/manual` exist for advanced/manual deployments, and all three paths target the same supported browser set: Google Chrome, Microsoft Edge, Brave, and Chromium.

@@ -9,46 +9,41 @@
 <body>
   <div class="popup-container">
     <header class="popup-header">
-      <h1>Auto-Coursera</h1>
+      <h1>🎓 Auto-Coursera</h1>
       <label class="toggle">
         <input type="checkbox" id="enableToggle" aria-label="Enable or disable extension">
         <span class="slider"></span>
       </label>
     </header>
-    <div class="status-section">
+
+    <!-- Context: Coursera page -->
+    <div id="courseraContext" class="context-section" style="display:none">
       <div class="status-indicator" id="statusIndicator">
         <span class="status-dot"></span>
         <span class="status-text" id="statusText">Idle</span>
       </div>
-
-      <!-- Error banner — hidden by default, clicking anywhere copies the error -->
-      <div class="error-banner" id="errorBanner" style="display: none;" title="Click to copy error">
+      <div class="error-banner" id="errorBanner" style="display:none" title="Click to copy error">
         <div class="error-content">
           <span class="error-icon">⚠️</span>
           <span class="error-text" id="errorText">Unknown error</span>
         </div>
-        <button type="button" class="error-copy-btn" id="errorCopyBtn">📋 Copy Error</button>
+        <button type="button" class="error-copy-btn" id="errorCopyBtn">📋 Copy</button>
       </div>
-
-      <div class="provider-info" id="providerInfo">
-        <span>Provider: <strong id="providerName">--</strong></span>
-        <span>Model: <strong id="modelName">--</strong></span>
+      <div class="session-stats" id="sessionStats">
+        <span class="stat-item stat-item--success">✓ <strong id="solvedCount">0</strong></span>
+        <span class="stat-item stat-item--error">✗ <strong id="failedCount">0</strong></span>
+        <span class="stat-item stat-item--info">🪙 <strong id="tokenCount">0</strong></span>
       </div>
-      <div class="confidence-display" id="confidenceDisplay">
-        <span>Last Confidence: <strong id="confidenceValue">--</strong></span>
+      <div class="actions-section">
+        <button type="button" class="action-btn" id="scanBtn" title="Re-scan page for questions">🔍 Scan</button>
+        <button type="button" class="action-btn" id="retryBtn" title="Retry failed questions">🔄 Retry</button>
       </div>
     </div>
 
-    <div class="session-stats" id="sessionStats">
-      <span>Solved: <strong id="solvedCount">0</strong></span>
-      <span>Failed: <strong id="failedCount">0</strong></span>
-      <span>Tokens: <strong id="tokenCount">0</strong></span>
-    </div>
-
-    <div class="actions-section">
-      <button type="button" class="action-btn" id="retryBtn" title="Retry last question">🔄 Retry</button>
-      <button type="button" class="action-btn" id="scanBtn" title="Re-scan page for questions">🔍 Scan Page</button>
-      <button type="button" class="action-btn" id="refreshBtn" title="Reset extension state (keeps API keys)">🔃 Refresh</button>
+    <!-- Context: Non-Coursera page -->
+    <div id="nonCourseraContext" class="context-section">
+      <p class="context-message">Navigate to a <strong>Coursera quiz</strong> to use this extension.</p>
+      <p class="context-hint">The floating widget will appear on Coursera pages.</p>
     </div>
 
     <footer class="popup-footer">

@@ -1,22 +1,29 @@
 /**
- * Popup UI logic — toggle, status, error display with copy, action buttons.
+ * Popup UI logic — slim fallback for non-Coursera pages and quick access.
+ * On Coursera pages, shows status, stats, and action buttons.
+ * On non-Coursera pages, shows a guidance message.
  * REQ: REQ-012
  */
 
+import {
+	getRuntimeStateForTab,
+	readRuntimeSessionSnapshot,
+	SESSION_RUNTIME_SCOPES_KEY,
+	SESSION_RUNTIME_TAB_SCOPES_KEY,
+} from '../types/runtime';
+import { getUserFriendlyError } from '../utils/error-messages';
 import { Logger } from '../utils/logger';
 
 const logger = new Logger('Popup');
+const STALE_ACTIVE_STATE_MS = 60_000;
 
-/** Maps primaryProvider value to its model settings key */
-const PROVIDER_MODEL_KEY: Record<string, string> = {
-	openrouter: 'openrouterModel',
-	'nvidia-nim': 'nvidiaModel',
-	gemini: 'geminiModel',
-	groq: 'groqModel',
-	cerebras: 'cerebrasModel',
-};
-
-const SETTINGS_DISPLAY_KEYS = ['primaryProvider', ...Object.values(PROVIDER_MODEL_KEY)];
+export interface PopupRuntimeSnapshot {
+	status: string;
+	lastError: string;
+	solvedCount: number;
+	failedCount: number;
+	tokenCount: number;
+}
 
 function getElement<T extends HTMLElement>(id: string): T {
 	const el = document.getElementById(id);
@@ -28,17 +35,72 @@ function getElement<T extends HTMLElement>(id: string): T {
 let enableToggle: HTMLInputElement;
 let statusText: HTMLElement;
 let statusDot: HTMLElement;
-let providerName: HTMLElement;
-let modelName: HTMLElement;
-let confidenceValue: HTMLElement;
-let openOptionsLink: HTMLElement;
+let courseraContext: HTMLElement;
+let nonCourseraContext: HTMLElement;
 let errorBanner: HTMLElement;
 let errorText: HTMLElement;
 let errorCopyBtn: HTMLButtonElement;
 let retryBtn: HTMLButtonElement;
 let scanBtn: HTMLButtonElement;
-let refreshBtn: HTMLButtonElement;
+let openOptionsLink: HTMLElement;
 let copyResetTimeout: ReturnType<typeof setTimeout> | null = null;
+
+/** Whether the active tab is a Coursera page */
+let isOnCoursera = false;
+let activeTabId: number | null = null;
+
+export function getPopupRuntimeSnapshot(
+	sessionData: Record<string, unknown>,
+	tabId: number | null,
+	enabled: boolean,
+): PopupRuntimeSnapshot {
+	if (!enabled) {
+		return {
+			status: 'disabled',
+			lastError: '',
+			solvedCount: 0,
+			failedCount: 0,
+			tokenCount: 0,
+		};
+	}
+
+	if (tabId === null) {
+		return {
+			status: 'idle',
+			lastError: '',
+			solvedCount: 0,
+			failedCount: 0,
+			tokenCount: 0,
+		};
+	}
+
+	const snapshot = readRuntimeSessionSnapshot(sessionData);
+	const runtimeState = getRuntimeStateForTab(snapshot, tabId);
+	if (!runtimeState) {
+		return {
+			status: 'idle',
+			lastError: '',
+			solvedCount: 0,
+			failedCount: 0,
+			tokenCount: 0,
+		};
+	}
+
+	const status =
+		runtimeState.status === 'active' &&
+		runtimeState.updatedAt > 0 &&
+		Date.now() - runtimeState.updatedAt > STALE_ACTIVE_STATE_MS
+			? 'idle'
+			: runtimeState.status;
+
+	return {
+		status,
+		lastError: runtimeState.lastError,
+		solvedCount: runtimeState.solvedCount,
+		failedCount: runtimeState.failedCount,
+		tokenCount: runtimeState.tokenCount,
+	};
+}
 
 async function init(): Promise<void> {
 	// Get DOM references
@@ -47,26 +109,42 @@ async function init(): Promise<void> {
 	const dot = document.querySelector('.status-dot');
 	if (!dot) throw new Error('Element .status-dot not found');
 	statusDot = dot as HTMLElement;
-	providerName = getElement<HTMLElement>('providerName');
-	modelName = getElement<HTMLElement>('modelName');
-	confidenceValue = getElement<HTMLElement>('confidenceValue');
-	openOptionsLink = getElement<HTMLElement>('openOptions');
+	courseraContext = getElement<HTMLElement>('courseraContext');
+	nonCourseraContext = getElement<HTMLElement>('nonCourseraContext');
 	errorBanner = getElement<HTMLElement>('errorBanner');
 	errorText = getElement<HTMLElement>('errorText');
 	errorCopyBtn = getElement<HTMLButtonElement>('errorCopyBtn');
 	retryBtn = getElement<HTMLButtonElement>('retryBtn');
 	scanBtn = getElement<HTMLButtonElement>('scanBtn');
-	refreshBtn = getElement<HTMLButtonElement>('refreshBtn');
+	openOptionsLink = getElement<HTMLElement>('openOptions');
+
+	// Detect context — is the user on a Coursera page?
+	await detectContext();
 
 	// Load current state
-	await loadStatus();
-	await loadSessionStats();
+	await refreshPopupRuntime();
 
 	// Event listeners
 	enableToggle.addEventListener('change', handleToggle);
-	openOptionsLink.addEventListener('click', (e) => {
+	openOptionsLink.addEventListener('click', async (e) => {
 		e.preventDefault();
-		chrome.runtime.openOptionsPage();
+		if (isOnCoursera) {
+			try {
+				const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+				if (tab?.id) {
+					const response = await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_SETTINGS' });
+					if (response?.success) {
+						window.close();
+					} else {
+						chrome.runtime.openOptionsPage();
+					}
+				}
+			} catch {
+				chrome.runtime.openOptionsPage();
+			}
+		} else {
+			chrome.runtime.openOptionsPage();
+		}
 	});
 
 	// Clicking anywhere on banner (including copy button) copies error
@@ -75,7 +153,6 @@ async function init(): Promise<void> {
 	// Action buttons
 	retryBtn.addEventListener('click', handleRetry);
 	scanBtn.addEventListener('click', handleScanPage);
-	refreshBtn.addEventListener('click', handleRefresh);
 
 	// Listen for storage changes to update in real-time
 	chrome.storage.onChanged.addListener(handleStorageChange);
@@ -83,123 +160,21 @@ async function init(): Promise<void> {
 	logger.info('Popup initialized');
 }
 
-async function loadStatus(): Promise<void> {
-	// Clean up any previous onboarding hint to restore status elements
-	const oldHint = document.getElementById('onboardingHint');
-	if (oldHint) {
-		oldHint.remove();
-		statusDot.style.display = '';
-		statusText.style.display = '';
+/** Detect whether the active tab is on coursera.org and show the appropriate context */
+async function detectContext(): Promise<void> {
+	try {
+		const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+		activeTabId = typeof tab?.id === 'number' ? tab.id : null;
+		isOnCoursera = /^https:\/\/www\.coursera\.org\//.test(tab?.url ?? '');
+	} catch {
+		activeTabId = null;
+		isOnCoursera = false;
 	}
-
-	const [localData, sessionData] = await Promise.all([
-		chrome.storage.local.get({
-			enabled: false,
-			openrouterApiKey: '',
-			nvidiaApiKey: '',
-			geminiApiKey: '',
-			groqApiKey: '',
-			cerebrasApiKey: '',
-			primaryProvider: 'openrouter',
-			openrouterModel: '',
-			nvidiaModel: '',
-			geminiModel: '',
-			groqModel: '',
-			cerebrasModel: '',
-		}),
-		chrome.storage.session.get({
-			_lastProvider: '--',
-			_lastModel: '--',
-			_lastConfidence: null,
-			_lastStatus: 'idle',
-			_lastError: '',
-			_lastStatusTimestamp: 0,
-		}),
-	]);
-
-	// Detect stale 'active' status (e.g. SW terminated while active)
-	let status = sessionData._lastStatus as string;
-	const timestamp = sessionData._lastStatusTimestamp as number;
-	if (status === 'active' && timestamp > 0 && Date.now() - timestamp > 60_000) {
-		status = 'idle';
-		chrome.storage.session.set({ _lastStatus: 'idle' }).catch(() => {});
-	}
-
-	enableToggle.checked = localData.enabled as boolean;
-	updateStatusDisplay(status, localData.enabled as boolean);
-	updateButtonState(localData.enabled as boolean);
-	// Show last-used provider/model if available, otherwise show configured settings
-	const sessionProvider = sessionData._lastProvider as string;
-	const sessionModel = sessionData._lastModel as string;
-	const configuredProvider = localData.primaryProvider as string;
-	const modelKey = PROVIDER_MODEL_KEY[configuredProvider];
-	const configuredModel = modelKey ? (localData[modelKey] as string) : '';
-
-	providerName.textContent =
-		sessionProvider && sessionProvider !== '--' ? sessionProvider : configuredProvider || '--';
-	modelName.textContent =
-		sessionModel && sessionModel !== '--' ? sessionModel : configuredModel || '--';
-	confidenceValue.textContent =
-		sessionData._lastConfidence !== null
-			? (sessionData._lastConfidence as number).toFixed(2)
-			: '--';
-
-	updateErrorBanner(sessionData._lastError as string, sessionData._lastStatus as string);
-
-	// H-3: Onboarding — check if API keys are configured
-	if (!sessionData._lastProvider || status === 'idle') {
-		if (
-			!localData.openrouterApiKey &&
-			!localData.nvidiaApiKey &&
-			!localData.geminiApiKey &&
-			!localData.groqApiKey &&
-			!localData.cerebrasApiKey
-		) {
-			const statusDiv = document.getElementById('statusIndicator');
-			if (statusDiv && !document.getElementById('onboardingHint')) {
-				// Hide status elements without destroying them
-				statusDot.style.display = 'none';
-				statusText.style.display = 'none';
-				const span = document.createElement('span');
-				span.id = 'onboardingHint';
-				span.style.color = '#eab308';
-				span.append('\u2699\uFE0F Setup needed \u2014 ');
-				const link = document.createElement('a');
-				link.href = '#';
-				link.textContent = 'Configure API keys';
-				link.addEventListener('click', (e) => {
-					e.preventDefault();
-					chrome.runtime.openOptionsPage();
-				});
-				span.appendChild(link);
-				span.append(' to get started');
-				statusDiv.appendChild(span);
-			}
-		}
-	}
+	courseraContext.style.display = isOnCoursera ? 'block' : 'none';
+	nonCourseraContext.style.display = isOnCoursera ? 'none' : 'block';
 }
 
-// Issue 6: Error pattern → user-friendly message
-const ERROR_PATTERNS: [RegExp, string][] = [
-	[/NO_API_KEY/i, 'Please add an API key in Settings to get started.'],
-	[/RATE_LIMITED|429|rate.?limit/i, 'Too many requests \u2014 please wait a moment and try again.'],
-	[/AUTH_FAILED|40[13]/i, 'Your API key is invalid or expired. Check Settings.'],
-	[
-		/ALL_PROVIDERS_FAILED/i,
-		'Could not connect to any AI provider. Check your internet and API keys.',
-	],
-	[/SOLVE_FAILED/i, 'Failed to solve this question. Try again or check Settings.'],
-];
-
-function getUserFriendlyError(rawError: string): string {
-	return (
-		ERROR_PATTERNS.find(([p]) => p.test(rawError))?.[1] ??
-		'Something went wrong. Check the popup for details.'
-	);
-}
-
-async function loadSessionStats(): Promise<void> {
-	const data = await chrome.storage.session.get({ solvedCount: 0, failedCount: 0, tokenCount: 0 });
+function renderSessionStats(data: PopupRuntimeSnapshot): void {
 	const solved = document.getElementById('solvedCount');
 	const failed = document.getElementById('failedCount');
 	const tokens = document.getElementById('tokenCount');
@@ -208,12 +183,34 @@ async function loadSessionStats(): Promise<void> {
 	if (tokens) tokens.textContent = String(data.tokenCount);
 }
 
+async function refreshPopupRuntime(): Promise<void> {
+	const [localData, sessionData] = await Promise.all([
+		chrome.storage.local.get({ enabled: false }),
+		chrome.storage.session.get({
+			[SESSION_RUNTIME_SCOPES_KEY]: {},
+			[SESSION_RUNTIME_TAB_SCOPES_KEY]: {},
+		}),
+	]);
+
+	const enabled = localData.enabled as boolean;
+	const runtime = getPopupRuntimeSnapshot(
+		sessionData as Record<string, unknown>,
+		activeTabId,
+		enabled,
+	);
+
+	enableToggle.checked = enabled;
+	updateStatusDisplay(runtime.status, enabled);
+	updateButtonState(enabled);
+	updateErrorBanner(runtime.lastError, runtime.status);
+	renderSessionStats(runtime);
+}
+
 async function handleToggle(): Promise<void> {
 	const enabled = enableToggle.checked;
 	try {
 		await chrome.runtime.sendMessage({ type: 'SET_ENABLED', payload: enabled });
-		await loadStatus();
-		updateButtonState(enabled);
+		await refreshPopupRuntime();
 	} catch (err) {
 		// Revert toggle to match actual stored state
 		logger.error('Toggle failed', err);
@@ -223,7 +220,7 @@ async function handleToggle(): Promise<void> {
 
 const STATUS_MAP: Record<string, [string, string?]> = {
 	active: ['Done', 'active'],
-	processing: ['Processing...', 'active'],
+	processing: ['Processing...', 'processing'],
 	error: ['Error', 'error'],
 };
 
@@ -272,7 +269,7 @@ async function handleCopyError(): Promise<void> {
 	errorCopyBtn.classList.add('copied');
 	if (copyResetTimeout) clearTimeout(copyResetTimeout);
 	copyResetTimeout = setTimeout(() => {
-		errorCopyBtn.textContent = '📋 Copy Error';
+		errorCopyBtn.textContent = '📋 Copy';
 		errorCopyBtn.classList.remove('copied');
 		copyResetTimeout = null;
 	}, 2000);
@@ -309,27 +306,7 @@ async function sendTabAction(
 }
 
 const handleRetry = () => sendTabAction(retryBtn, 'RETRY_QUESTIONS', '🔄 Retry');
-const handleScanPage = () => sendTabAction(scanBtn, 'SCAN_PAGE', '🔍 Scan Page');
-
-async function handleRefresh(): Promise<void> {
-	refreshBtn.textContent = '⏳...';
-	refreshBtn.disabled = true;
-	try {
-		const response = await chrome.runtime.sendMessage({ type: 'RESET_EXTENSION' });
-		if (response?.type === 'ERROR') {
-			logger.error('Reset failed', response.payload);
-		} else {
-			await loadStatus();
-			await loadSessionStats();
-		}
-	} catch (err) {
-		logger.error('Reset message failed', err);
-	}
-	setTimeout(() => {
-		refreshBtn.textContent = '🔃 Refresh';
-		refreshBtn.disabled = false;
-	}, 1500);
-}
+const handleScanPage = () => sendTabAction(scanBtn, 'SCAN_PAGE', '🔍 Scan');
 
 function handleStorageChange(
 	changes: { [key: string]: chrome.storage.StorageChange },
@@ -340,47 +317,19 @@ function handleStorageChange(
 			const newEnabled = changes.enabled.newValue as boolean;
 			enableToggle.checked = newEnabled;
 			updateButtonState(newEnabled);
-			// Full reload to sync status display with actual session state
-			loadStatus().catch((err) => logger.error('Enabled change refresh failed', err));
-		}
-		// When provider/model settings change, refresh the display
-		if (SETTINGS_DISPLAY_KEYS.some((key) => key in changes)) {
-			loadStatus().catch((err) => logger.error('Settings refresh failed', err));
-			return;
+			refreshPopupRuntime().catch((err) => logger.error('Enabled change refresh failed', err));
 		}
 	}
-	// Status fields are in session storage
 	if (areaName === 'session') {
-		if (changes._lastProvider) {
-			providerName.textContent = (changes._lastProvider.newValue as string) || '--';
-		}
-		if (changes._lastModel) {
-			modelName.textContent = (changes._lastModel.newValue as string) || '--';
-		}
-		if (changes._lastConfidence) {
-			const conf = changes._lastConfidence.newValue as number | null;
-			confidenceValue.textContent = conf !== null ? conf.toFixed(2) : '--';
-		}
-		// Update session stats on change
-		if (changes.solvedCount || changes.failedCount || changes.tokenCount) {
-			loadSessionStats().catch((err) => logger.error('Session stats update failed', err));
-		}
-		if (changes._lastStatus || changes._lastError) {
-			Promise.all([
-				chrome.storage.local.get({ enabled: false }),
-				chrome.storage.session.get({ _lastStatus: 'idle', _lastError: '' }),
-			])
-				.then(([localData, sessionData]) => {
-					updateStatusDisplay(sessionData._lastStatus as string, localData.enabled as boolean);
-					updateButtonState(localData.enabled as boolean);
-					updateErrorBanner(sessionData._lastError as string, sessionData._lastStatus as string);
-				})
-				.catch((err) => logger.error('Status update failed', err));
+		if (changes[SESSION_RUNTIME_SCOPES_KEY] || changes[SESSION_RUNTIME_TAB_SCOPES_KEY]) {
+			refreshPopupRuntime().catch((err) => logger.error('Runtime update failed', err));
 		}
 	}
 }
 
 // Bootstrap
-document.addEventListener('DOMContentLoaded', () => {
-	init().catch((err) => logger.error('Popup init failed', err));
-});
+if (typeof document !== 'undefined') {
+	document.addEventListener('DOMContentLoaded', () => {
+		init().catch((err) => logger.error('Popup init failed', err));
+	});
+}

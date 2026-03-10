@@ -8,10 +8,10 @@
 
 - [Extension not appearing after install](#1-extension-not-appearing-after-install)
 - [CRX download fails](#2-crx-download-fails)
-- [updates.xml returns 404](#3-updatesxml-returns-404)
+- [updates.xml returns 404 or wrong content](#3-updatesxml-returns-404-or-wrong-content)
 - [CORS errors on API](#4-cors-errors-on-api)
 - [Worker deployment fails](#5-worker-deployment-fails)
-- [R2 access denied](#6-r2-access-denied)
+- [GitHub API rate limited or unreachable](#6-github-api-rate-limited-or-unreachable)
 - [GitHub Actions fails](#7-github-actions-fails)
 - [Extension ID mismatch](#8-extension-id-mismatch)
 - [Browser not reading policy](#9-browser-not-reading-policy)
@@ -57,7 +57,7 @@ Open the browser and navigate to:
 Look for `ExtensionInstallForcelist` in the policy table. Its value should be:
 
 ```
-alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.me/updates.xml
+alojpdnpiddmekflpagdblmaehbdfcge;https://autocr-cdn.nicx.me/updates.xml
 ```
 
 If the policy does not appear, see issue [#9: Browser not reading policy](#9-browser-not-reading-policy).
@@ -66,7 +66,7 @@ If the policy does not appear, see issue [#9: Browser not reading policy](#9-bro
 
 Navigate to `chrome://extensions` (or the browser's equivalent). If the extension appears but is disabled or has errors, check for:
 
-- "Download error" — the browser could not reach `cdn.autocr.nicx.me` (see issue [#2](#2-crx-download-fails))
+- "Download error" — the browser could not reach `autocr-cdn.nicx.me` (see issue [#2](#2-crx-download-fails))
 - "CRX verification failed" — the CRX was signed with a different key than the extension ID in the policy (see issue [#8](#8-extension-id-mismatch))
 
 **Step 4: Wait.**
@@ -88,113 +88,163 @@ The browser shows the extension in `chrome://extensions` with a "Download error"
 
 ### Cause
 
-The CRX file is not accessible at the URL specified in `updates.xml`. Possible reasons:
+The CRX file is not accessible at the URL specified in `updates.xml`. In the current architecture, `autocr-cdn.nicx.me/releases/*.crx` is served by the Cloudflare Worker, which returns a **302 redirect** to GitHub Releases. Possible reasons:
 
-- The `extensions-bucket` R2 bucket does not contain the CRX file
-- The custom domain `cdn.autocr.nicx.me` is not configured
-- DNS has not propagated
-- SSL certificate is not provisioned
+- The CRX asset was not uploaded to the GitHub Release
+- The GitHub Release tag does not exist
+- The GitHub repository is private or inaccessible
+- The Worker is not deployed or the CDN route is misconfigured
+- DNS for `autocr-cdn.nicx.me` has not propagated
 
 ### Fix
 
-**Step 1: Check if the CRX file exists in R2.**
+**Step 1: Check if the CRX file exists on GitHub Releases.**
 
 ```bash
-wrangler r2 object list extensions-bucket --prefix releases/
+# List assets for the latest release
+gh release view --repo NICxKMS/auto-coursera --json assets \
+  --jq '.assets[].name' | grep '.crx'
+
+# Or check a specific version
+gh release view v1.8.0 --repo NICxKMS/auto-coursera --json assets \
+  --jq '.assets[].name'
 ```
 
-You should see files like `releases/auto_coursera_1.7.5.crx`.
+If `gh` CLI is not installed, check manually at:
 
-**Step 2: Check the custom domain.**
+```
+https://github.com/NICxKMS/auto-coursera/releases
+```
+
+You should see files like `auto_coursera_1.8.0.crx` and `auto_coursera_1.8.0.crx.sha256` attached to the release.
+
+**Step 2: Test the CDN redirect chain.**
+
+The Worker redirects `/releases/*.crx` to GitHub Releases via 302:
 
 ```bash
-curl -I https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx
+# Check the redirect (should return 302 → GitHub)
+curl -sI https://autocr-cdn.nicx.me/releases/auto_coursera_1.8.0.crx
 ```
 
-Expected: `200 OK` with the file. If you get:
+Expected:
 
-- **404 Not Found** — the file path is wrong or the file does not exist in the bucket
-- **403 Forbidden** — custom domain is not properly connected to the bucket
-- **DNS resolution error** — the CNAME record is missing or not propagated
+```
+HTTP/2 302
+location: https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx
+cache-control: public, max-age=86400
+```
+
+If you get:
+
+- **404 Not Found** — the filename does not match the expected pattern (`auto_coursera_X.Y.Z.crx`)
+- **DNS resolution error** — the Worker route or DNS record is misconfigured (see [CLOUDFLARE-SETUP.md](./CLOUDFLARE-SETUP.md#4-dns-configuration))
 - **SSL error** — certificate not provisioned yet (wait a few minutes)
 
-**Step 3: Verify the CORS configuration.**
+**Step 3: Verify the final GitHub download works.**
 
 ```bash
-curl -I -H "Origin: https://autocr.nicx.me" \
-  https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx
+# Follow the redirect and download
+curl -sIL https://autocr-cdn.nicx.me/releases/auto_coursera_1.8.0.crx | head -10
 ```
 
-CORS headers should be present if configured (see [CLOUDFLARE-SETUP.md](./CLOUDFLARE-SETUP.md#4-r2-cors-configuration)).
-
-**Step 4: Check updates.xml URL is correct.**
+If the redirect succeeds but the GitHub URL returns 404, the asset was not uploaded to the release. Re-run the CI pipeline or upload manually:
 
 ```bash
-curl https://cdn.autocr.nicx.me/updates.xml
+gh release upload v1.8.0 auto_coursera_1.8.0.crx \
+  --repo NICxKMS/auto-coursera
 ```
 
-Verify the `codebase` attribute points to the correct CRX URL and version.
+**Step 4: Check updates.xml points to the correct version and URL.**
+
+```bash
+curl -s https://autocr-cdn.nicx.me/updates.xml
+```
+
+The `codebase` attribute should point to a GitHub Releases URL.
 
 ### Verify
 
 ```bash
-curl -sI https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx | head -5
+# Full chain: CDN → 302 → GitHub → 200
+curl -sIL https://autocr-cdn.nicx.me/releases/auto_coursera_1.8.0.crx | grep -E "^HTTP|^location"
+# HTTP/2 302
+# location: https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx
 # HTTP/2 200
-# content-type: application/octet-stream
 ```
 
 ---
 
-## 3. updates.xml returns 404
+## 3. updates.xml returns 404 or wrong content
 
 ### Symptom
 
-Fetching `https://cdn.autocr.nicx.me/updates.xml` returns 404. The browser cannot discover extension updates.
+Fetching `https://autocr-cdn.nicx.me/updates.xml` returns 404, an error page, or XML with incorrect content. The browser cannot discover extension updates.
 
 ### Cause
 
-The `updates.xml` file has not been uploaded to the R2 bucket, or it was uploaded to the wrong path.
+The `updates.xml` endpoint is **dynamically generated** by the Cloudflare Worker using environment variables (`EXTENSION_ID`, `CURRENT_VERSION`, `GITHUB_REPO`). It is not a static file. Possible reasons:
+
+- The Worker is not deployed to the production environment
+- The CDN domain route (`autocr-cdn.nicx.me/*`) is not configured in `wrangler.toml`
+- The `CURRENT_VERSION` or `EXTENSION_ID` environment variables are wrong
+- DNS for `autocr-cdn.nicx.me` does not point to the Worker
 
 ### Fix
 
-**Step 1: Check if updates.xml exists in R2.**
+**Step 1: Check if the Worker is deployed and the CDN route is active.**
 
 ```bash
-wrangler r2 object list extensions-bucket --prefix updates
+wrangler deployments list --env production
 ```
 
-The file should be at the bucket root: `updates.xml` (not `releases/updates.xml` or any other path).
-
-**Step 2: Generate and upload manually (if missing).**
+Confirm the latest deployment is recent and successful. Then verify the route exists:
 
 ```bash
-bash scripts/generate-updates-xml.sh \
-  -i YOUR_EXTENSION_ID \
-  -v 1.7.5 \
-  -u https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx \
-  -o /tmp/updates.xml
-
-# Upload to bucket root
-wrangler r2 object put extensions-bucket/updates.xml --file /tmp/updates.xml \
-  --content-type "application/xml"
+# Check wrangler.toml for the CDN route
+grep -A2 'routes' workers/wrangler.toml
 ```
 
-**Step 3: Verify the custom domain resolves.**
+Expected:
 
-```bash
-curl https://cdn.autocr.nicx.me/updates.xml
+```toml
+[env.production]
+routes = [
+  { pattern = "autocr-api.nicx.me/*", zone_name = "nicx.me" },
+  { pattern = "autocr-cdn.nicx.me/*", zone_name = "nicx.me" }
+]
 ```
 
-Should return valid XML with the extension ID and version.
+Both domains must be listed. If the CDN route is missing, add it and redeploy.
 
-**Step 4: If using CI/CD, check the build logs.**
+**Step 2: Verify the Worker environment variables.**
 
-The `build-extension` workflow should upload `updates.xml` after building the CRX. Verify the workflow ran successfully and the upload step completed.
+The Worker generates `updates.xml` from these `Env` values:
 
-### Verify
+| Variable | Purpose | Example |
+|---|---|---|
+| `CURRENT_VERSION` | Version in the `<updatecheck>` tag | `1.8.0` |
+| `EXTENSION_ID` | The `appid` in the `<app>` tag | `alojpdnpiddmekflpagdblmaehbdfcge` |
+| `GITHUB_REPO` | Used to build the GitHub Releases codebase URL | `NICxKMS/auto-coursera` |
+
+Check values:
 
 ```bash
-curl -s https://cdn.autocr.nicx.me/updates.xml
+grep -E 'CURRENT_VERSION|EXTENSION_ID|GITHUB_REPO' workers/wrangler.toml
+```
+
+If `CURRENT_VERSION` does not match the latest release, update it and redeploy:
+
+```bash
+cd workers
+# Edit wrangler.toml with the correct version
+wrangler deploy --env production
+```
+
+**Step 3: Test the endpoint directly.**
+
+```bash
+curl -s https://autocr-cdn.nicx.me/updates.xml
 ```
 
 Expected output:
@@ -202,10 +252,30 @@ Expected output:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <gupdate xmlns="http://www.google.com/update2/response" protocol="2.0">
-  <app appid="your-extension-id-here">
-    <updatecheck codebase="https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx" version="1.7.5"/>
+  <app appid="alojpdnpiddmekflpagdblmaehbdfcge">
+    <updatecheck codebase="https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx" version="1.8.0"/>
   </app>
 </gupdate>
+```
+
+Key things to verify:
+
+- `appid` matches the extension ID derived from the signing key
+- `codebase` points to a GitHub Releases download URL (not an R2 URL)
+- `version` matches the latest release
+
+**Step 4: If using CI/CD, check the deploy-worker job.**
+
+The `deploy.yml` workflow deploys the Worker after the GitHub Release is created. Verify:
+
+1. The `deploy-worker` job ran successfully
+2. `CURRENT_VERSION` in `wrangler.toml` was bumped before tagging
+
+### Verify
+
+```bash
+curl -s https://autocr-cdn.nicx.me/updates.xml | grep -oP 'version="\K[^"]+'
+# Should return the current version, e.g., 1.8.0
 ```
 
 ---
@@ -217,7 +287,7 @@ Expected output:
 The website shows errors in the browser console like:
 
 ```
-Access to fetch at 'https://api.autocr.nicx.me/api/latest-version' from origin
+Access to fetch at 'https://autocr-api.nicx.me/api/latest-version' from origin
 'https://autocr.nicx.me' has been blocked by CORS policy: No
 'Access-Control-Allow-Origin' header is present on the requested resource.
 ```
@@ -245,7 +315,7 @@ The value must exactly match the website origin — including the `https://` sch
 
 ```bash
 curl -sI -H "Origin: https://autocr.nicx.me" \
-  https://api.autocr.nicx.me/api/latest-version
+  https://autocr-api.nicx.me/api/latest-version
 ```
 
 The response should include:
@@ -263,7 +333,7 @@ If these headers are missing, the Worker is not applying CORS correctly.
 curl -sI -X OPTIONS \
   -H "Origin: https://autocr.nicx.me" \
   -H "Access-Control-Request-Method: GET" \
-  https://api.autocr.nicx.me/api/latest-version
+  https://autocr-api.nicx.me/api/latest-version
 ```
 
 Should return `204 No Content` with CORS headers.
@@ -288,16 +358,16 @@ Open the website in a browser, open DevTools (F12) → Network tab, and confirm 
 Running `wrangler deploy` fails with an error. Common error messages:
 
 - `Authentication error` or `Code: 10000`
-- `R2 bucket not found`
 - `Could not route to ... no zone found`
+- TypeScript compilation errors
 
 ### Cause
 
 | Error | Cause |
 |---|---|
 | Authentication error | Invalid or missing API token. Wrangler is not logged in. |
-| R2 bucket not found | The bucket name in `wrangler.toml` does not match an existing bucket |
 | No zone found | The `zone_name` in the route configuration does not match your Cloudflare zone |
+| TypeScript errors | Source code issue — check the specific file and line |
 
 ### Fix
 
@@ -312,18 +382,6 @@ export CLOUDFLARE_API_TOKEN="your-token-here"
 wrangler deploy
 ```
 
-**R2 bucket not found:**
-
-```bash
-# List existing buckets
-wrangler r2 bucket list
-
-# Check wrangler.toml bucket names match
-grep bucket_name workers/wrangler.toml
-```
-
-Ensure the `bucket_name` values in `wrangler.toml` exactly match the R2 bucket names.
-
 **No zone found:**
 
 Check the `zone_name` in `workers/wrangler.toml`:
@@ -331,11 +389,27 @@ Check the `zone_name` in `workers/wrangler.toml`:
 ```toml
 [env.production]
 routes = [
-  { pattern = "api.autocr.nicx.me/*", zone_name = "nicx.me" }
+  { pattern = "autocr-api.nicx.me/*", zone_name = "nicx.me" },
+  { pattern = "autocr-cdn.nicx.me/*", zone_name = "nicx.me" }
 ]
 ```
 
-The `zone_name` must match the domain added to your Cloudflare account. Verify the domain is active in Cloudflare Dashboard → **Websites**.
+The `zone_name` must match the domain added to your Cloudflare account. Verify the domain is active in Cloudflare Dashboard → **Websites**. Both `autocr-api.nicx.me` and `autocr-cdn.nicx.me` routes must be present for dual-domain routing.
+
+**Check Worker environment variables:**
+
+The Worker requires these variables in `wrangler.toml`:
+
+```toml
+[vars]
+EXTENSION_ID = "alojpdnpiddmekflpagdblmaehbdfcge"
+CURRENT_VERSION = "1.8.0"
+ALLOWED_ORIGIN = "https://autocr.nicx.me"
+CDN_BASE_URL = "https://autocr-cdn.nicx.me"
+GITHUB_REPO = "NICxKMS/auto-coursera"
+```
+
+If any are missing, the Worker compiles but routes fail at runtime.
 
 ### Verify
 
@@ -349,55 +423,75 @@ wrangler deploy --env production
 
 ---
 
-## 6. R2 access denied
+## 6. GitHub API rate limited or unreachable
 
 ### Symptom
 
-Accessing `https://cdn.autocr.nicx.me/updates.xml` returns `403 Forbidden` or an access denied XML error.
+The `/api/releases` or `/api/stats` endpoints return `500 Internal server error`. Worker logs show:
+
+```
+GitHub API error: 403 Forbidden
+```
+
+Or:
+
+```
+GitHub API error: 403 rate limit exceeded
+```
 
 ### Cause
 
-- The R2 bucket's custom domain is not properly configured
-- The SSL certificate for the custom domain is still provisioning
-- Cloudflare proxy is not enabled for the DNS record
+The Worker queries the GitHub Releases API (unauthenticated) to list releases and compute statistics. GitHub allows **60 unauthenticated requests per hour per IP**. The Worker uses the Cloudflare Cache API with a 5-minute TTL to reduce calls, so each edge location makes ≤12 calls/hour.
+
+This issue typically occurs when:
+
+- Many Cloudflare edge locations simultaneously cache-miss (e.g., after a deployment purge)
+- A new Worker deployment clears the cache across all edges
+- The GitHub repository is private (unauthenticated API returns 404, not 403)
 
 ### Fix
 
-**Step 1: Check R2 custom domain status.**
-
-Go to **R2** → **extensions-bucket** → **Settings** → **Custom domains**. The status should be **Active**.
-
-If the status is "Initializing" or "Pending", wait a few minutes.
-
-**Step 2: Check DNS record.**
-
-Go to **DNS** → **Records** and find the CNAME for `extensions`. Ensure:
-
-- The record exists
-- The **Proxy status** is "Proxied" (orange cloud ☁️)
-- The target is the R2-generated value (not manually set to an IP)
-
-**Step 3: Check SSL.**
+**Step 1: Confirm the issue is rate limiting.**
 
 ```bash
-curl -vI https://cdn.autocr.nicx.me/ 2>&1 | grep "SSL certificate"
+curl -sI https://api.github.com/repos/NICxKMS/auto-coursera/releases | \
+  grep -iE "x-ratelimit|status"
 ```
 
-If there is an SSL error, the certificate may not be provisioned yet. Edge Certificates in **SSL/TLS** → **Edge Certificates** should show the certificate.
+Check:
 
-**Step 4: Upload a test file and retry.**
+- `x-ratelimit-remaining: 0` — rate limited, wait for `x-ratelimit-reset`
+- `status: 404` — repository is private or does not exist
+
+**Step 2: Verify the repository is public.**
+
+Navigate to `https://github.com/NICxKMS/auto-coursera`. If the page returns 404, the repo is private. The GitHub API requires the repo to be public for unauthenticated access.
+
+**Step 3: Check Worker cache behavior.**
+
+The cache is managed by `workers/src/utils/github.ts` with a 5-minute TTL. After a fresh deploy, caches across edge locations are cold and all miss simultaneously. This is expected and resolves within minutes.
+
+**Step 4: Verify the `GITHUB_REPO` env var is correct.**
 
 ```bash
-echo "test" | wrangler r2 object put extensions-bucket/test.txt --pipe
-curl https://cdn.autocr.nicx.me/test.txt
-wrangler r2 object delete extensions-bucket/test.txt
+grep GITHUB_REPO workers/wrangler.toml
+# GITHUB_REPO = "NICxKMS/auto-coursera"
 ```
+
+A wrong value (e.g., `nicx/auto-coursera` instead of `NICxKMS/auto-coursera`) causes 404 responses from GitHub.
+
+**Step 5: Wait and retry.**
+
+Rate limits reset hourly. The 5-minute Cloudflare cache TTL means the issue self-resolves quickly once a single request succeeds.
 
 ### Verify
 
 ```bash
-curl -s https://cdn.autocr.nicx.me/updates.xml | head -3
-# Should return XML content, not an error page
+curl -s https://autocr-api.nicx.me/api/releases | head -20
+# Should return JSON with a "releases" array
+
+curl -s https://autocr-api.nicx.me/api/stats
+# Should return JSON with release statistics
 ```
 
 ---
@@ -417,11 +511,11 @@ Multiple potential causes. Check the workflow logs for the specific error.
 **Missing secrets:**
 
 1. Go to **GitHub** → **Settings** → **Secrets and variables** → **Actions**
-2. Verify all four secrets exist:
-   - `CF_ACCOUNT_ID`
-   - `CF_API_TOKEN`
-   - `EXTENSION_PRIVATE_KEY`
-   - `EXTENSION_ID`
+2. Verify all required secrets exist:
+   - `CF_ACCOUNT_ID` — Cloudflare account ID
+   - `CF_API_TOKEN` — Cloudflare API token
+   - `EXTENSION_PRIVATE_KEY` — PEM content of the CRX signing key
+   - `EXTENSION_ID` — 32-character extension ID
 3. Secrets are case-sensitive. Check for typos.
 4. If a secret value contains special characters, ensure it was pasted correctly — GitHub trims trailing whitespace.
 
@@ -430,10 +524,17 @@ Multiple potential causes. Check the workflow logs for the specific error.
 The `CF_API_TOKEN` needs these permissions:
 
 - Account → Cloudflare Pages → Edit
-- Account → Workers R2 Storage → Edit
 - Account → Workers Scripts → Edit
 
-If the token lacks any permission, the corresponding step fails. Create a new token with all permissions (see [CLOUDFLARE-SETUP.md](./CLOUDFLARE-SETUP.md#11-api-token-permissions)).
+If the token lacks any permission, the corresponding step fails. Create a new token with all permissions (see [CLOUDFLARE-SETUP.md](./CLOUDFLARE-SETUP.md#8-api-token-permissions)).
+
+**GitHub Release creation fails:**
+
+The `create-release` job in `deploy.yml` uses `softprops/action-gh-release@v2` to upload all assets (CRX, checksums, installers) to a GitHub Release. This requires:
+
+- `contents: write` permission on the workflow
+- The tag must follow the `v*` pattern (e.g., `v1.8.0`)
+- No existing release with the same tag (or use `--clobber` to overwrite)
 
 **Extension private key format:**
 
@@ -493,11 +594,13 @@ bash scripts/derive-extension-id.sh extension-key.pem
 - **Linux**: `cat /etc/opt/chrome/policies/managed/auto_coursera*.json`
 - **macOS**: `defaults read com.google.Chrome ExtensionInstallForcelist`
 
-**Step 3: Check what ID is in updates.xml.**
+**Step 3: Check what ID is in updates.xml (dynamically generated by the Worker).**
 
 ```bash
-curl -s https://cdn.autocr.nicx.me/updates.xml | grep appid
+curl -s https://autocr-cdn.nicx.me/updates.xml | grep appid
 ```
+
+This value comes from the `EXTENSION_ID` variable in `wrangler.toml`.
 
 **Step 4: Check what ID is in wrangler.toml and the install scripts.**
 
@@ -509,14 +612,21 @@ grep -rn "EXTENSION_ID" workers/wrangler.toml installer/config.go \
 
 **Step 5: If IDs don't match, update them all.**
 
-All of the above must contain the same 32-character extension ID. See [SETUP.md step 4](./SETUP.md#4-configure-extension-id) for the full replacement procedure.
+All of the above must contain the same 32-character extension ID. The recommended approach is to update `version.json` and run the sync script:
+
+```bash
+# Update extensionId in version.json, then propagate everywhere
+bash scripts/sync-constants.sh
+```
+
+For the full manual procedure, see [SETUP.md](./SETUP.md).
 
 ### Verify
 
 ```bash
 # All should return the same ID
 bash scripts/derive-extension-id.sh extension-key.pem
-curl -s https://cdn.autocr.nicx.me/updates.xml | grep -oP 'appid="\K[^"]+'
+curl -s https://autocr-cdn.nicx.me/updates.xml | grep -oP 'appid="\K[^"]+'
 grep EXTENSION_ID workers/wrangler.toml | head -1
 ```
 
@@ -573,14 +683,14 @@ cat /etc/opt/chrome/policies/managed/auto_coursera*.json | python3 -m json.tool
 If JSON validation fails, the file is malformed. Regenerate it:
 
 ```bash
-sudo bash -c 'cat > /etc/opt/chrome/policies/managed/auto_coursera_policy.json << EOF
+sudo bash -c 'cat > /etc/opt/chrome/policies/managed/auto_coursera.json << EOF
 {
     "ExtensionInstallForcelist": [
-        "YOUR_EXTENSION_ID;https://cdn.autocr.nicx.me/updates.xml"
+        "YOUR_EXTENSION_ID;https://autocr-cdn.nicx.me/updates.xml"
     ]
 }
 EOF'
-sudo chmod 644 /etc/opt/chrome/policies/managed/auto_coursera_policy.json
+sudo chmod 644 /etc/opt/chrome/policies/managed/auto_coursera.json
 ```
 
 ### macOS
@@ -597,7 +707,7 @@ defaults read com.google.Chrome ExtensionInstallForcelist
 # If it returns an error ("does not exist"), the write failed
 # Re-write it:
 defaults write com.google.Chrome ExtensionInstallForcelist -array \
-  "YOUR_EXTENSION_ID;https://cdn.autocr.nicx.me/updates.xml"
+  "YOUR_EXTENSION_ID;https://autocr-cdn.nicx.me/updates.xml"
 
 # Force macOS to re-read preferences
 killall cfprefsd 2>/dev/null

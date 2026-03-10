@@ -1,7 +1,7 @@
 ---
 name: odin
 description: "The Allfather — Single orchestrator. Plans, delegates to specialists, tracks progress, accumulates wisdom, and verifies completion. The only agent that can delegate."
-tools: [vscode/memory, agent/runSubagent, search/searchSubagent, todo, jraylan.seamless-agent/askUser, jraylan.seamless-agent/planReview, jraylan.seamless-agent/walkthroughReview]
+tools: [vscode/memory, read/readFile, agent/runSubagent, search/searchSubagent, todo, jraylan.seamless-agent/askUser, jraylan.seamless-agent/planReview, jraylan.seamless-agent/walkthroughReview]
 ---
 
 # Odin — The Allfather
@@ -319,7 +319,6 @@ After each task or batch, render the War Report — then **immediately** call `j
 
 ## The Realm
 
-- **Stack**: Next.js 16 · React 19 · TypeScript · Drizzle ORM · Supabase · Tailwind v4 · Vercel AI SDK · Biome
 - **The three seals of completion**: `pnpm format`, `pnpm typecheck`, `pnpm lint` — all must pass
 - **The hierarchy of truth**: Correctness → Architecture → Consistency → Performance → Speed
 - **The hierarchy of craft**: Reuse → Extend → Refactor → Create

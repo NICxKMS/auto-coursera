@@ -16,7 +16,9 @@ import type {
 import {
 	AI_MAX_TOKENS,
 	AI_TEMPERATURE,
+	AI_TOP_P,
 	DEFAULT_REQUEST_TIMEOUT_MS,
+	ERROR_CODES,
 	MAX_RETRIES,
 	RETRY_BACKOFF_BASE_MS,
 	RETRY_JITTER_MS,
@@ -31,6 +33,58 @@ import {
 	SYSTEM_PROMPT,
 } from './prompt-engine';
 import { parseAIResponse, parseBatchAIResponse } from './response-parser';
+
+function isAbortError(error: unknown): boolean {
+	return error instanceof DOMException
+		? error.name === 'AbortError'
+		: error instanceof Error && error.name === 'AbortError';
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+	if (signal?.aborted) {
+		throw new Error(ERROR_CODES.REQUEST_CANCELLED);
+	}
+}
+
+function attachAbortSignal(
+	externalSignal: AbortSignal | undefined,
+	controller: AbortController,
+): () => void {
+	if (!externalSignal) return () => {};
+
+	if (externalSignal.aborted) {
+		controller.abort();
+		return () => {};
+	}
+
+	const onAbort = () => controller.abort();
+	externalSignal.addEventListener('abort', onAbort, { once: true });
+	return () => externalSignal.removeEventListener('abort', onAbort);
+}
+
+async function delayWithAbort(delayMs: number, signal?: AbortSignal): Promise<void> {
+	if (!signal) {
+		await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+		return;
+	}
+
+	throwIfAborted(signal);
+
+	await new Promise<void>((resolve, reject) => {
+		const timeoutId = setTimeout(() => {
+			signal.removeEventListener('abort', onAbort);
+			resolve();
+		}, delayMs);
+
+		const onAbort = () => {
+			clearTimeout(timeoutId);
+			signal.removeEventListener('abort', onAbort);
+			reject(new Error(ERROR_CODES.REQUEST_CANCELLED));
+		};
+
+		signal.addEventListener('abort', onAbort, { once: true });
+	});
+}
 
 /** JSON Schema for single question solve — enforces structured AI output */
 export const SINGLE_ANSWER_SCHEMA = {
@@ -123,6 +177,7 @@ export abstract class BaseAIProvider implements IAIProvider {
 		messages: ChatMessage[],
 		maxTokens: number = AI_MAX_TOKENS,
 		responseFormat?: Record<string, unknown>,
+		signal?: AbortSignal,
 	): Promise<APICompletionResponse> {
 		return this.fetchWithRetry(
 			this.apiUrl,
@@ -135,11 +190,13 @@ export abstract class BaseAIProvider implements IAIProvider {
 				messages,
 				temperature: AI_TEMPERATURE,
 				max_tokens: maxTokens,
-				top_p: 0.95,
+				top_p: AI_TOP_P,
 				stream: false,
 				...(responseFormat && { response_format: responseFormat }),
 			},
 			this.displayName,
+			MAX_RETRIES,
+			signal,
 		);
 	}
 
@@ -165,10 +222,16 @@ export abstract class BaseAIProvider implements IAIProvider {
 		body: Record<string, unknown>,
 		providerName: string,
 		retries: number = MAX_RETRIES,
+		signal?: AbortSignal,
 	): Promise<APICompletionResponse> {
+		throwIfAborted(signal);
+
 		for (let attempt = 0; attempt <= retries; attempt++) {
+			throwIfAborted(signal);
+
 			const controller = new AbortController();
 			const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+			const detachAbort = attachAbortSignal(signal, controller);
 			let res: Response;
 			try {
 				res = await fetch(url, {
@@ -179,6 +242,10 @@ export abstract class BaseAIProvider implements IAIProvider {
 				});
 			} catch (error) {
 				clearTimeout(timeout);
+				detachAbort();
+				if (signal?.aborted && isAbortError(error)) {
+					throw new Error(ERROR_CODES.REQUEST_CANCELLED);
+				}
 				if (error instanceof Error && error.name === 'AbortError') {
 					const timeoutSec = Math.round(this.timeoutMs / 1000);
 					throw new Error(`${providerName}: Request timed out (${timeoutSec}s)`);
@@ -188,12 +255,13 @@ export abstract class BaseAIProvider implements IAIProvider {
 					this.logger.warn(
 						`Network error, retrying in ${Math.round(backoff)}ms (attempt ${attempt + 1}/${retries + 1})`,
 					);
-					await new Promise<void>((r) => setTimeout(r, backoff));
+					await delayWithAbort(backoff, signal);
 					continue;
 				}
 				throw error;
 			}
 			clearTimeout(timeout);
+			detachAbort();
 
 			if (res.ok) {
 				return (await res.json()) as APICompletionResponse;
@@ -212,7 +280,7 @@ export abstract class BaseAIProvider implements IAIProvider {
 				this.logger.warn(
 					`${providerName} ${res.status}, retrying in ${Math.round(backoff)}ms (attempt ${attempt + 1}/${retries + 1})`,
 				);
-				await new Promise<void>((r) => setTimeout(r, backoff));
+				await delayWithAbort(backoff, signal);
 				continue;
 			}
 
@@ -227,12 +295,12 @@ export abstract class BaseAIProvider implements IAIProvider {
 	}
 
 	async solve(request: AIRequest): Promise<AIResponse> {
-		await this.rateLimiter.acquire();
+		await this.rateLimiter.acquire(request.signal);
 		const startTime = Date.now();
 
 		const messages = this.buildMessages(request);
 		const responseFormat = this.getResponseFormat(SINGLE_ANSWER_SCHEMA);
-		const data = await this.callAPI(messages, AI_MAX_TOKENS, responseFormat);
+		const data = await this.callAPI(messages, AI_MAX_TOKENS, responseFormat, request.signal);
 		const parsed = parseAIResponse(data.choices?.[0]?.message?.content ?? '');
 
 		return {
@@ -247,11 +315,16 @@ export abstract class BaseAIProvider implements IAIProvider {
 	}
 
 	async solveBatch(batchRequest: AIBatchRequest): Promise<AIBatchResponse> {
-		await this.rateLimiter.acquire();
+		await this.rateLimiter.acquire(batchRequest.signal);
 		const messages = this.buildBatchMessages(batchRequest);
 		const scaledTokens = Math.max(4096, batchRequest.questions.length * 384);
 		const responseFormat = this.getResponseFormat(BATCH_ANSWER_SCHEMA);
-		const response = await this.callAPI(messages, scaledTokens, responseFormat);
+		const response = await this.callAPI(
+			messages,
+			scaledTokens,
+			responseFormat,
+			batchRequest.signal,
+		);
 		const rawContent = response.choices?.[0]?.message?.content ?? '';
 		const result = parseBatchAIResponse(rawContent, batchRequest.questions);
 		return {

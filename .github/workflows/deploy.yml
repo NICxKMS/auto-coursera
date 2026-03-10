@@ -2,7 +2,7 @@
 # deploy.yml — Main Orchestration: Build, Sign, Upload, Deploy
 # =============================================================================
 # Triggers:
-#   - push to main  → deploy website only
+#   - push to master → deploy website only
 #   - push tag v*   → full release pipeline (extension + installers + website + worker)
 #
 # Required Secrets:
@@ -30,27 +30,41 @@ concurrency:
 
 jobs:
   # ===========================================================================
+  # VERSION CHECK — Verify all version references match version.json
+  # ===========================================================================
+  version-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Verify version consistency
+        run: bash scripts/check-version.sh
+
+  # ===========================================================================
   # BUILD EXTENSION — Sign and upload CRX (tags only)
   # ===========================================================================
   build-extension:
     if: startsWith(github.ref, 'refs/tags/v')
+    needs: [version-check]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Extract version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c # v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -84,53 +98,17 @@ jobs:
             -k extension-key.pem \
             -s extension/dist
 
-      - name: Generate updates.xml
-        run: |
-          ./scripts/generate-updates-xml.sh \
-            -i "${{ secrets.EXTENSION_ID }}" \
-            -v "${{ steps.version.outputs.VERSION }}" \
-            -u "https://cdn.autocr.nicx.me/releases/auto_coursera_${{ steps.version.outputs.VERSION }}.crx" \
-            -o updates.xml
-
-      - name: Upload CRX to R2
-        run: |
-          npx wrangler r2 object put \
-            "extensions-bucket/releases/auto_coursera_${{ steps.version.outputs.VERSION }}.crx" \
-            --file="auto_coursera_${{ steps.version.outputs.VERSION }}.crx"
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-
-      - name: Upload updates.xml to R2
-        run: |
-          npx wrangler r2 object put \
-            "extensions-bucket/updates.xml" \
-            --file=updates.xml
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-
-      - name: Upload checksum to R2
-        run: |
-          npx wrangler r2 object put \
-            "extensions-bucket/releases/auto_coursera_${{ steps.version.outputs.VERSION }}.crx.sha256" \
-            --file="auto_coursera_${{ steps.version.outputs.VERSION }}.crx.sha256"
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-
       - name: Cleanup signing key
         if: always()
         run: rm -f extension-key.pem
 
       - name: Upload CRX artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: crx-package
           path: |
             auto_coursera_${{ steps.version.outputs.VERSION }}.crx
             auto_coursera_${{ steps.version.outputs.VERSION }}.crx.sha256
-            updates.xml
           retention-days: 90
 
   # ===========================================================================
@@ -138,14 +116,15 @@ jobs:
   # ===========================================================================
   build-installers:
     if: startsWith(github.ref, 'refs/tags/v')
+    needs: [version-check]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: 'installer/go.sum'
@@ -156,44 +135,69 @@ jobs:
       - name: Generate checksums
         run: cd installer/dist && sha256sum * > checksums.sha256
 
-      - name: Upload binaries to R2
-        run: |
-          for file in installer/dist/*; do
-            filename=$(basename "$file")
-            echo "Uploading $filename..."
-            npx wrangler r2 object put \
-              "releases-bucket/${filename}" \
-              --file="$file"
-          done
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-
       - name: Upload installer artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: installers
           path: installer/dist/
           retention-days: 90
 
   # ===========================================================================
-  # DEPLOY WEBSITE (main branch) — No dependencies
+  # CREATE GITHUB RELEASE — Upload all assets (tags only)
+  # ===========================================================================
+  create-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-extension, build-installers]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    timeout-minutes: 5
+    steps:
+      - name: Download CRX artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: crx-package
+
+      - name: Download installer artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: installers
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            auto_coursera_*.crx
+            auto_coursera_*.crx.sha256
+            installer-*
+            checksums.sha256
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ===========================================================================
+  # DEPLOY WEBSITE (master branch) — No dependencies
   # ===========================================================================
   deploy-website-main:
     if: github.ref == 'refs/heads/master'
+    needs: [version-check]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c # v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -206,7 +210,7 @@ jobs:
         run: cd website && pnpm build
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
@@ -222,15 +226,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c # v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -243,7 +247,7 @@ jobs:
         run: cd website && pnpm build
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
@@ -254,20 +258,20 @@ jobs:
   # ===========================================================================
   deploy-worker:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [build-extension]
+    needs: [create-release]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c # v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -277,7 +281,7 @@ jobs:
         run: cd workers && pnpm install --frozen-lockfile
 
       - name: Deploy worker to production
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}

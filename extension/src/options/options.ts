@@ -3,11 +3,17 @@
  * REQ: REQ-013
  */
 
-import type { ErrorPayload, Message } from '../types/messages';
-import type { AppSettings } from '../types/settings';
-import { CEREBRAS_MODELS, GEMINI_MODELS, GROQ_MODELS } from '../utils/constants';
+import {
+	SETTINGS_PROVIDERS,
+	loadSettingsView,
+	saveSettingsFromSnapshot,
+	testSettingsConnection,
+	type LoadedSettingsView,
+	type SettingsFormSnapshot,
+	type SettingsProviderDefinition,
+} from '../settings/domain';
+import type { ProviderName } from '../types/settings';
 import { Logger } from '../utils/logger';
-import { getSettings, saveSettings } from '../utils/storage';
 
 const logger = new Logger('Options');
 
@@ -17,18 +23,22 @@ function getElement<T extends HTMLElement>(id: string): T {
 	return el as T;
 }
 
+function createProviderRecord<T>(
+	builder: (provider: SettingsProviderDefinition) => T,
+): Record<ProviderName, T> {
+	return Object.fromEntries(
+		SETTINGS_PROVIDERS.map((provider) => [provider.name, builder(provider)]),
+	) as Record<ProviderName, T>;
+}
+
 // DOM elements
-let openrouterKeyInput: HTMLInputElement;
-let nvidiaKeyInput: HTMLInputElement;
-let geminiKeyInput: HTMLInputElement;
-let groqKeyInput: HTMLInputElement;
-let cerebrasKeyInput: HTMLInputElement;
-let openrouterModelSelect: HTMLSelectElement;
-let nvidiaModelSelect: HTMLSelectElement;
-let geminiModelSelect: HTMLSelectElement;
-let groqModelSelect: HTMLSelectElement;
-let cerebrasModelSelect: HTMLSelectElement;
-let primaryProviderRadios: NodeListOf<HTMLInputElement>;
+let onboardingEl: HTMLDivElement;
+let apiKeyFieldsEl: HTMLDivElement;
+let modelFieldsEl: HTMLDivElement;
+let providerPriorityGroupEl: HTMLDivElement;
+let keyInputs = createProviderRecord(() => document.createElement('input'));
+let modelSelects = createProviderRecord(() => document.createElement('select'));
+let primaryProviderRadios = createProviderRecord(() => document.createElement('input'));
 let confidenceSlider: HTMLInputElement;
 let thresholdValue: HTMLElement;
 let autoSelectCheckbox: HTMLInputElement;
@@ -38,49 +48,140 @@ let testBtn: HTMLButtonElement;
 let statusMessage: HTMLElement;
 let statusTimeout: ReturnType<typeof setTimeout> | null = null;
 
-function populateSelect(select: HTMLSelectElement, models: readonly string[]): void {
-	for (const model of models) {
-		const opt = document.createElement('option');
-		opt.value = model;
-		opt.textContent = model;
-		select.appendChild(opt);
+function buildModelSelect(provider: SettingsProviderDefinition): HTMLSelectElement {
+	const select = document.createElement('select');
+	select.id = `${provider.name}Model`;
+
+	if (provider.catalog.kind === 'grouped') {
+		for (const group of provider.catalog.groups) {
+			const optgroup = document.createElement('optgroup');
+			optgroup.label = group.label;
+
+			for (const optionConfig of group.options) {
+				const option = document.createElement('option');
+				option.value = optionConfig.value;
+				option.textContent = optionConfig.label;
+				optgroup.appendChild(option);
+			}
+
+			select.appendChild(optgroup);
+		}
+		return select;
+	}
+
+	for (const model of provider.catalog.models) {
+		const option = document.createElement('option');
+		option.value = model;
+		option.textContent = model;
+		select.appendChild(option);
+	}
+
+	return select;
+}
+
+function renderDynamicSections(): void {
+	apiKeyFieldsEl.textContent = '';
+	modelFieldsEl.textContent = '';
+	providerPriorityGroupEl.textContent = '';
+
+	keyInputs = createProviderRecord(() => document.createElement('input'));
+	modelSelects = createProviderRecord(() => document.createElement('select'));
+	primaryProviderRadios = createProviderRecord(() => document.createElement('input'));
+
+	for (const provider of SETTINGS_PROVIDERS) {
+		const keyField = document.createElement('div');
+		keyField.className = 'form-field';
+
+		const keyLabel = document.createElement('label');
+		keyLabel.htmlFor = `${provider.name}Key`;
+		keyLabel.textContent = provider.keyLabel;
+
+		const keyInput = document.createElement('input');
+		keyInput.type = 'password';
+		keyInput.id = `${provider.name}Key`;
+		keyInput.placeholder = provider.keyPlaceholder;
+		keyInput.autocomplete = 'off';
+		keyInput.addEventListener('input', () => {
+			delete keyInput.dataset.hasKey;
+		});
+
+		keyField.append(keyLabel, keyInput);
+		apiKeyFieldsEl.appendChild(keyField);
+		keyInputs[provider.name] = keyInput;
+
+		const modelField = document.createElement('div');
+		modelField.className = 'form-field';
+
+		const modelLabel = document.createElement('label');
+		modelLabel.htmlFor = `${provider.name}Model`;
+		modelLabel.textContent = provider.modelLabel;
+
+		const modelSelect = buildModelSelect(provider);
+		modelField.append(modelLabel, modelSelect);
+		modelFieldsEl.appendChild(modelField);
+		modelSelects[provider.name] = modelSelect;
+
+		const radioLabel = document.createElement('label');
+		const radioInput = document.createElement('input');
+		radioInput.type = 'radio';
+		radioInput.name = 'primaryProvider';
+		radioInput.value = provider.name;
+		radioInput.checked = provider.name === 'openrouter';
+		radioLabel.append(radioInput, document.createTextNode(` ${provider.label} (Primary)`));
+		providerPriorityGroupEl.appendChild(radioLabel);
+		primaryProviderRadios[provider.name] = radioInput;
 	}
 }
 
-/**
- * Mask an API key input: show last 4 chars as placeholder, clear value.
- */
-function applyKeyMask(input: HTMLInputElement, key: string, fallback: string): void {
-	if (key) {
+function getSelectedProvider(): ProviderName {
+	return (
+		SETTINGS_PROVIDERS.find((provider) => primaryProviderRadios[provider.name].checked)?.name ??
+		'openrouter'
+	);
+}
+
+function getSnapshot(): SettingsFormSnapshot {
+	return {
+		keyInputs: createProviderRecord((provider) => ({
+			value: keyInputs[provider.name].value,
+			hasStoredValue: keyInputs[provider.name].dataset.hasKey === 'true',
+		})),
+		models: createProviderRecord((provider) => modelSelects[provider.name].value),
+		primaryProvider: getSelectedProvider(),
+		confidenceThreshold: Number.parseFloat(confidenceSlider.value),
+		autoSelect: autoSelectCheckbox.checked,
+		autoStartOnPageLoad: autoStartOnPageLoadCheckbox.checked,
+	};
+}
+
+function applyLoadedView(view: LoadedSettingsView): void {
+	for (const provider of SETTINGS_PROVIDERS) {
+		const input = keyInputs[provider.name];
 		input.value = '';
-		input.placeholder = `\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022${key.slice(-4)}`;
-		input.dataset.hasKey = 'true';
-	} else {
-		input.placeholder = fallback;
-	}
-}
+		input.placeholder = view.keyPlaceholders[provider.name];
+		if (view.keyHasStoredValue[provider.name]) {
+			input.dataset.hasKey = 'true';
+		} else {
+			delete input.dataset.hasKey;
+		}
 
-function populateModelDropdowns(): void {
-	populateSelect(geminiModelSelect, GEMINI_MODELS);
-	populateSelect(groqModelSelect, GROQ_MODELS);
-	populateSelect(cerebrasModelSelect, CEREBRAS_MODELS);
+		modelSelects[provider.name].value = view.models[provider.name];
+		primaryProviderRadios[provider.name].checked = provider.name === view.primaryProvider;
+	}
+
+	confidenceSlider.value = view.confidenceThreshold.toString();
+	thresholdValue.textContent = view.confidenceThreshold.toString();
+	autoSelectCheckbox.checked = view.autoSelect;
+	autoStartOnPageLoadCheckbox.checked = view.autoStartOnPageLoad;
+	onboardingEl.style.display = view.onboardingComplete ? 'none' : 'block';
 }
 
 async function init(): Promise<void> {
 	// Get DOM references
-	openrouterKeyInput = getElement<HTMLInputElement>('openrouterKey');
-	nvidiaKeyInput = getElement<HTMLInputElement>('nvidiaKey');
-	geminiKeyInput = getElement<HTMLInputElement>('geminiKey');
-	groqKeyInput = getElement<HTMLInputElement>('groqKey');
-	cerebrasKeyInput = getElement<HTMLInputElement>('cerebrasKey');
-	openrouterModelSelect = getElement<HTMLSelectElement>('openrouterModel');
-	nvidiaModelSelect = getElement<HTMLSelectElement>('nvidiaModel');
-	geminiModelSelect = getElement<HTMLSelectElement>('geminiModel');
-	groqModelSelect = getElement<HTMLSelectElement>('groqModel');
-	cerebrasModelSelect = getElement<HTMLSelectElement>('cerebrasModel');
-	primaryProviderRadios = document.querySelectorAll(
-		'input[name="primaryProvider"]',
-	) as NodeListOf<HTMLInputElement>;
+	onboardingEl = getElement<HTMLDivElement>('onboarding');
+	apiKeyFieldsEl = getElement<HTMLDivElement>('apiKeyFields');
+	modelFieldsEl = getElement<HTMLDivElement>('modelFields');
+	providerPriorityGroupEl = getElement<HTMLDivElement>('providerPriorityGroup');
 	confidenceSlider = getElement<HTMLInputElement>('confidenceThreshold');
 	thresholdValue = getElement<HTMLElement>('thresholdValue');
 	autoSelectCheckbox = getElement<HTMLInputElement>('autoSelect');
@@ -88,9 +189,9 @@ async function init(): Promise<void> {
 	saveBtn = getElement<HTMLButtonElement>('saveBtn');
 	testBtn = getElement<HTMLButtonElement>('testBtn');
 	statusMessage = getElement<HTMLElement>('statusMessage');
+	renderDynamicSections();
 
 	// Load current settings
-	populateModelDropdowns();
 	await loadSettings();
 
 	// Event listeners
@@ -100,116 +201,22 @@ async function init(): Promise<void> {
 		thresholdValue.textContent = confidenceSlider.value;
 	});
 
-	// Issue 9: Onboarding flow — show on first install
-	const { onboarded } = await chrome.storage.local.get({ onboarded: false });
-	if (!onboarded) {
-		const onboardingEl = document.getElementById('onboarding');
-		if (onboardingEl) {
-			onboardingEl.style.display = 'block';
-			document.getElementById('dismissOnboarding')?.addEventListener('click', async () => {
-				onboardingEl.style.display = 'none';
-				await chrome.storage.local.set({ onboarded: true });
-			});
-		}
-	}
-
 	logger.info('Options page initialized');
 }
 
 async function loadSettings(): Promise<void> {
-	const settings = await getSettings();
-
-	// Issue 7: Masked API keys — show placeholder with last 4 chars
-	applyKeyMask(openrouterKeyInput, settings.openrouterApiKey, 'sk-or-...');
-	applyKeyMask(nvidiaKeyInput, settings.nvidiaApiKey, 'nvapi-...');
-	applyKeyMask(geminiKeyInput, settings.geminiApiKey, 'AIza...');
-	applyKeyMask(groqKeyInput, settings.groqApiKey, 'gsk_...');
-	applyKeyMask(cerebrasKeyInput, settings.cerebrasApiKey, 'cbs-...');
-
-	// Clear hasKey flag when user interacts with a key field, enabling intentional clearing
-	for (const input of [
-		openrouterKeyInput,
-		nvidiaKeyInput,
-		geminiKeyInput,
-		groqKeyInput,
-		cerebrasKeyInput,
-	]) {
-		input.addEventListener(
-			'input',
-			() => {
-				delete input.dataset.hasKey;
-			},
-			{ once: true },
-		);
-	}
-
-	// Model selection
-	openrouterModelSelect.value = settings.openrouterModel;
-	nvidiaModelSelect.value = settings.nvidiaModel;
-	geminiModelSelect.value = settings.geminiModel;
-	groqModelSelect.value = settings.groqModel;
-	cerebrasModelSelect.value = settings.cerebrasModel;
-
-	// Primary provider
-	primaryProviderRadios.forEach((radio) => {
-		radio.checked = radio.value === settings.primaryProvider;
-	});
-
-	// Behavior
-	confidenceSlider.value = settings.confidenceThreshold.toString();
-	thresholdValue.textContent = settings.confidenceThreshold.toString();
-	autoSelectCheckbox.checked = settings.autoSelect;
-	autoStartOnPageLoadCheckbox.checked = settings.autoStartOnPageLoad;
+	applyLoadedView(await loadSettingsView());
 }
 
 /**
  * Handle Save button — persist settings.
- * AC-013.6: Save persists via StorageManager.saveSettings()
+ * AC-013.6: Save persists via the shared settings-domain workflow.
  */
 async function handleSave(): Promise<void> {
 	try {
 		saveBtn.disabled = true;
 		saveBtn.textContent = 'Saving...';
-
-		const selectedProvider =
-			Array.from(primaryProviderRadios).find((r) => r.checked)?.value ?? 'openrouter';
-
-		// Issue 7: Only save API key if user typed a new one
-		const currentSettings = await getSettings();
-		const apiKeyFields: { input: HTMLInputElement; key: keyof AppSettings }[] = [
-			{ input: openrouterKeyInput, key: 'openrouterApiKey' },
-			{ input: nvidiaKeyInput, key: 'nvidiaApiKey' },
-			{ input: geminiKeyInput, key: 'geminiApiKey' },
-			{ input: groqKeyInput, key: 'groqApiKey' },
-			{ input: cerebrasKeyInput, key: 'cerebrasApiKey' },
-		];
-		const resolvedKeys: Partial<AppSettings> = {};
-		for (const { input, key } of apiKeyFields) {
-			// If user typed a new value, use it; if field was untouched (has stored key), keep it; otherwise clear
-			const typed = input.value.trim();
-			if (typed) {
-				(resolvedKeys as Record<string, string>)[key] = typed;
-			} else if (input.dataset.hasKey === 'true') {
-				(resolvedKeys as Record<string, string>)[key] = currentSettings[key] as string;
-			} else {
-				(resolvedKeys as Record<string, string>)[key] = '';
-			}
-		}
-
-		const settings: Partial<AppSettings> = {
-			...resolvedKeys,
-			openrouterModel: openrouterModelSelect.value,
-			nvidiaModel: nvidiaModelSelect.value,
-			geminiModel: geminiModelSelect.value,
-			groqModel: groqModelSelect.value,
-			cerebrasModel: cerebrasModelSelect.value,
-			primaryProvider: selectedProvider as AppSettings['primaryProvider'],
-			confidenceThreshold: parseFloat(confidenceSlider.value),
-			autoSelect: autoSelectCheckbox.checked,
-			autoStartOnPageLoad: autoStartOnPageLoadCheckbox.checked,
-		};
-
-		await saveSettings(settings);
+		applyLoadedView(await saveSettingsFromSnapshot(getSnapshot()));
 		showStatus('Settings saved successfully!', 'success');
 		logger.info('Settings saved');
 	} catch (error) {
@@ -230,64 +237,8 @@ async function handleTest(): Promise<void> {
 		testBtn.disabled = true;
 		testBtn.textContent = 'Testing...';
 
-		const results: string[] = [];
-
-		// Issue 3: Enhanced model validation — test selected model
-		const hasKey = (el: HTMLInputElement) => el.value.trim() || el.dataset.hasKey === 'true';
-		const allKeyInputs = [
-			openrouterKeyInput,
-			nvidiaKeyInput,
-			geminiKeyInput,
-			groqKeyInput,
-			cerebrasKeyInput,
-		];
-		const selectedProvider =
-			Array.from(primaryProviderRadios).find((r) => r.checked)?.value ?? 'openrouter';
-		const modelSelects: Record<string, HTMLSelectElement> = {
-			openrouter: openrouterModelSelect,
-			'nvidia-nim': nvidiaModelSelect,
-			gemini: geminiModelSelect,
-			groq: groqModelSelect,
-			cerebras: cerebrasModelSelect,
-		};
-		const selectedModel = modelSelects[selectedProvider]?.value || 'unknown';
-		if (allKeyInputs.some((el) => hasKey(el))) {
-			try {
-				const res = (await chrome.runtime.sendMessage({
-					type: 'SOLVE_QUESTION',
-					payload: {
-						uid: 'test',
-						type: 'single-choice',
-						questionText: 'What is 2 + 2?',
-						options: ['3', '4', '5', '6'],
-						metadata: {
-							pageUrl: 'test',
-							quizTitle: null,
-							questionIndex: 0,
-							totalQuestions: 1,
-						},
-					},
-				})) as Message | undefined;
-				if (res?.type === 'SELECT_ANSWER') {
-					results.push(`✅ Model ${selectedModel}: Connected`);
-				} else {
-					const errPayload = res?.payload as ErrorPayload | undefined;
-					results.push(`⚠️ Model ${selectedModel}: ${errPayload?.message || 'Unknown error'}`);
-				} // Clear test pollution from session status
-				await chrome.storage.session.set({
-					_lastStatus: 'idle',
-					_lastProvider: '',
-					_lastModel: '',
-					_lastConfidence: null,
-				});
-			} catch {
-				results.push(`❌ Model ${selectedModel}: Connection failed`);
-			}
-		} else {
-			results.push('⏭️ No API keys configured');
-		}
-
-		showStatus(results.join('\n'), results.some((r) => r.startsWith('❌')) ? 'error' : 'success');
+		const result = await testSettingsConnection(getSnapshot());
+		showStatus(result.message, result.type);
 	} catch (error) {
 		showStatus('Test failed. Check console for details.', 'error');
 		logger.error('Test failed', error);

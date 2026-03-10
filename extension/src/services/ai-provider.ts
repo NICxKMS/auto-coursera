@@ -15,6 +15,12 @@ import { Logger } from '../utils/logger';
 
 const logger = new Logger('AIProviderManager');
 
+function isCancellationError(error: unknown): boolean {
+	return error instanceof DOMException
+		? error.name === 'AbortError'
+		: error instanceof Error && /REQUEST_CANCELLED/i.test(error.message);
+}
+
 export class AIProviderManager {
 	private providers: IAIProvider[] = [];
 	private primaryIndex: number = 0;
@@ -43,11 +49,17 @@ export class AIProviderManager {
 	}
 
 	async solve(request: AIRequest): Promise<AIResponse> {
+		if (request.signal?.aborted) {
+			throw new Error('REQUEST_CANCELLED');
+		}
 		const needsVision = (request.images?.length ?? 0) > 0;
 		return this.withFallback(needsVision, 'solve', (p) => p.solve(request));
 	}
 
 	async solveBatch(batchRequest: AIBatchRequest): Promise<AIBatchResponse> {
+		if (batchRequest.signal?.aborted) {
+			throw new Error('REQUEST_CANCELLED');
+		}
 		const needsVision = batchRequest.questions.some((q) => q.images && q.images.length > 0);
 		return this.withFallback(needsVision, 'batch', (provider) => {
 			if (!provider.solveBatch) throw new Error('solveBatch not implemented');
@@ -97,6 +109,10 @@ export class AIProviderManager {
 				logger.info(`Completed ${label} with ${provider.name}`);
 				return result;
 			} catch (error) {
+				if (isCancellationError(error)) {
+					logger.info(`Aborted ${label} with ${provider.name}`);
+					throw error;
+				}
 				circuit?.recordFailure();
 				logger.error(`Provider ${provider.name} ${label} failed`, error);
 				errors.push({ provider: provider.name, error });

@@ -1,5 +1,0 @@
-/download/windows  https://api.autocr.nicx.me/api/download/windows  302
-/download/macos    https://api.autocr.nicx.me/api/download/macos     302
-/download/linux    https://api.autocr.nicx.me/api/download/linux     302
-/ps                /scripts/install.ps1                        200
-/sh                /scripts/install.sh                         200

@@ -7,7 +7,7 @@ import ScriptBlock from '../components/ScriptBlock.astro';
 import Base from '../layouts/Base.astro';
 ---
 
-<Base title="Install" description="Download and install Auto-Coursera Assistant for your operating system. One-click installers for Windows, macOS, and Linux.">
+<Base title="Install" description="Download and install Auto-Coursera Assistant for your operating system. One-click installers for Windows, macOS, and Linux, with ARM64 variants available from the full downloads matrix.">
   <Header />
   <OSDetector />
 
@@ -18,7 +18,7 @@ import Base from '../layouts/Base.astro';
         <p class="section-label">Install</p>
         <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Get Auto-Coursera Assistant</h1>
         <p class="text-lg text-surface-400 max-w-xl mx-auto mb-4">
-          One-click install for your platform. The installer handles everything&nbsp;automatically.
+          One-click install for the most common targets. The native installer is the recommended path and handles the browser policy setup automatically.
         </p>
         <div id="os-badge" class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm text-surface-300">
           <span class="w-2 h-2 rounded-full bg-surface-600 animate-glow-pulse" id="os-dot"></span>
@@ -36,15 +36,23 @@ import Base from '../layouts/Base.astro';
 
         <div id="install-buttons" class="grid sm:grid-cols-3 gap-4">
           <div data-install-os="windows">
-            <InstallButton os="windows" label="Windows Installer" href="https://api.autocr.nicx.me/api/download/windows" size=".exe — ~8 MB" />
+            <InstallButton os="windows" label="Windows Installer" href="https://autocr-api.nicx.me/api/download/windows" size=".exe — ~8 MB" />
           </div>
           <div data-install-os="macos">
-            <InstallButton os="macos" label="macOS Installer" href="https://api.autocr.nicx.me/api/download/macos" size="Universal — ~8 MB" />
+            <InstallButton os="macos" label="macOS (Apple Silicon)" href="https://autocr-api.nicx.me/api/download/macos" size="M1/M2/M3/M4 — ~8 MB" />
+          </div>
+          <div data-install-os="macos-intel">
+            <InstallButton os="macos" label="macOS (Intel)" href="https://autocr-api.nicx.me/api/download/macos-intel" size="Intel x86_64 — ~8 MB" />
           </div>
           <div data-install-os="linux">
-            <InstallButton os="linux" label="Linux Installer" href="https://api.autocr.nicx.me/api/download/linux" size="x64 — ~8 MB" />
+            <InstallButton os="linux" label="Linux Installer" href="https://autocr-api.nicx.me/api/download/linux" size="x64 — ~8 MB" />
           </div>
         </div>
+
+        <p class="mt-4 text-sm text-surface-500">
+          Need a different architecture? The <a href="/downloads" class="text-primary-400 hover:text-primary-300">full downloads matrix</a>
+          also includes Windows ARM64 and Linux ARM64 installers, plus the direct script/manual paths.
+        </p>
       </section>
 
       <!-- ═══════════════════ METHOD 2: TERMINAL ═══════════════════ -->
@@ -52,13 +60,14 @@ import Base from '../layouts/Base.astro';
         <details class="group" id="terminal-section">
           <summary class="flex items-center gap-3 mb-6 cursor-pointer list-none select-none">
             <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-800 text-surface-400 text-sm font-bold group-open:bg-primary-500/15 group-open:text-primary-400 transition-colors">2</span>
-            <h2 class="text-xl font-semibold text-white">Install via Terminal</h2>
+            <h2 class="text-xl font-semibold text-white">Advanced: Install via Terminal</h2>
             <svg class="w-5 h-5 text-surface-500 ml-auto transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </summary>
 
           <div id="script-blocks" class="space-y-6 pl-11">
+            <p class="text-sm text-surface-500">These scripts write the same <code>ExtensionInstallForcelist</code> policy as the native installer. Use them for automation or shell-first environments, not as a separate install mechanism.</p>
             <div data-script-os="windows">
               <ScriptBlock command="irm https://autocr.nicx.me/scripts/install.ps1 | iex" label="Windows (PowerShell)" />
             </div>
@@ -91,7 +100,7 @@ import Base from '../layouts/Base.astro';
                 <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">1</span>
                 <div>
                   <p class="text-surface-200 font-medium">Extension is installed automatically</p>
-                  <p class="text-sm text-surface-500">The installer registers a browser policy that force-installs the extension.</p>
+                  <p class="text-sm text-surface-500">The installer or script writes a browser policy entry that force-installs the extension.</p>
                 </div>
               </li>
               <li class="flex gap-4">

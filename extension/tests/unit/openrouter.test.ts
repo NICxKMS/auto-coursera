@@ -163,6 +163,36 @@ describe('OpenRouterProvider', () => {
 				}),
 			).rejects.toThrow(/timed out/);
 		});
+
+		it('should surface REQUEST_CANCELLED when an external abort signal cancels fetch', async () => {
+			fetchMock.mockImplementation((_url: string, init?: RequestInit) => {
+				return new Promise((_, reject) => {
+					const signal = init?.signal;
+					if (!(signal instanceof AbortSignal)) {
+						reject(new Error('Missing abort signal'));
+						return;
+					}
+
+					signal.addEventListener(
+						'abort',
+						() => reject(new DOMException('The operation was aborted', 'AbortError')),
+						{ once: true },
+					);
+				});
+			});
+
+			const controller = new AbortController();
+			const promise = provider.solve({
+				questionText: 'Test?',
+				options: ['A', 'B'],
+				questionType: 'single-choice',
+				signal: controller.signal,
+			});
+
+			controller.abort();
+
+			await expect(promise).rejects.toThrow('REQUEST_CANCELLED');
+		});
 	});
 
 	describe('API URL', () => {

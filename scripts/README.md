@@ -47,8 +47,8 @@ The algorithm:
 Builds a signed CRX3 file from the extension dist directory using `npx crx3`.
 
 ```bash
-./scripts/package-crx.sh -v 1.7.5 -k extension-key.pem
-./scripts/package-crx.sh -v 1.7.5 -k extension-key.pem -s extension/dist -o releases/
+./scripts/package-crx.sh -v 1.8.0 -k extension-key.pem
+./scripts/package-crx.sh -v 1.8.0 -k extension-key.pem -s extension/dist -o releases/
 ```
 
 | Flag | Default | Description |
@@ -60,8 +60,8 @@ Builds a signed CRX3 file from the extension dist directory using `npx crx3`.
 | `-h` | — | Show help |
 
 **Output:**
-- `auto-coursera_<version>.crx` — signed CRX3 file
-- `auto-coursera_<version>.crx.sha256` — SHA256 checksum
+- `auto_coursera_<version>.crx` — signed CRX3 file
+- `auto_coursera_<version>.crx.sha256` — SHA256 checksum
 
 **Requires:** `openssl`, `npx crx3`, `sha256sum`
 
@@ -72,7 +72,7 @@ Builds a signed CRX3 file from the extension dist directory using `npx crx3`.
 Validates a CRX file by checking magic bytes, format version, manifest, and checksum.
 
 ```bash
-./scripts/verify-crx.sh auto-coursera_1.7.5.crx
+./scripts/verify-crx.sh auto_coursera_1.8.0.crx
 ```
 
 **Checks performed:**
@@ -89,16 +89,17 @@ Validates a CRX file by checking magic bytes, format version, manifest, and chec
 
 ### 📋 `generate-updates-xml.sh` — Generate Update Manifest
 
-Produces the `updates.xml` file Chrome checks for auto-updates.
+Produces a local/manual `updates.xml` fixture for testing browser policy installs.
+Production does **not** upload or attach a static `updates.xml` file; the canonical endpoint is `https://autocr-cdn.nicx.me/updates.xml`, which is generated dynamically by the Cloudflare Worker.
 
 ```bash
 ./scripts/generate-updates-xml.sh \
   -i abcdefghijklmnopabcdefghijklmnop \
-  -v 1.7.5 \
-  -u https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx
+  -v 1.8.0 \
+  -u https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx
 
 # Write to file
-./scripts/generate-updates-xml.sh -i <id> -v 1.7.5 -u <url> -o updates.xml
+./scripts/generate-updates-xml.sh -i <id> -v 1.8.0 -u <url> -o updates.xml
 ```
 
 | Flag | Default | Description |
@@ -119,6 +120,8 @@ Produces the `updates.xml` file Chrome checks for auto-updates.
 </gupdate>
 ```
 
+Use this script only for local/manual validation or troubleshooting. Tagged releases rely on the Worker route to serve `updates.xml` dynamically from Worker configuration.
+
 ---
 
 ### 🎨 `generate-icons.js` — Generate Icon Placeholders
@@ -135,18 +138,78 @@ Generates `16×16`, `32×32`, `48×48`, and `128×128` PNGs to `extension/assets
 
 ---
 
+### 🔄 `bump-version.sh` — Bump Version & Sync All Constants
+
+Updates the version in `version.json`, then delegates to `sync-constants.sh` to propagate **all constants** (version, extensionId, extensionName, updateUrl, domains) across the entire monorepo.
+
+```bash
+./scripts/bump-version.sh <new-version>
+```
+
+**Requires:** `jq`, `sed`
+
+---
+
+### 🔁 `sync-constants.sh` — Sync All Constants from `version.json`
+
+Reads **every field** from `version.json` (version, extensionId, extensionName, updateUrl, domains) and propagates them to all target files. Idempotent — safe to run multiple times.
+
+```bash
+./scripts/sync-constants.sh
+```
+
+**Syncs to:**
+- `extension/package.json`, `extension/manifest.json`, `workers/package.json`, `website/package.json` (version)
+- `installer/config.go` (AppVersion, ExtensionID, ExtensionName, UpdateURL)
+- `workers/wrangler.toml` (CURRENT_VERSION, EXTENSION_ID, ALLOWED_ORIGIN, CDN_BASE_URL)
+- `website/public/scripts/install.sh`, `install-mac.sh` (EXTENSION_ID, EXTENSION_NAME, UPDATE_URL)
+- `website/public/scripts/uninstall.sh`, `uninstall.ps1` (EXTENSION_ID, EXTENSION_NAME)
+- `website/public/scripts/install.ps1` (EXTENSION_ID, EXTENSION_NAME, UPDATE_URL)
+- `website/astro.config.mjs` (site domain)
+- `website/src/components/VersionBadge.astro` (fallback version)
+
+**Requires:** `jq`, `sed`
+
+---
+
+### ✅ `check-version.sh` — Verify All Constants Match `version.json`
+
+CI guard that validates **all constants** — version, extension ID, extension name, update URL, and domains — are consistent across every file in the monorepo, plus a few operational truth guards for the deployment branch and website source links. Runs 50+ checks across 20+ files.
+
+```bash
+./scripts/check-version.sh
+```
+
+**Checks:**
+- **Version** — JSON packages, Go config, TOML, VersionBadge fallback
+- **Extension ID** — Go config, TOML, 3 install scripts, 2 uninstall scripts, 2 docs pages
+- **Extension Name** — Go config, 3 install scripts, 2 uninstall scripts
+- **Update URL** — Go config, 3 install scripts, 1 docs page
+- **Domains (structured)** — TOML (ALLOWED_ORIGIN, CDN_BASE_URL), Astro config (site)
+- **Domains (page-level)** — API domain in 4 Astro pages + `_headers` + wrangler.toml route; website domain in 3 pages; CDN domain in 1 docs page
+- **Operational truth guards** — deployment branch references in workflow/docs/website README, plus the website footer GitHub license link branch
+- **Git tag** — Validates against `version.json` in CI
+
+**Requires:** `jq`, `grep`, `sed`
+
+---
+
 ## Typical Workflow
 
 ```mermaid
 flowchart LR
+    V["bump-version.sh"] -->|version.json| A
+    V -->|updates all files| C
     A["generate-key.sh"] -->|key.pem| B["derive-extension-id.sh"]
     B -->|extension ID| C["webpack build"]
     C -->|extension/dist/| D["package-crx.sh"]
     D -->|.crx file| E["verify-crx.sh"]
-    D -->|version + ID| F["generate-updates-xml.sh"]
-    F -->|updates.xml| G["Upload to R2"]
-    D -->|.crx + .sha256| G
+  D -.->|optional local/manual testing| F["generate-updates-xml.sh"]
+  D -->|.crx + .sha256| G["Upload to GitHub Releases"]
+  G --> H["Worker serves canonical\n/updates.xml dynamically"]
 ```
+
+`generate-updates-xml.sh` is retained as a manual/testing helper and is no longer part of the production release workflow in `deploy.yml`.
 
 ## Prerequisites
 
@@ -158,6 +221,7 @@ All scripts require a Unix shell (bash). On Windows, use WSL or Git Bash.
 | `xxd` | id, verify | Usually bundled with `vim` |
 | `sha256sum` | package, verify | Pre-installed on Linux; `shasum -a 256` on macOS |
 | `npx crx3` | package | `npm install -g crx3` or use `npx` |
+| `jq` | bump-version, sync-constants, check-version | `apt install jq` / `brew install jq` |
 | `Node.js` | icons | v18+ recommended |
 
 ## Related Documentation

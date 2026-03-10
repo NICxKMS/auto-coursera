@@ -171,7 +171,7 @@ When an extension is installed via browser policy, the browser periodically chec
 ### How it connects
 
 1. The installer writes a policy value: `<extension-id>;<update-url>`
-2. The `<update-url>` points to `https://cdn.autocr.nicx.me/updates.xml`
+2. The `<update-url>` points to `https://autocr-cdn.nicx.me/updates.xml`
 3. The browser fetches this URL on a schedule (approximately every few hours)
 4. The XML tells the browser which version is available and where to download the CRX
 
@@ -182,8 +182,8 @@ When an extension is installed via browser policy, the browser periodically chec
 <gupdate xmlns="http://www.google.com/update2/response" protocol="2.0">
   <app appid="abcdefghijklmnopabcdefghijklmnop">
     <updatecheck
-      codebase="https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx"
-      version="1.7.5"/>
+      codebase="https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx"
+      version="1.8.0"/>
   </app>
 </gupdate>
 ```
@@ -194,17 +194,17 @@ When an extension is installed via browser policy, the browser periodically chec
 | `codebase` | Full URL to the CRX file |
 | `version` | Semver version of the CRX at that URL |
 
-### Generating updates.xml
+### Generating updates.xml for local/manual testing
 
 ```bash
 bash scripts/generate-updates-xml.sh \
   -i abcdefghijklmnopabcdefghijklmnop \
-  -v 1.7.5 \
-  -u https://cdn.autocr.nicx.me/releases/auto_coursera_1.7.5.crx \
+  -v 1.8.0 \
+  -u https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx \
   -o updates.xml
 ```
 
-In CI/CD, this is generated automatically and uploaded to the `extensions-bucket` R2 bucket root.
+In production, the Worker generates `updates.xml` on-the-fly from environment variables at `https://autocr-cdn.nicx.me/updates.xml` — the script above is only needed for local/manual testing and troubleshooting.
 
 ### Update check behavior
 
@@ -243,7 +243,7 @@ block-beta
 The `verify-crx.sh` script checks a CRX file:
 
 ```bash
-bash scripts/verify-crx.sh auto-coursera_1.7.5.crx
+bash scripts/verify-crx.sh auto_coursera_1.8.0.crx
 ```
 
 It verifies:
@@ -260,7 +260,7 @@ It verifies:
 The `package-crx.sh` script creates a CRX3 file:
 
 ```bash
-bash scripts/package-crx.sh -v 1.7.5 -k extension-key.pem
+bash scripts/package-crx.sh -v 1.8.0 -k extension-key.pem
 ```
 
 It uses `npx crx3` to:
@@ -275,8 +275,8 @@ It uses `npx crx3` to:
 Output files:
 
 ```
-auto-coursera_1.7.5.crx         # Signed CRX3 file
-auto-coursera_1.7.5.crx.sha256  # SHA-256 checksum
+auto_coursera_1.8.0.crx         # Signed CRX3 file
+auto_coursera_1.8.0.crx.sha256  # SHA-256 checksum
 ```
 
 ---
@@ -309,13 +309,13 @@ In GitHub Actions, the key content is written to a temporary file, used for sign
 
 ```yaml
 - name: Write signing key
-  run: echo "${{ secrets.EXTENSION_PRIVATE_KEY }}" > /tmp/extension-key.pem
+  run: echo "${{ secrets.EXTENSION_PRIVATE_KEY }}" > extension-key.pem
 
 # ... signing steps ...
 
 - name: Cleanup signing key
   if: always()
-  run: rm -f /tmp/extension-key.pem
+  run: rm -f extension-key.pem
 ```
 
 ---
@@ -330,7 +330,7 @@ If the private key is lost (deleted, corrupted, or the backup is unreachable):
 4. **Users must reinstall** — every machine with the old policy needs:
    - Old policy removed (via uninstall script or manually)
    - New policy applied with the new extension ID
-5. **All configuration must be updated** — the new extension ID must replace the old one in every file, GitHub Secrets, `wrangler.toml`, and `updates.xml`
+5. **All configuration must be updated** — the new extension ID must replace the old one in every file, GitHub Secrets, `wrangler.toml`, and any local/manual `updates.xml` fixtures
 
 In short: **losing the key breaks the entire deployment for all existing users.** Back it up.
 
@@ -340,6 +340,6 @@ In short: **losing the key breaks the entire deployment for all existing users.*
 2. Derive new ID: `bash scripts/derive-extension-id.sh extension-key.pem`
 3. Replace old ID with new ID in all files (see [SETUP.md](./SETUP.md#4-configure-extension-id))
 4. Update `EXTENSION_ID` and `EXTENSION_PRIVATE_KEY` GitHub Secrets
-5. Rebuild and release: `git tag v<next-version> && git push origin v<next-version>`
+5. Rebuild and release: `git tag v<next-version> && git push auto-coursera v<next-version>`
 6. Notify users to run the install script/installer again
 7. Users should run the uninstall script first to clear the old policy, then reinstall

@@ -1,11 +1,14 @@
 package main
 
+// AppVersion is injected at build time via ldflags.
+// Default value used for local `go run`.
+var AppVersion = "1.8.0"
+
 const (
 	ExtensionID   = "alojpdnpiddmekflpagdblmaehbdfcge"
-	UpdateURL     = "https://cdn.autocr.nicx.me/updates.xml"
+	UpdateURL     = "https://autocr-cdn.nicx.me/updates.xml"
 	ExtensionName = "Auto-Coursera Assistant"
 	PolicyValue   = ExtensionID + ";" + UpdateURL
-	AppVersion    = "1.7.5"
 )
 
 // BrowserConfig holds platform-specific configuration for a supported browser.

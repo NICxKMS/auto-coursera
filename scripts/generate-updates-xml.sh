@@ -5,8 +5,10 @@ set -euo pipefail
 # generate-updates-xml.sh — Generate Chrome extension auto-update manifest
 # ============================================================================
 #
-# Produces the updates.xml file that Chrome checks for extension updates
-# when using enterprise policy installs or self-hosted extensions.
+# Produces a local/manual updates.xml fixture for enterprise policy installs
+# or self-hosted extension testing.
+# Production uses the Worker-served endpoint at https://autocr-cdn.nicx.me/updates.xml
+# and no longer publishes a static updates.xml artifact in release CI.
 # See: https://developer.chrome.com/docs/extensions/how-to/distribute/host-on-linux
 
 # Colors
@@ -26,11 +28,13 @@ OUTPUT_FILE=""
 usage() {
     echo -e "${BOLD}Usage:${NC} $0 -i <extension-id> -v <version> -u <crx-url> [-o <output-file>] [-h]"
     echo ""
-    echo "Generate a Chrome extension updates.xml auto-update manifest."
+    echo "Generate a Chrome extension updates.xml auto-update manifest for local/manual testing."
+    echo "Production uses the Worker-served endpoint at https://autocr-cdn.nicx.me/updates.xml."
+    echo "This helper is not used by the tagged-release CI workflow."
     echo ""
     echo -e "${BOLD}Required:${NC}"
     echo "  -i <extension-id>   Chrome extension ID (32 lowercase letters a-p)"
-    echo "  -v <version>        Extension version (e.g., 1.7.5)"
+    echo "  -v <version>        Extension version (e.g., 1.8.0)"
     echo "  -u <crx-url>        Full URL to the CRX file"
     echo ""
     echo -e "${BOLD}Optional:${NC}"
@@ -38,8 +42,8 @@ usage() {
     echo "  -h                  Show this help message"
     echo ""
     echo -e "${BOLD}Examples:${NC}"
-    echo "  $0 -i abcdefghijklmnopabcdefghijklmnop -v 1.7.5 -u https://cdn.autocr.nicx.me/auto-coursera/auto-coursera_1.7.5.crx"
-    echo "  $0 -i abcdefghijklmnopabcdefghijklmnop -v 1.7.5 -u https://cdn.autocr.nicx.me/auto-coursera/auto-coursera_1.7.5.crx -o updates.xml"
+    echo "  $0 -i abcdefghijklmnopabcdefghijklmnop -v 1.8.0 -u https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx"
+    echo "  $0 -i abcdefghijklmnopabcdefghijklmnop -v 1.8.0 -u https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx -o updates.xml"
     echo ""
     echo -e "${BOLD}Output format:${NC}"
     echo '  <?xml version="1.0" encoding="UTF-8"?>'
@@ -118,7 +122,7 @@ fi
 # Validate version format
 if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
     log_error "Invalid version format: ${VERSION}"
-    echo -e "${YELLOW}Expected format: X.Y.Z or X.Y.Z.W (e.g., 1.7.5)${NC}" >&2
+    echo -e "${YELLOW}Expected format: X.Y.Z or X.Y.Z.W (e.g., 1.8.0)${NC}" >&2
     exit 1
 fi
 
@@ -145,7 +149,7 @@ if [[ -n "$OUTPUT_FILE" ]]; then
     mkdir -p "$(dirname "$OUTPUT_FILE")"
 
     echo "$XML_CONTENT" > "$OUTPUT_FILE"
-    log_success "updates.xml written to: ${OUTPUT_FILE}"
+    log_success "Local/manual updates.xml written to: ${OUTPUT_FILE}"
     log_info "Extension ID: ${EXTENSION_ID}"
     log_info "Version:      ${VERSION}"
     log_info "CRX URL:      ${CRX_URL}"

@@ -19,19 +19,19 @@ describe('MessageRouter', () => {
 
 	describe('handler registration and routing', () => {
 		it('should route a message to the registered handler', async () => {
-			router.on('GET_STATUS', async () => ({
-				type: 'GET_STATUS',
-				payload: { status: 'idle' },
+			router.on('SET_ENABLED', async () => ({
+				type: 'SET_ENABLED',
+				payload: { success: true },
 			}));
 
-			const message: Message = { type: 'GET_STATUS', payload: null };
+			const message: Message = { type: 'SET_ENABLED', payload: true };
 			const sender = {
 				id: 'ext-id',
 				tab: { url: 'https://www.coursera.org/' },
 			} as chrome.runtime.MessageSender;
 			const result = await router.route(message, sender);
-			expect(result.type).toBe('GET_STATUS');
-			expect((result.payload as Record<string, unknown>).status).toBe('idle');
+			expect(result.type).toBe('SET_ENABLED');
+			expect((result.payload as Record<string, unknown>).success).toBe(true);
 		});
 
 		it('should return ERROR for unknown message types', async () => {
@@ -45,11 +45,11 @@ describe('MessageRouter', () => {
 		});
 
 		it('should handle handler errors gracefully', async () => {
-			router.on('SOLVE_QUESTION', async () => {
+			router.on('SOLVE_BATCH', async () => {
 				throw new Error('Provider exploded');
 			});
 
-			const message: Message = { type: 'SOLVE_QUESTION', payload: {} };
+			const message: Message = { type: 'SOLVE_BATCH', payload: {} };
 			const sender = { id: 'ext-id' } as chrome.runtime.MessageSender;
 			const result = await router.route(message, sender);
 			expect(result.type).toBe('ERROR');
@@ -58,29 +58,31 @@ describe('MessageRouter', () => {
 			expect(errPayload.message).toBe('Provider exploded');
 		});
 
-		it('should persist error state to session storage on handler error', async () => {
-			router.on('SOLVE_QUESTION', async () => {
+		it('should not mutate session storage on handler error', async () => {
+			router.on('SOLVE_BATCH', async () => {
 				throw new Error('Crash');
 			});
 
-			const message: Message = { type: 'SOLVE_QUESTION', payload: {} };
+			const message: Message = { type: 'SOLVE_BATCH', payload: {} };
 			const sender = { id: 'ext-id' } as chrome.runtime.MessageSender;
 			await router.route(message, sender);
 
 			const sessionStore = chrome.storage.session._getStore() as Record<string, unknown>;
-			expect(sessionStore._lastStatus).toBe('error');
-			expect(sessionStore._lastError).toBe('Crash');
+			expect(sessionStore).toEqual({});
 		});
 
 		it('should route multiple different message types correctly', async () => {
-			router.on('GET_STATUS', async () => ({ type: 'GET_STATUS', payload: 'status-ok' }));
+			router.on('TEST_CONNECTION', async () => ({
+				type: 'TEST_CONNECTION',
+				payload: 'connection-ok',
+			}));
 			router.on('SET_ENABLED', async () => ({ type: 'SET_ENABLED', payload: 'enabled-ok' }));
 
 			const sender = { id: 'ext-id' } as chrome.runtime.MessageSender;
-			const r1 = await router.route({ type: 'GET_STATUS', payload: null }, sender);
+			const r1 = await router.route({ type: 'TEST_CONNECTION', payload: {} }, sender);
 			const r2 = await router.route({ type: 'SET_ENABLED', payload: true }, sender);
 
-			expect(r1.payload).toBe('status-ok');
+			expect(r1.payload).toBe('connection-ok');
 			expect(r2.payload).toBe('enabled-ok');
 		});
 
@@ -88,13 +90,13 @@ describe('MessageRouter', () => {
 			let receivedPayload: unknown;
 			let receivedSender: chrome.runtime.MessageSender | undefined;
 
-			router.on('SOLVE_QUESTION', async (payload, sender) => {
+			router.on('SOLVE_BATCH', async (payload, sender) => {
 				receivedPayload = payload;
 				receivedSender = sender;
-				return { type: 'SELECT_ANSWER', payload: { answerIndices: [0] } };
+				return { type: 'SOLVE_BATCH', payload: { answers: [] } };
 			});
 
-			const message: Message = { type: 'SOLVE_QUESTION', payload: { questionText: 'test?' } };
+			const message: Message = { type: 'SOLVE_BATCH', payload: { questionText: 'test?' } };
 			const sender = {
 				id: 'ext-id',
 				tab: { id: 42, url: 'https://www.coursera.org/learn/test' },

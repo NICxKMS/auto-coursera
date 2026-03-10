@@ -203,4 +203,18 @@ describe('AIProviderManager', () => {
 			expect(result.provider).toBe('has-vision');
 		});
 	});
+
+	describe('cancellation', () => {
+		it('should not fall back to a secondary provider when the request is cancelled', async () => {
+			const primary = createMockProvider('primary', {
+				solveError: new Error('REQUEST_CANCELLED'),
+			});
+			const fallback = createMockProvider('fallback');
+			manager.register(primary);
+			manager.register(fallback);
+
+			await expect(manager.solve(baseRequest)).rejects.toThrow('REQUEST_CANCELLED');
+			expect(fallback.solve).not.toHaveBeenCalled();
+		});
+	});
 });

@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.8.0] — 2026-03-10
+
+### Added
+- **Linux ARM64 release target** — `make build-all` now covers the Linux ARM64 installer binary alongside the existing Windows and macOS targets so the release matrix matches the website/download routing
+
+### Fixed
+- **macOS browser detection** — Unix detection now checks both `/Applications` and `~/Applications` for Chrome, Edge, Brave, and Chromium app bundles, covering user-local installs that were previously missed
+
 ## [1.7.5] — 2026-03-09
 
 ### Added

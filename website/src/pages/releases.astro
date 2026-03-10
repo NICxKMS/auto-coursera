@@ -88,8 +88,9 @@ import Base from '../layouts/Base.astro';
   interface ReleaseData {
     version: string;
     date: string;
-    downloadUrl: string;
-    size?: string;
+    url: string;
+    file: string;
+    size: number;
   }
 
   const container = document.getElementById('releases-container')!;
@@ -112,12 +113,18 @@ import Base from '../layouts/Base.astro';
     }
   }
 
+  function formatSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
   function renderRelease(release: ReleaseData, isLatest: boolean): string {
     const dateFormatted = escapeHtml(formatDate(release.date));
     const version = escapeHtml(release.version);
     const dateAttr = escapeHtml(release.date);
-    const downloadUrl = escapeHtml(release.downloadUrl);
-    const size = release.size ? escapeHtml(release.size) : '';
+    const downloadUrl = escapeHtml(release.url);
+    const size = release.size ? escapeHtml(formatSize(release.size)) : '';
     return `
       <article class="card-interactive relative overflow-hidden animate-slide-up">
         <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary-500 via-primary-400/50 to-transparent" aria-hidden="true"></div>
@@ -173,12 +180,13 @@ import Base from '../layouts/Base.astro';
     container.querySelectorAll('.release-card').forEach((el) => el.remove());
 
     try {
-      const res = await fetch('https://api.autocr.nicx.me/api/releases', {
+      const res = await fetch('https://autocr-api.nicx.me/api/releases', {
         signal: AbortSignal.timeout(10000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const releases: ReleaseData[] = await res.json();
+      const data = await res.json();
+      const releases: ReleaseData[] = data.releases;
 
       // Remove skeleton
       container.querySelectorAll('.skeleton-card').forEach((el) => el.remove());

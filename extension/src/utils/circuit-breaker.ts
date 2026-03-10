@@ -1,3 +1,4 @@
+import { CIRCUIT_COOLDOWN_MS, CIRCUIT_FAILURE_THRESHOLD } from './constants';
 import { Logger } from './logger';
 
 const logger = new Logger('CircuitBreaker');
@@ -16,8 +17,8 @@ export class CircuitBreaker {
 
 	constructor(
 		private readonly name: string,
-		private readonly failureThreshold: number = 3,
-		private readonly cooldownMs: number = 60_000,
+		private readonly failureThreshold: number = CIRCUIT_FAILURE_THRESHOLD,
+		private readonly cooldownMs: number = CIRCUIT_COOLDOWN_MS,
 	) {}
 
 	canProceed(): boolean {

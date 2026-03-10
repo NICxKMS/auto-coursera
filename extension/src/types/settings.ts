@@ -46,3 +46,20 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	maxRetries: 2,
 	rateLimitRpm: 20,
 };
+
+/** Maps provider name to its API key and model settings keys */
+export const PROVIDER_KEY_MAP = {
+	openrouter: { apiKey: 'openrouterApiKey', model: 'openrouterModel' },
+	'nvidia-nim': { apiKey: 'nvidiaApiKey', model: 'nvidiaModel' },
+	gemini: { apiKey: 'geminiApiKey', model: 'geminiModel' },
+	groq: { apiKey: 'groqApiKey', model: 'groqModel' },
+	cerebras: { apiKey: 'cerebrasApiKey', model: 'cerebrasModel' },
+} as const satisfies Record<ProviderName, { apiKey: keyof AppSettings; model: keyof AppSettings }>;
+
+export type ProviderApiKeyField = (typeof PROVIDER_KEY_MAP)[ProviderName]['apiKey'];
+export type ProviderModelField = (typeof PROVIDER_KEY_MAP)[ProviderName]['model'];
+
+export const PROVIDER_NAMES = Object.keys(PROVIDER_KEY_MAP) as ProviderName[];
+export const API_KEY_FIELDS = PROVIDER_NAMES.map(
+	(name) => PROVIDER_KEY_MAP[name].apiKey,
+) as ProviderApiKeyField[];

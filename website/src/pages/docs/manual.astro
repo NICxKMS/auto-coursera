@@ -4,7 +4,7 @@ import Header from '../../components/Header.astro';
 import Base from '../../layouts/Base.astro';
 ---
 
-<Base title="Manual Installation" description="Step-by-step manual installation guide for Auto-Coursera Assistant on Windows, Linux, and macOS.">
+<Base title="Manual Installation" description="Advanced browser-policy installation guide for Auto-Coursera Assistant on Windows, Linux, and macOS.">
   <Header />
 
   <main id="main-content" class="py-16 sm:py-24 px-4">
@@ -14,7 +14,7 @@ import Base from '../../layouts/Base.astro';
         <p class="section-label">Docs</p>
         <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Manual Installation</h1>
         <p class="text-lg text-surface-400 max-w-xl mx-auto">
-          Configure browser policies by hand if you prefer full control over the process.
+          Advanced guide for writing browser policies by hand when you need full control over the install path.
         </p>
       </div>
 
@@ -24,9 +24,18 @@ import Base from '../../layouts/Base.astro';
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
         </div>
         <div class="text-sm text-surface-400 leading-relaxed">
-          <strong class="text-surface-200">Prefer automatic installation?</strong> Use the <a href="/install" class="text-primary-400 hover:text-primary-300">one-click installer</a> instead — it handles all of this automatically.
+          <strong class="text-surface-200">Prefer automatic installation?</strong> Use the <a href="/install" class="text-primary-400 hover:text-primary-300">native installer</a> first. Terminal scripts and this page are advanced/manual alternatives when you need scripting or browser-by-browser control.
         </div>
       </div>
+
+      <section class="mb-10 animate-slide-up delay-50">
+        <div class="glass p-6">
+          <h2 class="text-base font-semibold text-white mb-2">Supported browsers</h2>
+          <p class="text-sm text-surface-400 leading-relaxed">
+            The same manual policy mechanism works with <strong class="text-surface-200">Google Chrome</strong>, <strong class="text-surface-200">Microsoft Edge</strong>, <strong class="text-surface-200">Brave</strong>, and <strong class="text-surface-200">Chromium</strong> on every supported OS. Pick the matching registry key, policy directory, or plist domain below.
+          </p>
+        </div>
+      </section>
 
       <!-- ═══════════════════ WINDOWS ═══════════════════ -->
       <section class="mb-12 animate-slide-up delay-100">
@@ -44,10 +53,13 @@ import Base from '../../layouts/Base.astro';
             </div>
 
             <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 2 — Create the policy key</h3>
-              <p class="text-sm text-surface-400 mb-3">Navigate to or create the following registry key:</p>
-              <div class="glass-strong p-4 overflow-x-auto">
-                <code class="text-sm font-mono text-surface-200 whitespace-nowrap">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist</code>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 2 — Choose the registry key for your browser</h3>
+              <p class="text-sm text-surface-400 mb-3">Navigate to or create the matching <code>ExtensionInstallForcelist</code> key:</p>
+              <div class="glass-strong p-4 space-y-3 overflow-x-auto text-sm">
+                <div><span class="text-surface-300 font-medium">Chrome</span><br /><code class="text-surface-200 font-mono whitespace-nowrap">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist</code></div>
+                <div><span class="text-surface-300 font-medium">Edge</span><br /><code class="text-surface-200 font-mono whitespace-nowrap">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist</code></div>
+                <div><span class="text-surface-300 font-medium">Brave</span><br /><code class="text-surface-200 font-mono whitespace-nowrap">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\BraveSoftware\Brave\ExtensionInstallForcelist</code></div>
+                <div><span class="text-surface-300 font-medium">Chromium</span><br /><code class="text-surface-200 font-mono whitespace-nowrap">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Chromium\ExtensionInstallForcelist</code></div>
               </div>
             </div>
 
@@ -55,16 +67,13 @@ import Base from '../../layouts/Base.astro';
               <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 3 — Add the extension entry</h3>
               <p class="text-sm text-surface-400 mb-3">Create a new String Value (<code>REG_SZ</code>) with name <code>1</code> and value:</p>
               <div class="glass-strong p-4 overflow-x-auto">
-                <code class="text-sm font-mono text-surface-200 whitespace-nowrap">alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.me/updates.xml</code>
+                <code class="text-sm font-mono text-surface-200 whitespace-nowrap">alojpdnpiddmekflpagdblmaehbdfcge;https://autocr-cdn.nicx.me/updates.xml</code>
               </div>
             </div>
 
             <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 4 — For Edge (optional)</h3>
-              <p class="text-sm text-surface-400 mb-3">Use the same value at this registry path instead:</p>
-              <div class="glass-strong p-4 overflow-x-auto">
-                <code class="text-sm font-mono text-surface-200 whitespace-nowrap">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist</code>
-              </div>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 4 — Repeat for any additional browsers</h3>
+              <p class="text-sm text-surface-400 mb-3">Use the same string value in each browser-specific registry key you want to manage, then restart the browser and reload <code>chrome://policy</code>.</p>
             </div>
           </div>
         </details>
@@ -81,19 +90,23 @@ import Base from '../../layouts/Base.astro';
 
           <div class="px-6 pb-6 space-y-6 border-t border-white/[0.04]">
             <div class="pt-6">
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 1 — Create the policy directory</h3>
-              <div class="glass-strong p-4 overflow-x-auto">
-                <code class="text-sm font-mono text-surface-200">sudo mkdir -p /etc/opt/chrome/policies/managed</code>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 1 — Choose the policy directory for your browser</h3>
+              <div class="glass-strong p-4 space-y-3 overflow-x-auto text-sm">
+                <div><span class="text-surface-300 font-medium">Chrome</span><br /><code class="text-surface-200 font-mono">/etc/opt/chrome/policies/managed</code></div>
+                <div><span class="text-surface-300 font-medium">Edge</span><br /><code class="text-surface-200 font-mono">/etc/opt/edge/policies/managed</code></div>
+                <div><span class="text-surface-300 font-medium">Brave</span><br /><code class="text-surface-200 font-mono">/etc/brave/policies/managed</code></div>
+                <div><span class="text-surface-300 font-medium">Chromium</span><br /><code class="text-surface-200 font-mono">/etc/chromium/policies/managed</code></div>
               </div>
+              <p class="text-sm text-surface-400 mt-3">Create the directory you need with <code>sudo mkdir -p &lt;policy-dir&gt;</code>.</p>
             </div>
 
             <div>
               <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 2 — Create the policy file</h3>
-              <p class="text-sm text-surface-400 mb-3">Create <code>/etc/opt/chrome/policies/managed/auto_coursera_policy.json</code> with:</p>
+              <p class="text-sm text-surface-400 mb-3">Create <code>/etc/opt/chrome/policies/managed/auto_coursera.json</code> with:</p>
               <div class="glass-strong p-4 overflow-x-auto">
                 <pre class="text-sm font-mono text-surface-200 leading-relaxed">{`{
   "ExtensionInstallForcelist": [
-    "alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.me/updates.xml"
+    "alojpdnpiddmekflpagdblmaehbdfcge;https://autocr-cdn.nicx.me/updates.xml"
   ]
 }`}</pre>
               </div>
@@ -102,13 +115,13 @@ import Base from '../../layouts/Base.astro';
             <div>
               <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 3 — Set file permissions</h3>
               <div class="glass-strong p-4 overflow-x-auto">
-                <code class="text-sm font-mono text-surface-200">sudo chmod 644 /etc/opt/chrome/policies/managed/auto_coursera_policy.json</code>
+                <code class="text-sm font-mono text-surface-200">sudo chmod 644 /etc/opt/chrome/policies/managed/auto_coursera.json</code>
               </div>
             </div>
 
             <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">For Chromium (optional)</h3>
-              <p class="text-sm text-surface-400 mb-3">Use the directory <code>/etc/chromium/policies/managed/</code> instead.</p>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 4 — Repeat for additional browsers if needed</h3>
+              <p class="text-sm text-surface-400 mb-3">Use the same filename (<code>auto_coursera.json</code>) in the browser-specific Edge, Brave, or Chromium directory when you want more than one browser managed.</p>
             </div>
           </div>
         </details>
@@ -125,24 +138,31 @@ import Base from '../../layouts/Base.astro';
 
           <div class="px-6 pb-6 space-y-6 border-t border-white/[0.04]">
             <div class="pt-6">
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 1 — Write the policy using defaults</h3>
-              <p class="text-sm text-surface-400 mb-3">Open Terminal and run:</p>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 1 — Choose the browser domain</h3>
+              <div class="glass-strong p-4 space-y-3 overflow-x-auto text-sm">
+                <div><span class="text-surface-300 font-medium">Chrome</span><br /><code class="text-surface-200 font-mono">com.google.Chrome</code></div>
+                <div><span class="text-surface-300 font-medium">Edge</span><br /><code class="text-surface-200 font-mono">com.microsoft.Edge</code></div>
+                <div><span class="text-surface-300 font-medium">Brave</span><br /><code class="text-surface-200 font-mono">com.brave.Browser</code></div>
+                <div><span class="text-surface-300 font-medium">Chromium</span><br /><code class="text-surface-200 font-mono">org.chromium.Chromium</code></div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 2 — Write the policy using defaults</h3>
+              <p class="text-sm text-surface-400 mb-3">Open Terminal and run the command for your browser. Example for Chrome:</p>
               <div class="glass-strong p-4 overflow-x-auto">
                 <pre class="text-sm font-mono text-surface-200 leading-relaxed">{`defaults write com.google.Chrome ExtensionInstallForcelist -array-add \\
-  "alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.me/updates.xml"`}</pre>
+  "alojpdnpiddmekflpagdblmaehbdfcge;https://autocr-cdn.nicx.me/updates.xml"`}</pre>
               </div>
             </div>
 
             <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 2 — For Edge (optional)</h3>
-              <div class="glass-strong p-4 overflow-x-auto">
-                <pre class="text-sm font-mono text-surface-200 leading-relaxed">{`defaults write com.microsoft.Edge ExtensionInstallForcelist -array-add \\
-  "alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.me/updates.xml"`}</pre>
-              </div>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 3 — Swap in the matching domain for Edge, Brave, or Chromium</h3>
+              <p class="text-sm text-surface-400">Keep the same value string and replace only the domain prefix from Step 1.</p>
             </div>
 
             <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 3 — Restart the browser</h3>
+              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 4 — Restart the browser</h3>
               <p class="text-sm text-surface-400">Quit Chrome completely (Cmd + Q) and reopen it. The extension will be installed on next launch.</p>
             </div>
           </div>

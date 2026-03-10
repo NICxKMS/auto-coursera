@@ -3,6 +3,38 @@
  * REQ: NFR-002 — per-provider rate limiting
  */
 
+import { ERROR_CODES } from './constants';
+
+function throwIfAborted(signal?: AbortSignal): void {
+	if (signal?.aborted) {
+		throw new Error(ERROR_CODES.REQUEST_CANCELLED);
+	}
+}
+
+async function waitWithAbort(waitMs: number, signal?: AbortSignal): Promise<void> {
+	if (!signal) {
+		await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
+		return;
+	}
+
+	throwIfAborted(signal);
+
+	await new Promise<void>((resolve, reject) => {
+		const timeoutId = setTimeout(() => {
+			signal.removeEventListener('abort', onAbort);
+			resolve();
+		}, waitMs);
+
+		const onAbort = () => {
+			clearTimeout(timeoutId);
+			signal.removeEventListener('abort', onAbort);
+			reject(new Error(ERROR_CODES.REQUEST_CANCELLED));
+		};
+
+		signal.addEventListener('abort', onAbort, { once: true });
+	});
+}
+
 export class RateLimiter {
 	private tokens: number;
 	private readonly maxTokens: number;
@@ -31,7 +63,9 @@ export class RateLimiter {
 	 * Acquire a token. Waits asynchronously if no tokens are available.
 	 * AC-NFR-002.2: Callers wait when bucket is empty, not rejected.
 	 */
-	async acquire(): Promise<void> {
+	async acquire(signal?: AbortSignal): Promise<void> {
+		throwIfAborted(signal);
+
 		while (true) {
 			this.refill();
 			if (this.tokens >= 1) {
@@ -40,7 +74,7 @@ export class RateLimiter {
 			}
 			// Calculate wait time until 1 token is available
 			const waitMs = Math.ceil((1 - this.tokens) / this.refillRate);
-			await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
+			await waitWithAbort(waitMs, signal);
 		}
 	}
 

@@ -3,7 +3,7 @@
     Auto-Coursera Assistant — Windows Browser Extension Policy Uninstaller
 .DESCRIPTION
     Removes the Auto-Coursera Assistant extension from the ExtensionInstallForcelist
-    registry policy for all Chromium-based browsers (Chrome, Edge, Brave).
+    registry policy for all supported Chromium-based browsers (Chrome, Edge, Brave, Chromium).
 .EXAMPLE
     .\uninstall.ps1
 .NOTES
@@ -27,6 +27,7 @@ $BrowserPolicies = @{
     "Google Chrome"  = "HKLM:\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist"
     "Microsoft Edge" = "HKLM:\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist"
     "Brave Browser"  = "HKLM:\SOFTWARE\Policies\BraveSoftware\Brave\ExtensionInstallForcelist"
+    "Chromium"       = "HKLM:\SOFTWARE\Policies\Chromium\ExtensionInstallForcelist"
 }
 
 # ── Helper Functions ─────────────────────────────────────────────────────────
@@ -68,7 +69,7 @@ function Show-Usage {
     Write-Host "Usage:" -ForegroundColor White
     Write-Host "  .\uninstall.ps1" -ForegroundColor Gray
     Write-Host ""
-    Write-Host "Removes the ${EXTENSION_NAME} from all browser policies." -ForegroundColor Gray
+    Write-Host "Removes the ${EXTENSION_NAME} from all supported browser policies (Chrome, Edge, Brave, Chromium)." -ForegroundColor Gray
     Write-Host "Requires Administrator privileges." -ForegroundColor Gray
     Write-Host ""
 }

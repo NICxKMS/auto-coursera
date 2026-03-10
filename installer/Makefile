@@ -1,7 +1,8 @@
 .PHONY: build-all build-windows build-windows-arm build-macos build-macos-intel build-linux clean
 
 BINARY  := installer
-LDFLAGS := -ldflags="-s -w"
+VERSION := $(shell jq -r .version ../version.json 2>/dev/null || echo "dev")
+LDFLAGS := -ldflags="-s -w -X main.AppVersion=$(VERSION)"
 
 build-all: build-windows build-windows-arm build-macos build-macos-intel build-linux build-linux-arm64
 

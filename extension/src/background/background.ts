@@ -7,249 +7,527 @@ import { AIProviderManager } from '../services/ai-provider';
 import { CerebrasProvider } from '../services/cerebras';
 import { GeminiProvider } from '../services/gemini';
 import { GroqProvider } from '../services/groq';
-import { fetchAsBase64, processCorsBlockedImages } from '../services/image-pipeline';
+import { fetchAsBase64 } from '../services/image-pipeline';
 import { NvidiaNimProvider } from '../services/nvidia-nim';
 import { OpenRouterProvider } from '../services/openrouter';
-import type { AIBatchRequest, AIRequest, IAIProvider } from '../types/api';
+import type { AIBatchRequest, IAIProvider } from '../types/api';
 import type {
+	ApplyOutcomePayload,
 	BatchQuestionPayload,
 	BatchSolveResponsePayload,
+	CancelPageWorkPayload,
 	ErrorPayload,
-	GetSettingsResponsePayload,
 	Message,
+	RegisterPageContextPayload,
+	RegisterPageContextResponsePayload,
+	ReportPageErrorPayload,
 	ResetExtensionResponsePayload,
-	SelectAnswerPayload,
+	RuntimeRequestContext,
 	SetEnabledResponsePayload,
-	SolveImageQuestionPayload,
-	SolveQuestionPayload,
-	StatusPayload,
+	TabActionResponsePayload,
+	TestConnectionPayload,
+	TestConnectionResponsePayload,
 } from '../types/messages';
-import type { AppSettings } from '../types/settings';
-import { ERROR_CODES } from '../utils/constants';
+import type { RuntimeScopeDescriptor } from '../types/runtime';
+import { getRuntimeScopeId } from '../types/runtime';
+import type { AppSettings, ProviderName } from '../types/settings';
+import { PROVIDER_KEY_MAP } from '../types/settings';
+import {
+	ERROR_CODES,
+	IDLE_RESET_DELAY_MINUTES,
+	KEEPALIVE_PERIOD_MINUTES,
+} from '../utils/constants';
 import { Logger } from '../utils/logger';
 import { RateLimiter } from '../utils/rate-limiter';
 import { getSettings, setEnabled } from '../utils/storage';
 import { MessageRouter } from './router';
+import {
+	getProcessingRecoveryAlarmName,
+	PROCESSING_RECOVERY_ALARM_PREFIX,
+	RuntimeStateManager,
+} from './runtime-state';
 
 const logger = new Logger('ServiceWorker');
 const router = new MessageRouter();
+const runtimeStateManager = new RuntimeStateManager();
+
 let providerManager = new AIProviderManager();
+let providersReady = false;
+let providerReadyPromise: Promise<void> = getSettings()
+	.then((settings) => initializeProviders(settings))
+	.catch((error) => {
+		logger.error('Provider init failed', error);
+		providersReady = true;
+	});
+
+const KEEPALIVE_ALARM = 'sw-keepalive';
+const IDLE_RESET_ALARM = 'sw-idle-reset';
+let idleResetTimestamp = 0;
 
 function errorResponse(code: string, message: string): Message {
 	return { type: 'ERROR', payload: { code, message } satisfies ErrorPayload };
 }
 
-const KEEPALIVE_ALARM = 'sw-keepalive';
-const IDLE_RESET_ALARM = 'sw-idle-reset';
-let _idleResetTimestamp = 0;
-let solveMutex: Promise<void> = Promise.resolve();
+function getErrorMessage(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
+}
+
+function isCancellationError(error: unknown): boolean {
+	return error instanceof DOMException
+		? error.name === 'AbortError'
+		: error instanceof Error && /REQUEST_CANCELLED/i.test(error.message);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function getRuntimeRequestContext(value: unknown): RuntimeRequestContext | null {
+	if (
+		!isRecord(value) ||
+		typeof value.requestId !== 'string' ||
+		typeof value.pageInstanceId !== 'string' ||
+		typeof value.pageUrl !== 'string'
+	) {
+		return null;
+	}
+
+	return {
+		requestId: value.requestId,
+		pageInstanceId: value.pageInstanceId,
+		pageUrl: value.pageUrl,
+	};
+}
+
+function getTabId(sender: chrome.runtime.MessageSender): number | null {
+	return typeof sender.tab?.id === 'number' ? sender.tab.id : null;
+}
+
+function buildScopeDescriptor(
+	tabId: number,
+	pageInstanceId: string,
+	pageUrl: string,
+): RuntimeScopeDescriptor {
+	return {
+		tabId,
+		pageInstanceId,
+		pageUrl,
+		scopeId: getRuntimeScopeId(tabId, pageInstanceId),
+	};
+}
+
+function getPrimaryProviderModel(settings: AppSettings): string {
+	const modelKey = PROVIDER_KEY_MAP[settings.primaryProvider].model;
+	return settings[modelKey] as string;
+}
 
 function startKeepAlive(): void {
-	chrome.alarms.create(KEEPALIVE_ALARM, { periodInMinutes: 0.4 }); // 24s, under 30s idle limit
+	chrome.alarms.create(KEEPALIVE_ALARM, { periodInMinutes: KEEPALIVE_PERIOD_MINUTES });
 }
 
 function stopKeepAlive(): void {
 	chrome.alarms.clear(KEEPALIVE_ALARM);
 }
 
+function scheduleIdleReset(): void {
+	idleResetTimestamp = Date.now();
+	chrome.alarms.create(IDLE_RESET_ALARM, { delayInMinutes: IDLE_RESET_DELAY_MINUTES });
+}
+
 chrome.alarms.onAlarm.addListener((alarm) => {
 	if (alarm.name === KEEPALIVE_ALARM) {
 		logger.debug('Keep-alive ping');
-	} else if (alarm.name === IDLE_RESET_ALARM) {
-		handleIdleReset();
+		return;
 	}
+
+	if (alarm.name === IDLE_RESET_ALARM) {
+		void handleIdleReset();
+		return;
+	}
+
+	if (alarm.name.startsWith(PROCESSING_RECOVERY_ALARM_PREFIX)) {
+		const scopeId = alarm.name.slice(PROCESSING_RECOVERY_ALARM_PREFIX.length);
+		void runtimeStateManager.recoverStaleProcessingScope(scopeId);
+	}
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+	void runtimeStateManager.removeTabScope(tabId);
 });
 
 async function handleIdleReset(): Promise<void> {
 	try {
-		const current = await chrome.storage.session.get({
-			_lastStatus: '',
-			_lastStatusTimestamp: 0,
-		});
-		if (
-			current._lastStatus === 'active' &&
-			(current._lastStatusTimestamp as number) <= _idleResetTimestamp
-		) {
-			await chrome.storage.session.set({ _lastStatus: 'idle' });
-		}
+		await runtimeStateManager.idleActiveScopesUpdatedBefore(idleResetTimestamp);
 	} catch {
-		/* SW context may have been invalidated */
+		/* service worker context may have been invalidated */
 	}
 }
-let providersReady = false;
-let providerReadyPromise: Promise<void> = getSettings()
-	.then((s) => initializeProviders(s))
-	.catch((err) => {
-		logger.error('Provider init failed', err);
-		providersReady = true; // Unblock message handling; empty provider list will return proper errors
-	});
 
-const PROVIDER_CONFIG: ReadonlyArray<{
-	key: 'openrouterApiKey' | 'nvidiaApiKey' | 'geminiApiKey' | 'groqApiKey' | 'cerebrasApiKey';
-	model: 'openrouterModel' | 'nvidiaModel' | 'geminiModel' | 'groqModel' | 'cerebrasModel';
-	Ctor: new (apiKey: string, model: string, limiter: RateLimiter) => IAIProvider;
-}> = [
-	{ key: 'openrouterApiKey', model: 'openrouterModel', Ctor: OpenRouterProvider },
-	{ key: 'nvidiaApiKey', model: 'nvidiaModel', Ctor: NvidiaNimProvider },
-	{ key: 'geminiApiKey', model: 'geminiModel', Ctor: GeminiProvider },
-	{ key: 'groqApiKey', model: 'groqModel', Ctor: GroqProvider },
-	{ key: 'cerebrasApiKey', model: 'cerebrasModel', Ctor: CerebrasProvider },
-];
+/** Maps provider name to its constructor */
+const PROVIDER_CTORS: Record<
+	ProviderName,
+	new (
+		apiKey: string,
+		model: string,
+		limiter: RateLimiter,
+	) => IAIProvider
+> = {
+	openrouter: OpenRouterProvider,
+	'nvidia-nim': NvidiaNimProvider,
+	gemini: GeminiProvider,
+	groq: GroqProvider,
+	cerebras: CerebrasProvider,
+};
 
-async function initializeProviders(settings: AppSettings): Promise<void> {
-	providerManager = new AIProviderManager();
+const PROVIDER_CONFIG = (Object.keys(PROVIDER_KEY_MAP) as ProviderName[]).map((name) => ({
+	name,
+	key: PROVIDER_KEY_MAP[name].apiKey,
+	model: PROVIDER_KEY_MAP[name].model,
+	Ctor: PROVIDER_CTORS[name],
+}));
+
+function createProviderManager(settings: AppSettings): AIProviderManager {
+	const manager = new AIProviderManager();
 	for (const { key, model, Ctor } of PROVIDER_CONFIG) {
 		if (settings[key]) {
-			providerManager.register(
-				new Ctor(settings[key], settings[model], new RateLimiter(settings.rateLimitRpm)),
+			manager.register(
+				new Ctor(
+					settings[key] as string,
+					settings[model] as string,
+					new RateLimiter(settings.rateLimitRpm),
+				),
 			);
 		}
 	}
-	providerManager.setPrimary(settings.primaryProvider);
+	manager.setPrimary(settings.primaryProvider);
+	return manager;
+}
+
+async function initializeProviders(settings: AppSettings): Promise<void> {
+	providerManager = createProviderManager(settings);
 	providersReady = true;
 	logger.info(`Providers initialized: ${providerManager.getProviderNames().join(', ')}`);
 }
 
-async function acquireSolveLock(): Promise<() => void> {
-	let release!: () => void;
-	const gate = new Promise<void>((resolve) => {
-		release = resolve;
-	});
-	const prev = solveMutex;
-	solveMutex = gate;
-	await prev;
-	return release;
-}
-
-async function solveLifecycle(label: string, execute: () => Promise<Message>): Promise<Message> {
-	const release = await acquireSolveLock();
-	try {
-		return await solveLifecycleCore(label, execute);
-	} finally {
-		release();
+async function ensureProvidersReady(): Promise<string | null> {
+	if (!providersReady) {
+		await providerReadyPromise;
 	}
-}
-
-async function solveLifecycleCore(
-	label: string,
-	execute: () => Promise<Message>,
-): Promise<Message> {
-	await chrome.storage.session.set({
-		_lastStatus: 'processing',
-		_lastError: '',
-		_lastStatusTimestamp: Date.now(),
-	});
-
-	if (!providersReady) await providerReadyPromise;
 
 	if (providerManager.getProviderCount() === 0) {
-		const msg = 'No AI providers configured. Please add API keys in settings.';
-		await chrome.storage.session.set({
-			_lastStatus: 'error',
-			_lastError: msg,
-			_lastStatusTimestamp: Date.now(),
-		});
-		return errorResponse(ERROR_CODES.NO_API_KEY, msg);
+		return 'No AI providers configured. Please add API keys in settings.';
 	}
 
+	return null;
+}
+
+async function resolveCurrentScope(
+	sender: chrome.runtime.MessageSender,
+	pageInstanceId: string,
+	pageUrl: string,
+): Promise<RuntimeScopeDescriptor | 'invalid' | null> {
+	const tabId = getTabId(sender);
+	if (tabId === null) {
+		return null;
+	}
+
+	const expectedScope = buildScopeDescriptor(tabId, pageInstanceId, pageUrl);
+	const currentState = await runtimeStateManager.getStateForTab(tabId);
+	if (!currentState) {
+		const { enabled } = await chrome.storage.local.get({ enabled: false });
+		await runtimeStateManager.registerScope({
+			tabId,
+			pageInstanceId,
+			pageUrl,
+			enabled: enabled as boolean,
+		});
+		return expectedScope;
+	}
+
+	if (currentState.scopeId !== expectedScope.scopeId) {
+		return 'invalid';
+	}
+
+	return expectedScope;
+}
+
+async function registerScopeForPage(
+	sender: chrome.runtime.MessageSender,
+	payload: RegisterPageContextPayload,
+): Promise<RegisterPageContextResponsePayload | null> {
+	const tabId = getTabId(sender);
+	if (tabId === null) {
+		return null;
+	}
+
+	const { enabled } = await chrome.storage.local.get({ enabled: false });
+	const state = await runtimeStateManager.registerScope({
+		tabId,
+		pageInstanceId: payload.pageInstanceId,
+		pageUrl: payload.pageUrl,
+		enabled: enabled as boolean,
+	});
+
+	return {
+		success: true,
+		scope: buildScopeDescriptor(tabId, payload.pageInstanceId, payload.pageUrl),
+		state,
+	};
+}
+
+async function solveWithProviderManager<T>(execute: () => Promise<T>): Promise<T> {
 	startKeepAlive();
 	try {
-		const response = await execute();
-		scheduleIdleReset();
-		return response;
-	} catch (error) {
-		logger.error(`${label} failed`, error);
-		const failSession = await chrome.storage.session.get({ failedCount: 0 });
-		await chrome.storage.session.set({
-			_lastStatus: 'error',
-			_lastError: error instanceof Error ? error.message : String(error),
-			_lastStatusTimestamp: Date.now(),
-			failedCount: (failSession.failedCount as number) + 1,
-		});
-		chrome.action.setBadgeText({ text: '!' });
-		chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
-		return errorResponse(
-			ERROR_CODES.SOLVE_FAILED,
-			error instanceof Error ? error.message : 'Unknown error',
-		);
+		return await execute();
 	} finally {
 		stopKeepAlive();
 	}
 }
 
-function scheduleIdleReset(): void {
-	_idleResetTimestamp = Date.now();
-	chrome.alarms.create(IDLE_RESET_ALARM, { delayInMinutes: 0.5 });
+async function preprocessBatchQuestions(
+	payload: BatchQuestionPayload,
+	signal?: AbortSignal,
+): Promise<AIBatchRequest['questions']> {
+	return Promise.all(
+		payload.questions.map(async (question) => {
+			if (!question.images?.length) {
+				return question;
+			}
+
+			const images = await Promise.all(
+				question.images.map(async (imgUrl) => {
+					try {
+						const result = await fetchAsBase64(imgUrl, signal);
+						return `data:${result.mime};base64,${result.base64}`;
+					} catch (error) {
+						if (isCancellationError(error)) {
+							throw error;
+						}
+						logger.warn('Failed to fetch image, skipping:', imgUrl);
+						return null;
+					}
+				}),
+			).then((results) => results.filter((result): result is string => result !== null));
+
+			return { ...question, images };
+		}),
+	);
 }
 
-async function handleSolveQuestion(payload: unknown): Promise<Message> {
-	if (!payload || typeof (payload as Record<string, unknown>).questionText !== 'string') {
-		return errorResponse('INVALID_PAYLOAD', 'Invalid question payload');
+async function handleSolveBatch(
+	payload: unknown,
+	sender: chrome.runtime.MessageSender,
+): Promise<Message> {
+	if (!isRecord(payload) || !Array.isArray(payload.questions)) {
+		return errorResponse('INVALID_PAYLOAD', 'Invalid batch payload');
 	}
 
-	return solveLifecycle('Solve', async () => {
-		const question = payload as SolveQuestionPayload | SolveImageQuestionPayload;
-		const request: AIRequest = {
-			questionText: question.questionText,
-			options: question.options,
-			images: [],
-			questionType: question.type,
-		};
+	const batchPayload = payload as unknown as BatchQuestionPayload;
+	const runtimeContext = getRuntimeRequestContext(payload.runtimeContext);
+	if (!runtimeContext) {
+		return errorResponse('INVALID_PAYLOAD', 'Invalid batch payload');
+	}
 
-		if ('images' in question && question.images?.length) {
-			request.images = await processCorsBlockedImages(
-				question.images.map((img) => ({ base64: img.base64, context: img.context })),
+	const resolvedScope = await resolveCurrentScope(
+		sender,
+		runtimeContext.pageInstanceId,
+		runtimeContext.pageUrl,
+	);
+	if (resolvedScope === 'invalid') {
+		return errorResponse(ERROR_CODES.INVALID_SCOPE, 'Page context is no longer current.');
+	}
+	if (!resolvedScope) {
+		return errorResponse(ERROR_CODES.INVALID_SCOPE, 'Could not determine the current tab scope.');
+	}
+
+	const signal = await runtimeStateManager.beginRequest(resolvedScope, runtimeContext.requestId);
+	if (!signal) {
+		return errorResponse(ERROR_CODES.INVALID_SCOPE, 'The current page scope is not available.');
+	}
+
+	const providerConfigError = await ensureProvidersReady();
+	if (providerConfigError) {
+		await runtimeStateManager.failRequest(
+			resolvedScope,
+			runtimeContext.requestId,
+			providerConfigError,
+		);
+		return errorResponse(ERROR_CODES.NO_API_KEY, providerConfigError);
+	}
+
+	try {
+		return await solveWithProviderManager(async () => {
+			const batchRequest: AIBatchRequest = {
+				questions: await preprocessBatchQuestions(batchPayload, signal),
+				signal,
+			};
+			const result = await providerManager.solveBatch(batchRequest);
+			const minConfidence =
+				result.answers.length > 0
+					? Math.min(...result.answers.map((answer) => answer.confidence))
+					: null;
+
+			const accepted = await runtimeStateManager.completeRequestSolve(
+				resolvedScope,
+				runtimeContext.requestId,
+				{
+					provider: result.provider,
+					model: result.model,
+					confidence: minConfidence,
+					tokensUsed: result.tokensUsed,
+				},
 			);
+			if (!accepted) {
+				return errorResponse(ERROR_CODES.REQUEST_CANCELLED, 'Request cancelled.');
+			}
+
+			return {
+				type: 'SOLVE_BATCH',
+				payload: {
+					requestId: runtimeContext.requestId,
+					answers: result.answers,
+				} satisfies BatchSolveResponsePayload,
+			};
+		});
+	} catch (error) {
+		if (isCancellationError(error)) {
+			return errorResponse(ERROR_CODES.REQUEST_CANCELLED, 'Request cancelled.');
 		}
 
-		const result = await providerManager.solve(request);
+		const message = getErrorMessage(error);
+		await runtimeStateManager.failRequest(resolvedScope, runtimeContext.requestId, message);
+		logger.error('Batch solve failed', error);
+		return errorResponse(ERROR_CODES.SOLVE_FAILED, message);
+	}
+}
+async function handleRegisterPageContext(
+	payload: unknown,
+	sender: chrome.runtime.MessageSender,
+): Promise<Message> {
+	if (
+		!isRecord(payload) ||
+		typeof payload.pageInstanceId !== 'string' ||
+		typeof payload.pageUrl !== 'string'
+	) {
+		return errorResponse('INVALID_PAYLOAD', 'Invalid page context payload');
+	}
 
-		const session = await chrome.storage.session.get({ solvedCount: 0, tokenCount: 0 });
-		const newSolvedCount = (session.solvedCount as number) + 1;
-		await chrome.storage.session.set({
-			_lastProvider: result.provider,
-			_lastModel: result.model,
-			_lastConfidence: result.confidence,
-			_lastStatus: 'active',
-			_lastError: '',
-			_lastStatusTimestamp: Date.now(),
-			solvedCount: newSolvedCount,
-			tokenCount: (session.tokenCount as number) + (result.tokensUsed || 0),
-		});
-		chrome.action.setBadgeText({ text: String(newSolvedCount) });
-		chrome.action.setBadgeBackgroundColor({ color: '#22c55e' });
+	const responsePayload = await registerScopeForPage(
+		sender,
+		payload as unknown as RegisterPageContextPayload,
+	);
+	if (!responsePayload) {
+		return errorResponse(ERROR_CODES.INVALID_SCOPE, 'Could not determine the current tab scope.');
+	}
 
-		return {
-			type: 'SELECT_ANSWER',
-			payload: {
-				answerIndices: result.answerIndices,
-				confidence: result.confidence,
-				reasoning: result.reasoning,
-				provider: result.provider,
-			} satisfies SelectAnswerPayload,
-		};
-	});
+	return {
+		type: 'REGISTER_PAGE_CONTEXT',
+		payload: responsePayload satisfies RegisterPageContextResponsePayload,
+	};
 }
 
-async function handleGetStatus(): Promise<Message> {
-	const [localData, sessionData] = await Promise.all([
-		chrome.storage.local.get({ enabled: false }),
-		chrome.storage.session.get({
-			_lastProvider: '',
-			_lastModel: '',
-			_lastConfidence: null,
-			_lastStatus: 'idle',
-		}),
-	]);
+async function handleCancelPageWork(
+	payload: unknown,
+	sender: chrome.runtime.MessageSender,
+): Promise<Message> {
+	if (
+		!isRecord(payload) ||
+		typeof payload.pageInstanceId !== 'string' ||
+		typeof payload.pageUrl !== 'string' ||
+		typeof payload.reason !== 'string'
+	) {
+		return errorResponse('INVALID_PAYLOAD', 'Invalid cancel payload');
+	}
+
+	const tabId = getTabId(sender);
+	if (tabId === null) {
+		return errorResponse(ERROR_CODES.INVALID_SCOPE, 'Could not determine the current tab scope.');
+	}
+
+	const cancelPayload = payload as unknown as CancelPageWorkPayload;
+	const scope = buildScopeDescriptor(tabId, cancelPayload.pageInstanceId, cancelPayload.pageUrl);
+	const nextStatus = cancelPayload.reason === 'disable' ? 'disabled' : 'idle';
+	const removeScope = cancelPayload.reason === 'navigation' || cancelPayload.reason === 'reset';
+	await runtimeStateManager.cancelScope(scope.scopeId, nextStatus, removeScope);
+
 	return {
-		type: 'GET_STATUS',
+		type: 'CANCEL_PAGE_WORK',
+		payload: { success: true } satisfies TabActionResponsePayload,
+	};
+}
+
+async function handleReportApplyOutcome(
+	payload: unknown,
+	sender: chrome.runtime.MessageSender,
+): Promise<Message> {
+	if (
+		!isRecord(payload) ||
+		typeof payload.requestId !== 'string' ||
+		typeof payload.pageInstanceId !== 'string' ||
+		typeof payload.pageUrl !== 'string' ||
+		typeof payload.appliedCount !== 'number' ||
+		typeof payload.failedCount !== 'number'
+	) {
+		return errorResponse('INVALID_PAYLOAD', 'Invalid apply outcome payload');
+	}
+
+	const tabId = getTabId(sender);
+	if (tabId === null) {
+		return errorResponse(ERROR_CODES.INVALID_SCOPE, 'Could not determine the current tab scope.');
+	}
+
+	const applyOutcome = payload as unknown as ApplyOutcomePayload;
+	const scope = buildScopeDescriptor(tabId, applyOutcome.pageInstanceId, applyOutcome.pageUrl);
+	const success = await runtimeStateManager.finalizeApply(scope, applyOutcome.requestId, {
+		appliedCount: applyOutcome.appliedCount,
+		failedCount: applyOutcome.failedCount,
+		errorMessage: applyOutcome.errorMessage,
+	});
+	if (success && applyOutcome.appliedCount > 0) {
+		scheduleIdleReset();
+	}
+
+	return {
+		type: 'REPORT_APPLY_OUTCOME',
 		payload: {
-			enabled: localData.enabled as boolean,
-			provider: sessionData._lastProvider as string,
-			model: sessionData._lastModel as string,
-			lastConfidence: sessionData._lastConfidence as number | null,
-			status: sessionData._lastStatus as StatusPayload['status'],
-		} satisfies StatusPayload,
+			success,
+			reason: success ? undefined : ERROR_CODES.INVALID_SCOPE,
+		} satisfies TabActionResponsePayload,
+	};
+}
+
+async function handleReportPageError(
+	payload: unknown,
+	sender: chrome.runtime.MessageSender,
+): Promise<Message> {
+	if (
+		!isRecord(payload) ||
+		typeof payload.pageInstanceId !== 'string' ||
+		typeof payload.pageUrl !== 'string' ||
+		typeof payload.message !== 'string'
+	) {
+		return errorResponse('INVALID_PAYLOAD', 'Invalid runtime error payload');
+	}
+
+	const tabId = getTabId(sender);
+	if (tabId === null) {
+		return errorResponse(ERROR_CODES.INVALID_SCOPE, 'Could not determine the current tab scope.');
+	}
+
+	const runtimeError = payload as unknown as ReportPageErrorPayload;
+	const scope = buildScopeDescriptor(tabId, runtimeError.pageInstanceId, runtimeError.pageUrl);
+	const success = await runtimeStateManager.reportRuntimeError(
+		scope,
+		runtimeError.message,
+		runtimeError.requestId,
+	);
+
+	return {
+		type: 'REPORT_PAGE_ERROR',
+		payload: {
+			success,
+			reason: success ? undefined : ERROR_CODES.INVALID_SCOPE,
+		} satisfies TabActionResponsePayload,
 	};
 }
 
@@ -257,85 +535,71 @@ async function handleSetEnabled(payload: unknown): Promise<Message> {
 	if (typeof payload !== 'boolean') {
 		return errorResponse('INVALID_PAYLOAD', 'Expected boolean payload');
 	}
+
 	await setEnabled(payload);
+	await runtimeStateManager.setEnabled(payload);
+
 	return {
 		type: 'SET_ENABLED',
 		payload: { success: true } satisfies SetEnabledResponsePayload,
 	};
 }
 
-async function handleGetSettings(): Promise<Message> {
-	const settings = await getSettings();
-	const masked = { ...settings };
-	for (const { key } of PROVIDER_CONFIG) {
-		masked[key] = settings[key] ? '••••••••' : '';
+async function handleTestConnection(payload: unknown): Promise<Message> {
+	if (!isRecord(payload) || !isRecord(payload.settings)) {
+		return errorResponse('INVALID_PAYLOAD', 'Invalid test connection payload');
 	}
-	return {
-		type: 'GET_SETTINGS',
-		payload: masked satisfies GetSettingsResponsePayload,
+
+	const baseSettings = await getSettings();
+	const mergedSettings: AppSettings = {
+		...baseSettings,
+		...(payload as unknown as TestConnectionPayload).settings,
 	};
-}
 
-async function handleSolveBatch(payload: unknown): Promise<Message> {
-	if (!payload || !Array.isArray((payload as Record<string, unknown>).questions)) {
-		return errorResponse('INVALID_PAYLOAD', 'Invalid batch payload');
-	}
-
-	return solveLifecycle('Batch solve', async () => {
-		const batchPayload = payload as BatchQuestionPayload;
-		const processedQuestions = await Promise.all(
-			batchPayload.questions.map(async (q) => {
-				if (q.images && q.images.length > 0) {
-					const base64Images = await Promise.all(
-						q.images.map(async (imgUrl) => {
-							try {
-								const result = await fetchAsBase64(imgUrl);
-								return `data:${result.mime};base64,${result.base64}`;
-							} catch {
-								logger.warn('Failed to fetch image, skipping:', imgUrl);
-								return null;
-							}
-						}),
-					).then((results) => results.filter((r): r is string => r !== null));
-					return { ...q, images: base64Images };
-				}
-				return q;
-			}),
-		);
-
-		const batchRequest: AIBatchRequest = { questions: processedQuestions };
-		const result = await providerManager.solveBatch(batchRequest);
-
-		const batchSession = await chrome.storage.session.get({
-			_solvedUIDs: [] as string[],
-			tokenCount: 0,
-		});
-		const solvedSet = new Set(batchSession._solvedUIDs as string[]);
-		for (const answer of result.answers) {
-			solvedSet.add(answer.uid);
+	try {
+		const testManager = createProviderManager(mergedSettings);
+		if (testManager.getProviderCount() === 0) {
+			return {
+				type: 'TEST_CONNECTION',
+				payload: {
+					success: false,
+					provider: mergedSettings.primaryProvider,
+					model: getPrimaryProviderModel(mergedSettings),
+					confidence: null,
+					message: `${ERROR_CODES.TEST_CONNECTION_FAILED}: No AI providers configured.`,
+				} satisfies TestConnectionResponsePayload,
+			};
 		}
-		await chrome.storage.session.set({
-			_lastProvider: result.provider,
-			_lastModel: result.model,
-			_lastConfidence:
-				result.answers.length > 0 ? Math.min(...result.answers.map((a) => a.confidence)) : 0,
-			_lastStatus: 'active',
-			_lastError: '',
-			_lastStatusTimestamp: Date.now(),
-			_solvedUIDs: Array.from(solvedSet),
-			solvedCount: solvedSet.size,
-			tokenCount: (batchSession.tokenCount as number) + (result.tokensUsed || 0),
+
+		const result = await testManager.solve({
+			questionText: 'What is 2 + 2?',
+			options: ['3', '4', '5', '6'],
+			questionType: 'single-choice',
 		});
-		chrome.action.setBadgeText({ text: String(solvedSet.size) });
-		chrome.action.setBadgeBackgroundColor({ color: '#22c55e' });
 
 		return {
-			type: 'SOLVE_BATCH',
+			type: 'TEST_CONNECTION',
 			payload: {
-				answers: result.answers,
-			} satisfies BatchSolveResponsePayload,
+				success: true,
+				provider: result.provider,
+				model: result.model,
+				confidence: result.confidence,
+				message: `Connection successful via ${result.provider}.`,
+			} satisfies TestConnectionResponsePayload,
 		};
-	});
+	} catch (error) {
+		logger.error('Connection test failed', error);
+		return {
+			type: 'TEST_CONNECTION',
+			payload: {
+				success: false,
+				provider: mergedSettings.primaryProvider,
+				model: getPrimaryProviderModel(mergedSettings),
+				confidence: null,
+				message: `${ERROR_CODES.TEST_CONNECTION_FAILED}: ${getErrorMessage(error)}`,
+			} satisfies TestConnectionResponsePayload,
+		};
+	}
 }
 
 async function handleResetExtension(): Promise<Message> {
@@ -348,45 +612,40 @@ async function handleResetExtension(): Promise<Message> {
 		};
 	} catch (error) {
 		logger.error('Reset failed', error);
-		return errorResponse(
-			ERROR_CODES.SOLVE_FAILED,
-			error instanceof Error ? error.message : 'Reset failed',
-		);
+		return errorResponse(ERROR_CODES.SOLVE_FAILED, getErrorMessage(error));
 	}
 }
 
-router.on('SOLVE_QUESTION', handleSolveQuestion);
-router.on('SOLVE_IMAGE_QUESTION', handleSolveQuestion);
 router.on('SOLVE_BATCH', handleSolveBatch);
-router.on('GET_STATUS', handleGetStatus);
-router.on('SET_ENABLED', handleSetEnabled);
-router.on('GET_SETTINGS', handleGetSettings);
-router.on('RESET_EXTENSION', handleResetExtension);
+router.on('REGISTER_PAGE_CONTEXT', handleRegisterPageContext);
+router.on('CANCEL_PAGE_WORK', handleCancelPageWork);
+router.on('REPORT_APPLY_OUTCOME', handleReportApplyOutcome);
+router.on('REPORT_PAGE_ERROR', handleReportPageError);
+router.on('SET_ENABLED', async (payload) => handleSetEnabled(payload));
+router.on('TEST_CONNECTION', async (payload) => handleTestConnection(payload));
+router.on('RESET_EXTENSION', async () => handleResetExtension());
 
 chrome.commands.onCommand.addListener(async (command) => {
 	if (command === 'scan-page') {
 		const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-		if (tab?.id) chrome.tabs.sendMessage(tab.id, { type: 'SCAN_PAGE' });
-	} else if (command === 'toggle-enabled') {
+		if (tab?.id) {
+			chrome.tabs.sendMessage(tab.id, { type: 'SCAN_PAGE' });
+		}
+		return;
+	}
+
+	if (command === 'toggle-enabled') {
 		const { enabled } = await chrome.storage.local.get({ enabled: false });
 		await chrome.storage.local.set({ enabled: !enabled });
+		await runtimeStateManager.setEnabled(!enabled);
 	}
 });
 
 async function resetAndReinitialize(): Promise<void> {
-	chrome.action.setBadgeText({ text: '' });
-	await chrome.storage.session.set({
-		_lastStatus: 'idle',
-		_lastError: '',
-		_lastProvider: '',
-		_lastModel: '',
-		_lastConfidence: null,
-		_lastStatusTimestamp: 0,
-		_solvedUIDs: [],
-		solvedCount: 0,
-		failedCount: 0,
-		tokenCount: 0,
-	});
+	stopKeepAlive();
+	chrome.alarms.clear(IDLE_RESET_ALARM);
+	idleResetTimestamp = 0;
+	await runtimeStateManager.resetAll();
 	providersReady = false;
 	const settings = await getSettings();
 	providerReadyPromise = initializeProviders(settings);
@@ -395,11 +654,13 @@ async function resetAndReinitialize(): Promise<void> {
 
 chrome.runtime.onInstalled.addListener(async (details) => {
 	try {
-		if (details.reason === 'install') chrome.runtime.openOptionsPage();
+		if (details.reason === 'install') {
+			chrome.runtime.openOptionsPage();
+		}
 		await resetAndReinitialize();
 		logger.info('Extension installed/updated');
-	} catch (err) {
-		logger.error('onInstalled handler failed', err);
+	} catch (error) {
+		logger.error('onInstalled handler failed', error);
 	}
 });
 
@@ -407,8 +668,8 @@ chrome.runtime.onStartup.addListener(async () => {
 	try {
 		logger.info('Service worker startup');
 		await resetAndReinitialize();
-	} catch (err) {
-		logger.error('onStartup handler failed', err);
+	} catch (error) {
+		logger.error('onStartup handler failed', error);
 	}
 });
 
@@ -423,7 +684,7 @@ chrome.runtime.onMessage.addListener(
 			sender.id === chrome.runtime.id &&
 			(senderUrl.startsWith('https://www.coursera.org/') ||
 				senderUrl.startsWith('chrome-extension://') ||
-				senderUrl === ''); // popup/options have empty url
+				senderUrl === '');
 
 		if (!isAllowed) {
 			sendResponse({
@@ -432,23 +693,26 @@ chrome.runtime.onMessage.addListener(
 			});
 			return false;
 		}
+
 		if (!message || typeof message.type !== 'string') {
 			sendResponse(errorResponse('INVALID_MESSAGE', 'Invalid message format'));
 			return false;
 		}
+
 		router
 			.route(message, sender)
 			.then(sendResponse)
 			.catch(() => {
 				sendResponse(errorResponse('INTERNAL_ERROR', 'Unexpected routing failure'));
 			});
-		return true; // Keep message channel open for async response
+
+		return true;
 	},
 );
 
-// Re-initialize providers when settings change
 chrome.storage.onChanged.addListener(async (changes, areaName) => {
 	if (areaName !== 'local') return;
+
 	const settingsKeys = [
 		'openrouterApiKey',
 		'nvidiaApiKey',
@@ -463,8 +727,8 @@ chrome.storage.onChanged.addListener(async (changes, areaName) => {
 		'primaryProvider',
 		'rateLimitRpm',
 	];
-	const needsReinit = settingsKeys.some((key) => key in changes);
-	if (needsReinit) {
+
+	if (settingsKeys.some((key) => key in changes)) {
 		logger.info('Settings changed, re-initializing providers');
 		const settings = await getSettings();
 		providersReady = false;
@@ -472,5 +736,38 @@ chrome.storage.onChanged.addListener(async (changes, areaName) => {
 		await providerReadyPromise;
 	}
 });
+
+export const __testing = {
+	runtimeStateManager,
+	handleSolveBatch,
+	handleRegisterPageContext,
+	handleCancelPageWork,
+	handleReportApplyOutcome,
+	handleReportPageError,
+	handleSetEnabled,
+	handleTestConnection,
+	handleTabRemoved(tabId: number): Promise<void> {
+		return runtimeStateManager.removeTabScope(tabId);
+	},
+	handleProcessingRecoveryAlarm(scopeId: string): Promise<boolean> {
+		return runtimeStateManager.recoverStaleProcessingScope(scopeId);
+	},
+	getProcessingRecoveryAlarmName,
+	async reloadProvidersFromStorage(): Promise<void> {
+		const settings = await getSettings();
+		providersReady = false;
+		providerReadyPromise = initializeProviders(settings);
+		await providerReadyPromise;
+	},
+	async resetForTests(): Promise<void> {
+		stopKeepAlive();
+		chrome.alarms.clear(IDLE_RESET_ALARM);
+		idleResetTimestamp = 0;
+		providerManager = new AIProviderManager();
+		providersReady = true;
+		providerReadyPromise = Promise.resolve();
+		await runtimeStateManager.resetAll();
+	},
+};
 
 logger.info('Service worker loaded');

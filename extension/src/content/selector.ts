@@ -4,7 +4,15 @@
  */
 
 import type { AnswerOption, SelectionResult } from '../types/questions';
-import { CONFIDENCE_HIGH, CONFIDENCE_MEDIUM, DATA_ATTRIBUTES } from '../utils/constants';
+import { DEFAULT_SETTINGS } from '../types/settings';
+import {
+	CLICK_SETTLE_DELAY_MS,
+	CLICK_VERIFY_MAX_RETRIES,
+	COLORS,
+	CONFIDENCE_HIGH,
+	CONFIDENCE_MEDIUM,
+	DATA_ATTRIBUTES,
+} from '../utils/constants';
 import { Logger } from '../utils/logger';
 
 const logger = new Logger('AnswerSelector');
@@ -12,16 +20,19 @@ const logger = new Logger('AnswerSelector');
 type ConfidenceLevel = 'high' | 'medium' | 'low';
 
 const CONFIDENCE_COLORS: Record<ConfidenceLevel, string> = {
-	high: '#22c55e',
-	medium: '#eab308',
-	low: '#f97316',
+	high: COLORS.SUCCESS,
+	medium: COLORS.WARNING,
+	low: COLORS.LOW,
 };
 
 export class AnswerSelector {
 	private readonly confidenceThreshold: number;
 	private readonly autoSelect: boolean;
 
-	constructor(threshold: number = 0.7, autoSelect: boolean = true) {
+	constructor(
+		threshold: number = DEFAULT_SETTINGS.confidenceThreshold,
+		autoSelect: boolean = DEFAULT_SETTINGS.autoSelect,
+	) {
 		this.confidenceThreshold = threshold;
 		this.autoSelect = autoSelect;
 	}
@@ -82,7 +93,7 @@ export class AnswerSelector {
 		// Re-verification: a later click's React re-render can revert an earlier selection.
 		// Wait for React to settle, then re-check and re-click any reverted inputs.
 		if (results.length > 1) {
-			await new Promise<void>((r) => setTimeout(r, 250));
+			await new Promise<void>((r) => setTimeout(r, CLICK_SETTLE_DELAY_MS));
 			for (let i = 0; i < results.length; i++) {
 				if (!results[i].success) continue;
 				const option = options[results[i].selectedIndex];
@@ -185,7 +196,7 @@ export class AnswerSelector {
 	 */
 	private static async clickWithVerification(
 		target: HTMLElement,
-		maxRetries: number = 2,
+		maxRetries: number = CLICK_VERIFY_MAX_RETRIES,
 	): Promise<boolean> {
 		const input =
 			target.querySelector<HTMLInputElement>('input[type="radio"], input[type="checkbox"]') ??
@@ -201,7 +212,7 @@ export class AnswerSelector {
 			if (!input) return true;
 
 			// Wait for React to process the event and re-render
-			await new Promise<void>((r) => setTimeout(r, 250));
+			await new Promise<void>((r) => setTimeout(r, CLICK_SETTLE_DELAY_MS));
 
 			if (input.checked) return true;
 
@@ -246,7 +257,7 @@ export class AnswerSelector {
 	 * Mark a question as having an error.
 	 */
 	static markError(element: HTMLElement): void {
-		element.style.outline = '2px solid #ef4444';
+		element.style.outline = `2px solid ${COLORS.ERROR}`;
 		element.style.outlineOffset = '2px';
 		element.setAttribute(DATA_ATTRIBUTES.ERROR, 'true');
 	}
@@ -255,7 +266,7 @@ export class AnswerSelector {
 	 * Mark a question as processing with a subtle pulsing outline.
 	 */
 	static markProcessing(element: HTMLElement): void {
-		element.style.outline = '2px solid #94a3b8';
+		element.style.outline = `2px solid ${COLORS.PROCESSING}`;
 		element.style.outlineOffset = '2px';
 		element.style.animation = 'auto-coursera-pulse 1.5s ease-in-out infinite';
 		element.setAttribute(DATA_ATTRIBUTES.PROCESSING, 'true');
@@ -264,7 +275,7 @@ export class AnswerSelector {
 		if (!document.getElementById('auto-coursera-pulse-style')) {
 			const style = document.createElement('style');
 			style.id = 'auto-coursera-pulse-style';
-			style.textContent = `@keyframes auto-coursera-pulse { 0%,100% { outline-color: #94a3b8; } 50% { outline-color: #cbd5e1; } }`;
+			style.textContent = `@keyframes auto-coursera-pulse { 0%,100% { outline-color: ${COLORS.PROCESSING}; } 50% { outline-color: ${COLORS.PULSE_MID}; } }`;
 			document.head.appendChild(style);
 		}
 	}

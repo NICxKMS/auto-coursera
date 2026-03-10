@@ -55,6 +55,9 @@ export const ERROR_CODES = {
 	NO_API_KEY: 'NO_API_KEY',
 	UNKNOWN_MESSAGE: 'UNKNOWN_MESSAGE',
 	SOLVE_FAILED: 'SOLVE_FAILED',
+	REQUEST_CANCELLED: 'REQUEST_CANCELLED',
+	INVALID_SCOPE: 'INVALID_SCOPE',
+	TEST_CONNECTION_FAILED: 'TEST_CONNECTION_FAILED',
 } as const;
 
 /** Confidence thresholds for answer highlighting */
@@ -97,3 +100,88 @@ export const DATA_ATTRIBUTES = {
 	ERROR: 'data-auto-coursera-error',
 	PROCESSING: 'data-auto-coursera-processing',
 } as const;
+
+// ── Image Pipeline ──────────────────────────────────────────────
+
+/** Allowed image hosts for CORS-aware fetching */
+export const ALLOWED_IMAGE_HOSTS = [
+	'coursera.org',
+	'd3njjcbhbojbot.cloudfront.net',
+	'd2j5ihb19pt1hq.cloudfront.net',
+	'coursera-assessments.s3.amazonaws.com',
+	'coursera-university-assets.s3.amazonaws.com',
+];
+
+/** Maximum image size in bytes (10 MB) */
+export const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+
+// ── Content Script ──────────────────────────────────────────────
+
+/** Debounce time for batching detected questions (ms) */
+export const BATCH_DEBOUNCE_MS = 800;
+
+// ── Service Worker Lifecycle ────────────────────────────────────
+
+/** Keep-alive alarm period in minutes (24s, under 30s idle limit) */
+export const KEEPALIVE_PERIOD_MINUTES = 0.4;
+
+/** Idle reset delay in minutes (30s) */
+export const IDLE_RESET_DELAY_MINUTES = 0.5;
+
+/** Apply-outcome recovery timeout in ms after solve completes but the page never reports apply status */
+export const APPLY_OUTCOME_TIMEOUT_MS = 60 * 1000;
+
+// ── Prompt Engine ───────────────────────────────────────────────
+
+/** Maximum question text length before truncation */
+export const MAX_QUESTION_TEXT_LENGTH = 5000;
+
+// ── AI Request Parameters ───────────────────────────────────────
+
+/** Default top_p (nucleus sampling) for AI requests */
+export const AI_TOP_P = 0.95;
+
+// ── Circuit Breaker ─────────────────────────────────────────────
+
+/** Number of failures before circuit opens */
+export const CIRCUIT_FAILURE_THRESHOLD = 3;
+
+/** Cooldown period after circuit opens (ms) */
+export const CIRCUIT_COOLDOWN_MS = 60_000;
+
+// ── Response Parser Fallbacks ───────────────────────────────────
+
+/** Fallback confidence when JSON parse succeeds but confidence missing */
+export const CONFIDENCE_FALLBACK_JSON = 0.5;
+
+/** Fallback confidence when regex extraction works */
+export const CONFIDENCE_FALLBACK_REGEX = 0.3;
+
+/** Fallback confidence when context-based extraction works */
+export const CONFIDENCE_FALLBACK_CONTEXT = 0.3;
+
+/** Fallback confidence when only a number is found */
+export const CONFIDENCE_FALLBACK_NUMBER = 0.2;
+
+/** Max characters for reasoning truncation */
+export const REASONING_MAX_LENGTH = 1000;
+
+// ── Color Palette ───────────────────────────────────────────────
+
+/** Shared color palette for UI feedback */
+export const COLORS = {
+	SUCCESS: '#22c55e',
+	WARNING: '#eab308',
+	LOW: '#f97316',
+	ERROR: '#ef4444',
+	PROCESSING: '#94a3b8',
+	PULSE_MID: '#cbd5e1',
+} as const;
+
+// ── Click Verification ──────────────────────────────────────────
+
+/** Maximum retries for click verification */
+export const CLICK_VERIFY_MAX_RETRIES = 2;
+
+/** Delay before verifying click selection (ms) */
+export const CLICK_SETTLE_DELAY_MS = 250;

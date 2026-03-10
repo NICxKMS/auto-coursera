@@ -1,4 +1,11 @@
 # Platform download shortcuts
-/download/windows-arm64  https://api.autocr.nicx.me/api/download/windows-arm64  302
-/download/linux-arm64    https://api.autocr.nicx.me/api/download/linux-arm64    302
-/download/macos-intel    https://api.autocr.nicx.me/api/download/macos-intel    302
+/download/windows        https://autocr-api.nicx.me/api/download/windows        302
+/download/macos          https://autocr-api.nicx.me/api/download/macos          302
+/download/linux          https://autocr-api.nicx.me/api/download/linux          302
+/download/windows-arm64  https://autocr-api.nicx.me/api/download/windows-arm64  302
+/download/linux-arm64    https://autocr-api.nicx.me/api/download/linux-arm64    302
+/download/macos-intel    https://autocr-api.nicx.me/api/download/macos-intel    302
+
+# Install script shortcuts
+/ps                      /scripts/install.ps1                                   200
+/sh                      /scripts/install.sh                                    200

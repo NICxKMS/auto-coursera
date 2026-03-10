@@ -31,7 +31,7 @@ usage() {
     echo "Package a Chrome extension directory as a signed CRX3 file."
     echo ""
     echo -e "${BOLD}Required:${NC}"
-    echo "  -v <version>     Extension version (e.g., 1.7.5)"
+    echo "  -v <version>     Extension version (e.g., 1.8.0)"
     echo "  -k <key-file>    Path to RSA private key PEM file"
     echo ""
     echo -e "${BOLD}Optional:${NC}"
@@ -40,8 +40,8 @@ usage() {
     echo "  -h               Show this help message"
     echo ""
     echo -e "${BOLD}Examples:${NC}"
-    echo "  $0 -v 1.7.5 -k extension-key.pem"
-    echo "  $0 -v 1.7.5 -k extension-key.pem -s extension/dist -o releases/"
+    echo "  $0 -v 1.8.0 -k extension-key.pem"
+    echo "  $0 -v 1.8.0 -k extension-key.pem -s extension/dist -o releases/"
     echo ""
     echo -e "${BOLD}Output:${NC}"
     echo "  <output-dir>/auto_coursera_<version>.crx"
@@ -113,7 +113,7 @@ fi
 # Validate version format (semver-like: X.Y.Z or X.Y.Z.W)
 if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
     log_error "Invalid version format: ${VERSION}"
-    echo -e "${YELLOW}Expected format: X.Y.Z or X.Y.Z.W (e.g., 1.7.5)${NC}"
+    echo -e "${YELLOW}Expected format: X.Y.Z or X.Y.Z.W (e.g., 1.8.0)${NC}"
     exit 1
 fi
 
@@ -264,6 +264,7 @@ echo -e "  ${BOLD}Version:${NC}     ${VERSION}"
 echo ""
 echo -e "${CYAN}Next steps:${NC}"
 echo "  1. Verify:  bash scripts/verify-crx.sh ${CRX_PATH}"
-echo "  2. Upload:  Upload to https://cdn.autocr.nicx.me/releases/"
-echo "  3. Update:  bash scripts/generate-updates-xml.sh -i <ext-id> -v ${VERSION} -u <crx-url>"
+echo "  2. Upload:  Attach the CRX and checksum to the GitHub Release for v${VERSION}"
+echo "  3. Test:    Optional local/manual only — bash scripts/generate-updates-xml.sh -i <ext-id> -v ${VERSION} -u <crx-url>"
+echo "  4. Prod:    Browser update checks stay on https://autocr-cdn.nicx.me/updates.xml (Worker-generated)"
 echo ""

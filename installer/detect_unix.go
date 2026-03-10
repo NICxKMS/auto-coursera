@@ -28,12 +28,18 @@ func isBrowserInstalled(browser BrowserConfig) bool {
 		}
 	}
 
-	// macOS: check /Applications for known .app bundles.
+	// macOS: check /Applications and ~/Applications for known .app bundles.
 	if runtime.GOOS == "darwin" {
 		if bundle, ok := macOSAppBundles[browser.Name]; ok {
 			info, err := os.Stat("/Applications/" + bundle)
 			if err == nil && info.IsDir() {
 				return true
+			}
+			if home, err := os.UserHomeDir(); err == nil {
+				info, err := os.Stat(home + "/Applications/" + bundle)
+				if err == nil && info.IsDir() {
+					return true
+				}
 			}
 		}
 	}

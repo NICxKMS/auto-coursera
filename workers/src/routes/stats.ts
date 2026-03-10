@@ -1,31 +1,27 @@
 import type { Env } from '../index';
-import { listObjects } from '../utils/r2';
+import { fetchGitHubReleases } from '../utils/github';
 import { errorResponse, jsonResponse } from '../utils/response';
 
 /**
  * GET /api/stats
  *
- * Return aggregate statistics about published releases:
- * total count, latest version, and last updated timestamp.
+ * Return aggregate statistics from GitHub Releases.
+ * Same JSON shape as before for backwards compatibility.
  */
 export async function handleStats(env: Env): Promise<Response> {
 	try {
-		const objects = await listObjects(env.EXTENSIONS_BUCKET, 'releases/');
+		const ghReleases = await fetchGitHubReleases(env);
 
 		const versionPattern = /auto_coursera_([\d.]+)\.crx$/;
 
-		const releases = objects
-			.map((obj) => {
-				const match = obj.key.match(versionPattern);
-				if (!match) return null;
-				return {
-					version: match[1],
-					uploaded: obj.uploaded,
-				};
-			})
-			.filter((r): r is { version: string; uploaded: Date } => r !== null);
+		const crxReleases = ghReleases
+			.filter((r) => r.assets.some((a) => versionPattern.test(a.name)))
+			.map((r) => ({
+				version: r.tag_name.replace(/^v/, ''),
+				published: new Date(r.published_at),
+			}));
 
-		if (releases.length === 0) {
+		if (crxReleases.length === 0) {
 			return jsonResponse({
 				totalReleases: 0,
 				latestVersion: env.CURRENT_VERSION,
@@ -33,13 +29,12 @@ export async function handleStats(env: Env): Promise<Response> {
 			});
 		}
 
-		// Find the latest by upload date
-		const latest = releases.reduce((acc, r) => (r.uploaded > acc.uploaded ? r : acc));
+		const latest = crxReleases.reduce((acc, r) => (r.published > acc.published ? r : acc));
 
 		return jsonResponse({
-			totalReleases: releases.length,
+			totalReleases: crxReleases.length,
 			latestVersion: latest.version,
-			lastUpdated: latest.uploaded.toISOString(),
+			lastUpdated: latest.published.toISOString(),
 		});
 	} catch (error) {
 		console.error(

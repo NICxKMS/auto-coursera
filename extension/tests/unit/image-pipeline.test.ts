@@ -56,7 +56,10 @@ describe('ImagePipeline', () => {
 			it('should allow coursera.org', async () => {
 				mockFetchSuccess();
 				await fetchAsBase64('https://coursera.org/image.png');
-				expect(globalThis.fetch).toHaveBeenCalledWith('https://coursera.org/image.png');
+				expect(globalThis.fetch).toHaveBeenCalledWith(
+					'https://coursera.org/image.png',
+					expect.objectContaining({ signal: undefined }),
+				);
 			});
 
 			it('should allow d3njjcbhbojbot.cloudfront.net', async () => {
@@ -130,7 +133,10 @@ describe('ImagePipeline', () => {
 			expect(result).toHaveLength(1);
 			expect(result[0].base64).toBeTruthy();
 			expect(result[0].context).toBe('question');
-			expect(globalThis.fetch).toHaveBeenCalledWith('https://coursera.org/img.jpg');
+			expect(globalThis.fetch).toHaveBeenCalledWith(
+				'https://coursera.org/img.jpg',
+				expect.objectContaining({ signal: undefined }),
+			);
 		});
 
 		it('should skip CORS-blocked images that fail to fetch', async () => {

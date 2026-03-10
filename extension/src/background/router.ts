@@ -39,12 +39,6 @@ export class MessageRouter {
 			return await handler(message.payload, sender);
 		} catch (error) {
 			logger.error(`Handler error for ${message.type}`, error);
-			// Persist error state for popup visibility
-			await chrome.storage.session.set({
-				_lastStatus: 'error',
-				_lastError: error instanceof Error ? error.message : String(error),
-				_lastStatusTimestamp: Date.now(),
-			});
 			return {
 				type: 'ERROR',
 				payload: {

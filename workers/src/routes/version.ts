@@ -7,13 +7,10 @@ import { jsonResponse } from '../utils/response';
  * Return the current published version and relevant download URLs.
  */
 export function handleVersion(env: Env): Response {
-	const version = env.CURRENT_VERSION;
-	const extensionId = env.EXTENSION_ID;
-
 	return jsonResponse({
-		version,
-		extensionId,
+		version: env.CURRENT_VERSION,
+		extensionId: env.EXTENSION_ID,
 		updateUrl: `${env.CDN_BASE_URL}/updates.xml`,
-		downloadUrl: `${env.CDN_BASE_URL}/releases/auto_coursera_${version}.crx`,
+		downloadUrl: `https://github.com/${env.GITHUB_REPO}/releases/download/v${env.CURRENT_VERSION}/auto_coursera_${env.CURRENT_VERSION}.crx`,
 	});
 }

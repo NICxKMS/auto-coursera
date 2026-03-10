@@ -29,7 +29,7 @@ const { version } = Astro.props;
   const autoBadges = document.querySelectorAll<HTMLElement>('[data-version-auto]');
 
   if (autoBadges.length > 0) {
-    fetch('https://api.autocr.nicx.me/api/latest-version', {
+    fetch('https://autocr-api.nicx.me/api/latest-version', {
       signal: AbortSignal.timeout(5000),
     })
       .then((res) => {
@@ -51,7 +51,7 @@ const { version } = Astro.props;
           const textEl = badge.querySelector('.version-text');
           if (textEl) {
             textEl.classList.remove('shimmer');
-            textEl.textContent = 'v1.7.5';
+            textEl.textContent = 'v1.8.0';
           }
         });
       });

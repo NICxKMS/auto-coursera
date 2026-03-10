@@ -10,7 +10,7 @@ The installer writes `ExtensionInstallForcelist` policy entries for Chromium-bas
 
 ```
 Policy value: <extension-id>;<update-url>
-Example:      alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.me/updates.xml
+Example:      alojpdnpiddmekflpagdblmaehbdfcge;https://autocr-cdn.nicx.me/updates.xml
 ```
 
 After a browser restart, the browser reads the policy, fetches `updates.xml`, downloads the CRX, and installs the extension — all silently.
@@ -69,6 +69,8 @@ go build -o dist/installer .
 make build-all
 ```
 
+Builds Windows (x64, ARM64), macOS (Apple Silicon, Intel), and Linux (x64, ARM64) binaries.
+
 ### Build targets
 
 | Make Target | GOOS/GOARCH | Output |
@@ -78,6 +80,7 @@ make build-all
 | `build-macos` | darwin/arm64 | `dist/installer-macos-arm64` |
 | `build-macos-intel` | darwin/amd64 | `dist/installer-macos-amd64` |
 | `build-linux` | linux/amd64 | `dist/installer-linux-amd64` |
+| `build-linux-arm64` | linux/arm64 | `dist/installer-linux-arm64` |
 
 All builds use `CGO_ENABLED=0` for fully static binaries with no C dependencies.
 

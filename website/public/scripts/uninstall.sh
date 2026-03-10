@@ -20,7 +20,7 @@ set -euo pipefail
 
 EXTENSION_NAME="Auto-Coursera Assistant"
 EXTENSION_ID="alojpdnpiddmekflpagdblmaehbdfcge"
-POLICY_FILENAME="auto_coursera_policy.json"
+POLICY_FILENAME="auto_coursera.json"
 PLIST_KEY="ExtensionInstallForcelist"
 
 # ── Colors ───────────────────────────────────────────────────────────────────

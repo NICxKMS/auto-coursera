@@ -3,19 +3,16 @@
  * REQ: REQ-005
  */
 
+import { ALLOWED_IMAGE_HOSTS, MAX_IMAGE_SIZE } from '../utils/constants';
 import { Logger } from '../utils/logger';
 
 const logger = new Logger('ImagePipeline');
 
-const ALLOWED_IMAGE_HOSTS = [
-	'coursera.org',
-	'd3njjcbhbojbot.cloudfront.net',
-	'd2j5ihb19pt1hq.cloudfront.net',
-	'coursera-assessments.s3.amazonaws.com',
-	'coursera-university-assets.s3.amazonaws.com',
-];
-
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
+function isAbortError(error: unknown): boolean {
+	return error instanceof DOMException
+		? error.name === 'AbortError'
+		: error instanceof Error && error.name === 'AbortError';
+}
 
 /**
  * Fetch a CORS-blocked image from the service worker context.
@@ -23,7 +20,10 @@ const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
  * @param url - The original image URL
  * @returns base64-encoded image data
  */
-export async function fetchAsBase64(url: string): Promise<{ base64: string; mime: string }> {
+export async function fetchAsBase64(
+	url: string,
+	signal?: AbortSignal,
+): Promise<{ base64: string; mime: string }> {
 	// Handle data URIs directly
 	if (url.startsWith('data:')) {
 		const match = url.match(/^data:([^;,]+)/);
@@ -52,7 +52,7 @@ export async function fetchAsBase64(url: string): Promise<{ base64: string; mime
 	}
 
 	try {
-		const response = await fetch(url);
+		const response = await fetch(url, { signal });
 		if (!response.ok) {
 			throw new Error(`Image fetch failed: ${response.status} ${response.statusText}`);
 		}
@@ -67,6 +67,9 @@ export async function fetchAsBase64(url: string): Promise<{ base64: string; mime
 		const base64 = await blobToBase64(blob);
 		return { base64, mime };
 	} catch (error) {
+		if (signal?.aborted || isAbortError(error)) {
+			throw error;
+		}
 		logger.error(`Failed to fetch image: ${url}`, error);
 		throw error;
 	}
@@ -79,16 +82,20 @@ export async function fetchAsBase64(url: string): Promise<{ base64: string; mime
  */
 export async function processCorsBlockedImages(
 	images: Array<{ base64: string; context: string }>,
+	signal?: AbortSignal,
 ): Promise<Array<{ base64: string; context: string; mime?: string }>> {
 	const results = await Promise.all(
 		images.map(async (img) => {
 			if (img.base64.startsWith('CORS_BLOCKED:')) {
 				const url = img.base64.replace('CORS_BLOCKED:', '');
 				try {
-					const result = await fetchAsBase64(url);
+					const result = await fetchAsBase64(url, signal);
 					logger.info(`Re-fetched CORS-blocked image: ${url}`);
 					return { base64: result.base64, context: img.context, mime: result.mime };
-				} catch {
+				} catch (error) {
+					if (signal?.aborted || isAbortError(error)) {
+						throw error;
+					}
 					logger.warn(`Skipping unfetchable image: ${url}`);
 					return null;
 				}

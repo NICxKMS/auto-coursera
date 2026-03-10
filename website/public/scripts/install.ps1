@@ -3,10 +3,10 @@
     Auto-Coursera Assistant — Windows Browser Extension Policy Installer
 .DESCRIPTION
     Configures Windows registry policies to force-install the Auto-Coursera Assistant
-    browser extension for Chrome, Edge, and/or Brave browsers.
+    browser extension for Chrome, Edge, Brave, and/or Chromium browsers.
     Supports both install and uninstall operations.
 .PARAMETER Browser
-    Target browser: chrome, edge, brave, or all (default: all)
+    Target browser: chrome, edge, brave, chromium, or all (default: all)
 .PARAMETER Uninstall
     Switch to remove the extension policy instead of installing it
 .EXAMPLE
@@ -23,7 +23,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet("chrome", "edge", "brave", "all")]
+    [ValidateSet("chrome", "edge", "brave", "chromium", "all")]
     [string]$Browser = "all",
 
     [switch]$Uninstall
@@ -33,7 +33,7 @@ param(
 
 $EXTENSION_NAME = "Auto-Coursera Assistant"
 $EXTENSION_ID   = "alojpdnpiddmekflpagdblmaehbdfcge"
-$UPDATE_URL     = "https://cdn.autocr.nicx.me/updates.xml"
+$UPDATE_URL     = "https://autocr-cdn.nicx.me/updates.xml"
 $POLICY_VALUE   = "${EXTENSION_ID};${UPDATE_URL}"
 
 # ── Browser Definitions ──────────────────────────────────────────────────────
@@ -60,6 +60,14 @@ $BrowserDefs = @{
             "HKLM:\SOFTWARE\BraveSoftware\Brave-Browser"
         )
         PolicyPath  = "HKLM:\SOFTWARE\Policies\BraveSoftware\Brave\ExtensionInstallForcelist"
+    }
+    chromium = @{
+        Name        = "Chromium"
+        DetectPaths = @(
+            "HKLM:\SOFTWARE\Chromium",
+            "HKLM:\SOFTWARE\WOW6432Node\Chromium"
+        )
+        PolicyPath  = "HKLM:\SOFTWARE\Policies\Chromium\ExtensionInstallForcelist"
     }
 }
 
@@ -100,12 +108,13 @@ function Write-Err {
 
 function Show-Usage {
     Write-Host "Usage:" -ForegroundColor White
-    Write-Host "  .\install.ps1 [-Browser <chrome|edge|brave|all>] [-Uninstall]" -ForegroundColor Gray
+    Write-Host "  .\install.ps1 [-Browser <chrome|edge|brave|chromium|all>] [-Uninstall]" -ForegroundColor Gray
     Write-Host ""
     Write-Host "Examples:" -ForegroundColor White
-    Write-Host "  .\install.ps1                       # Install for all detected browsers" -ForegroundColor Gray
+    Write-Host "  .\install.ps1                       # Install for all detected supported browsers" -ForegroundColor Gray
     Write-Host "  .\install.ps1 -Browser chrome        # Install for Chrome only" -ForegroundColor Gray
-    Write-Host "  .\install.ps1 -Uninstall             # Remove from all browsers" -ForegroundColor Gray
+    Write-Host "  .\install.ps1 -Browser chromium      # Install for Chromium only" -ForegroundColor Gray
+    Write-Host "  .\install.ps1 -Uninstall             # Remove from all supported browsers" -ForegroundColor Gray
     Write-Host "  .\install.ps1 -Browser edge -Uninstall  # Remove from Edge only" -ForegroundColor Gray
     Write-Host ""
 }

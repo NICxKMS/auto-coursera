@@ -7,6 +7,7 @@ export interface AIRequest {
 	images?: { base64: string; context: string; mime?: string }[];
 	questionType: QuestionType;
 	model?: string;
+	signal?: AbortSignal;
 }
 
 /** Response from an AI provider */
@@ -62,6 +63,7 @@ export interface AIBatchRequest {
 		images?: string[];
 		questionType: ExtractedQuestionType;
 	}>;
+	signal?: AbortSignal;
 }
 
 /** Batch response from an AI provider */

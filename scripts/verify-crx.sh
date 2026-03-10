@@ -29,8 +29,8 @@ usage() {
     echo "  <crx-file>   Path to the CRX file to verify"
     echo ""
     echo -e "${BOLD}Examples:${NC}"
-    echo "  $0 auto-coursera_1.7.5.crx"
-    echo "  $0 releases/auto-coursera_1.7.5.crx"
+    echo "  $0 auto_coursera_1.8.0.crx"
+    echo "  $0 releases/auto_coursera_1.8.0.crx"
     echo ""
     echo -e "${BOLD}Checks performed:${NC}"
     echo "  1. File exists and is readable"
@@ -146,11 +146,12 @@ fi
 MANIFEST_VERSION="unknown"
 
 if command -v python3 &>/dev/null; then
-    MANIFEST_VERSION=$(python3 -c "
+    MANIFEST_VERSION=$(python3 - "$CRX_FILE" << 'PYEOF' 2>/dev/null || echo "unknown"
 import zipfile, json, io, struct, sys
 
 try:
-    with open('${CRX_FILE}', 'rb') as f:
+    crx_file = sys.argv[1]
+    with open(crx_file, 'rb') as f:
         magic = f.read(4)
         version = struct.unpack('<I', f.read(4))[0]
         header_size = struct.unpack('<I', f.read(4))[0]
@@ -163,7 +164,8 @@ try:
 except Exception as e:
     print('extraction failed: ' + str(e), file=sys.stderr)
     print('unknown')
-" 2>/dev/null || echo "unknown")
+PYEOF
+)
 elif command -v node &>/dev/null; then
     # Fallback: try to find version string with grep in binary
     MANIFEST_VERSION=$(strings "$CRX_FILE" 2>/dev/null \

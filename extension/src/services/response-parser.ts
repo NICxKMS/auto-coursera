@@ -1,4 +1,11 @@
 import type { ParsedAIAnswer } from '../types/api';
+import {
+	CONFIDENCE_FALLBACK_CONTEXT,
+	CONFIDENCE_FALLBACK_JSON,
+	CONFIDENCE_FALLBACK_NUMBER,
+	CONFIDENCE_FALLBACK_REGEX,
+	REASONING_MAX_LENGTH,
+} from '../utils/constants';
 import { Logger } from '../utils/logger';
 
 const logger = new Logger('ResponseParser');
@@ -37,8 +44,12 @@ export function parseAIResponse(content: string): ParsedAIAnswer {
 				if (normalized.length > 0) {
 					return {
 						answer: normalized,
-						confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.5,
-						reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning.slice(0, 1000) : '',
+						confidence:
+							typeof parsed.confidence === 'number' ? parsed.confidence : CONFIDENCE_FALLBACK_JSON,
+						reasoning:
+							typeof parsed.reasoning === 'string'
+								? parsed.reasoning.slice(0, REASONING_MAX_LENGTH)
+								: '',
 					};
 				}
 				// Valid JSON but answer values were all invalid — fall through to regex
@@ -54,7 +65,7 @@ export function parseAIResponse(content: string): ParsedAIAnswer {
 		const indices = [...new Set(matches.map((m) => letterToIndex(m[1])))];
 		return {
 			answer: indices,
-			confidence: 0.3,
+			confidence: CONFIDENCE_FALLBACK_REGEX,
 			reasoning: content.substring(0, 200),
 		};
 	}
@@ -65,7 +76,7 @@ export function parseAIResponse(content: string): ParsedAIAnswer {
 		const indices = [...new Set(contextMatches.map((m) => letterToIndex(m[1])))];
 		return {
 			answer: indices,
-			confidence: 0.3,
+			confidence: CONFIDENCE_FALLBACK_CONTEXT,
 			reasoning: content.substring(0, 200),
 		};
 	}
@@ -75,7 +86,7 @@ export function parseAIResponse(content: string): ParsedAIAnswer {
 	if (numMatch) {
 		return {
 			answer: [parseInt(numMatch[1], 10)],
-			confidence: 0.2,
+			confidence: CONFIDENCE_FALLBACK_NUMBER,
 			reasoning: 'Number fallback',
 		};
 	}
@@ -131,8 +142,12 @@ export function parseBatchAIResponse(
 					return {
 						uid: q.uid,
 						answer,
-						confidence: typeof match.confidence === 'number' ? match.confidence : 0.5,
-						reasoning: typeof match.reasoning === 'string' ? match.reasoning.slice(0, 1000) : '',
+						confidence:
+							typeof match.confidence === 'number' ? match.confidence : CONFIDENCE_FALLBACK_JSON,
+						reasoning:
+							typeof match.reasoning === 'string'
+								? match.reasoning.slice(0, REASONING_MAX_LENGTH)
+								: '',
 					};
 				}
 				return {
@@ -173,7 +188,7 @@ export function parseBatchAIResponse(
 					return {
 						uid: q.uid,
 						answer: indices,
-						confidence: 0.3,
+						confidence: CONFIDENCE_FALLBACK_REGEX,
 						reasoning: 'Extracted via regex fallback',
 					};
 				}

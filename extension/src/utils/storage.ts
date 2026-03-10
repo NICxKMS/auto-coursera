@@ -1,14 +1,7 @@
 import type { AppSettings } from '../types/settings';
-import { DEFAULT_SETTINGS } from '../types/settings';
+import { API_KEY_FIELDS, DEFAULT_SETTINGS } from '../types/settings';
 
 const ENC_PREFIX = 'ENC:';
-const API_KEY_FIELDS = [
-	'openrouterApiKey',
-	'nvidiaApiKey',
-	'geminiApiKey',
-	'groqApiKey',
-	'cerebrasApiKey',
-] as const;
 let derivedKeyPromise: Promise<CryptoKey> | null = null;
 
 export async function getSettings(): Promise<AppSettings> {

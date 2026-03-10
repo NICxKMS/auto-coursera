@@ -1,0 +1,12 @@
+{
+  "version": "1.8.0",
+  "extensionId": "alojpdnpiddmekflpagdblmaehbdfcge",
+  "extensionName": "Auto-Coursera Assistant",
+  "domains": {
+    "website": "https://autocr.nicx.me",
+    "cdn": "https://autocr-cdn.nicx.me",
+    "api": "https://autocr-api.nicx.me"
+  },
+  "updateUrl": "https://autocr-cdn.nicx.me/updates.xml",
+  "githubRepo": "NICxKMS/auto-coursera"
+}

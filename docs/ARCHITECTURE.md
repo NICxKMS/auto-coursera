@@ -37,9 +37,9 @@ This repository wraps it in a **complete distribution platform** so the extensio
 
 The platform answers three questions:
 
-1. **How does a user install the extension?** — Via a website that offers a native installer binary or a one-liner terminal script. Both configure browser *policy* to force-install the extension from a self-hosted update URL.
-2. **Where does the extension binary live?** — As a signed CRX3 file in a Cloudflare R2 bucket, fronted by a custom domain and an `updates.xml` manifest that browsers poll for version changes.
-3. **How are new versions released?** — A developer pushes a `v*` tag. GitHub Actions builds the CRX, builds cross-platform installers, uploads everything to R2, and deploys the website and API.
+1. **How does a user install the extension?** — Via a website that leads with native installer binaries. Advanced users can also use terminal scripts or manual policy steps. All three paths configure browser *policy* to force-install the extension from a self-hosted update URL.
+2. **Where does the extension binary live?** — As a signed CRX3 file on GitHub Releases. A Cloudflare Worker fronts the CDN domain (`autocr-cdn.nicx.me`), dynamically generating `updates.xml` and redirecting CRX download requests to GitHub.
+3. **How are new versions released?** — A developer pushes a `v*` tag. GitHub Actions builds the CRX, builds cross-platform installers, uploads everything to a GitHub Release, and deploys the website and API.
 
 ---
 
@@ -47,7 +47,7 @@ The platform answers three questions:
 
 ```mermaid
 flowchart TD
-    subgraph repo["GitHub Repository — nicx/auto-coursera"]
+    subgraph repo["GitHub Repository — NICxKMS/auto-coursera"]
         ext["extension/ (MV3 TS)"]
         inst["installer/ (Go)"]
         web["website/ (Astro)"]
@@ -61,21 +61,21 @@ flowchart TD
     wkr --> ci4["CI: deploy-worker"]
     scr -.->|"used by"| ci1
 
-    ci1 --> r2e["R2\nextensions-bucket"]
-    ci2 --> r2r["R2\nreleases-bucket"]
+    ci1 --> ghrel["GitHub Release\n(CRX + checksums)"]
+    ci2 --> ghrel
     ci3 --> pages["Cloudflare Pages"]
     ci4 --> workers["Cloudflare Workers"]
 
-    r2e --> cdn["cdn.autocr.nicx.me"]
-    r2r -.->|"via API"| api
+    ghrel --> cdn["autocr-cdn.nicx.me\n(Worker-served)"]
     pages --> site["autocr.nicx.me"]
-    workers --> api["api.autocr.nicx.me"]
+    workers --> api["autocr-api.nicx.me"]
+    workers --> cdn
 
     site --> user["End User"]
     api --> user
 
     user -->|"1. Visits autocr.nicx.me\n2. Downloads installer OR runs script\n3. Browser policy configured"| browser["Chromium-based Browser"]
-    cdn -->|"Reads policy → fetches updates.xml\n→ downloads CRX → installs"| browser
+    cdn -->|"Reads policy → fetches updates.xml\n→ redirects to GitHub CRX → installs"| browser
 ```
 
 ---
@@ -88,16 +88,16 @@ flowchart TD
 |---|---|
 | **Location** | `extension/` (source in `extension/src/`) |
 | **Stack** | Manifest V3, TypeScript, Webpack |
-| **Version** | 1.7.5 |
+| **Version** | 1.8.0 |
 
 The extension is an AI-powered assistant for Coursera. It uses a background service worker, content scripts injected into `coursera.org`, a popup UI, and an options page. It communicates with multiple AI providers (OpenRouter, Gemini, Groq, Cerebras, NVIDIA NIM) to process quiz questions.
 
-Key manifest fields for the distribution platform:
+Key release/distribution facts for the extension:
 
-- `update_url` — points to `https://cdn.autocr.nicx.me/updates.xml` so the browser knows where to check for updates (added during CRX packaging).
 - `version` — stamped by CI during the build.
+- Install and update discovery are **policy-driven**, not packaging-driven. The installer, terminal scripts, and manual steps all write `<extension-id>;<update-url>` into `ExtensionInstallForcelist`, and browsers then poll `https://autocr-cdn.nicx.me/updates.xml`.
 
-The extension source code is **not modified** by this platform. The platform wraps it for distribution.
+The extension source code is **not modified** by this platform beyond the normal release build/signing flow. The platform wraps it for distribution.
 
 ---
 
@@ -113,14 +113,14 @@ The extension source code is **not modified** by this platform. The platform wra
 The website is the user-facing entry point. It provides:
 
 - **Landing page** — what the extension does, supported browsers, CTA to install
-- **Install page** — OS detection, two install methods (native installer download or terminal one-liner), copy-to-clipboard commands
-- **Downloads page** — all available binaries with version, size, and SHA256 checksums
-- **Releases page** — version history fetched from the Workers API
-- **Documentation** — manual install steps, troubleshooting guides, policy file paths
+- **Install page** — OS detection, native installers as the recommended path, with advanced terminal commands for scripted installs
+- **Downloads page** — native installers first, plus advanced scripts and direct download shortcuts
+- **Releases page** — version history fetched from the Workers API / GitHub Releases metadata
+- **Documentation** — advanced manual install steps, troubleshooting guides, policy file paths
 - **Static install scripts** — served from `/scripts/` (install.ps1, install.sh, install-mac.sh, uninstall.ps1, uninstall.sh)
 
-Security headers are configured in `website/_headers` (HSTS, CSP, X-Frame-Options).
-Redirect shortcuts are defined in `website/_redirects` (e.g., `/download/windows` → API).
+Security headers are configured in `website/public/_headers` (HSTS, CSP, X-Frame-Options).
+Redirect shortcuts are defined in `website/public/_redirects` (e.g., `/download/windows` → API).
 
 ---
 
@@ -151,6 +151,7 @@ A cross-platform CLI tool that configures browser policies to force-install the 
 | `build-macos` | darwin/arm64 | `installer-macos-arm64` |
 | `build-macos-intel` | darwin/amd64 | `installer-macos-amd64` |
 | `build-linux` | linux/amd64 | `installer-linux-amd64` |
+| `build-linux-arm64` | linux/arm64 | `installer-linux-arm64` |
 
 **CLI flags:**
 
@@ -170,7 +171,7 @@ A cross-platform CLI tool that configures browser policies to force-install the 
 | **Location** | `website/public/scripts/` |
 | **Served at** | `https://autocr.nicx.me/scripts/` |
 
-One-liner scripts for users who prefer the terminal over downloading a binary.
+Advanced one-liner scripts for users who prefer the terminal, need automation, or are working in shell-first environments instead of downloading a binary.
 
 | Script | Platform | Invocation |
 |---|---|---|
@@ -197,36 +198,54 @@ Each script:
 |---|---|
 | **Location** | `workers/` |
 | **Stack** | Cloudflare Workers, TypeScript, Wrangler |
-| **Domain** | `api.autocr.nicx.me` |
-| **R2 bindings** | `EXTENSIONS_BUCKET`, `RELEASES_BUCKET` |
+| **Domains** | `autocr-api.nicx.me` (API), `autocr-cdn.nicx.me` (CDN) |
 
-The API provides endpoints the website calls to display version info, release lists, and serve installer downloads.
+The Worker serves two domains via dual-domain routing:
 
-**Endpoints:**
+- **API domain** (`autocr-api.nicx.me`) — REST endpoints the website calls for version info, release lists, stats, and installer download redirects. CORS enabled.
+- **CDN domain** (`autocr-cdn.nicx.me`) — Dynamically generates `updates.xml` and redirects CRX download requests to GitHub Releases. No CORS.
+
+All binary artifacts are stored on GitHub Releases. The Worker proxies the GitHub API (with 5-minute cache) and generates 302 redirects to GitHub download URLs.
+
+**API Endpoints:**
 
 | Method | Path | Description |
 |---|---|---|
+| `GET` | `/api/health` | Health check |
 | `GET` | `/api/latest-version` | Current version, extension ID, update/download URLs |
-| `GET` | `/api/releases` | All CRX releases from R2, sorted newest-first |
-| `GET` | `/api/download/:os` | Stream installer binary (windows, macos, linux) |
-| `GET` | `/api/stats` | Total releases, latest version, last updated date |
+| `GET` | `/api/releases` | All CRX releases (from GitHub API, cached 5 min) |
+| `GET` | `/api/download/:os` | 302 redirect to GitHub Release installer binary |
+| `GET` | `/api/stats` | Aggregate stats from GitHub API |
 | `OPTIONS` | `/*` | CORS preflight handler |
+
+**CDN Endpoints:**
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/updates.xml` | Dynamically generated Chrome update manifest |
+| `GET` | `/releases/*.crx` | 302 redirect to GitHub Release CRX |
+| `GET` | `/releases/*.crx.sha256` | 302 redirect to GitHub Release checksum |
 
 **Environment variables** (set in `wrangler.toml`):
 
 | Variable | Value |
 |---|---|
 | `EXTENSION_ID` | `alojpdnpiddmekflpagdblmaehbdfcge` |
-| `CURRENT_VERSION` | `1.7.5` |
+| `CURRENT_VERSION` | `1.8.0` |
 | `ALLOWED_ORIGIN` | `https://autocr.nicx.me` |
+| `CDN_BASE_URL` | `https://autocr-cdn.nicx.me` |
+| `GITHUB_REPO` | `NICxKMS/auto-coursera` |
 
 **Download mapping** (`/api/download/:os`):
 
-| OS | Binary served from `RELEASES_BUCKET` |
+| OS | Binary redirected to (GitHub Release) |
 |---|---|
 | `windows` | `installer-windows-amd64.exe` |
+| `windows-arm64` | `installer-windows-arm64.exe` |
 | `macos` | `installer-macos-arm64` |
+| `macos-intel` | `installer-macos-amd64` |
 | `linux` | `installer-linux-amd64` |
+| `linux-arm64` | `installer-linux-arm64` |
 
 ---
 
@@ -244,7 +263,7 @@ Shell scripts that handle extension signing, packaging, and verification.
 | `generate-key.sh` | Generate RSA 2048 private key (`extension-key.pem`), print derived extension ID |
 | `derive-extension-id.sh` | Derive the 32-character extension ID from an existing private key |
 | `package-crx.sh` | Build a signed CRX3 file from `extension/dist/` using `npx crx3`, generate SHA256 checksum |
-| `generate-updates-xml.sh` | Produce the `updates.xml` auto-update manifest with extension ID, version, and CRX URL |
+| `generate-updates-xml.sh` | Produce a local/manual `updates.xml` fixture for testing; production uses the Worker-served `/updates.xml` route |
 | `verify-crx.sh` | Validate a CRX3 file: magic bytes, format version, manifest, file size, checksum |
 
 See [SIGNING.md](./SIGNING.md) for the full cryptographic details.
@@ -256,23 +275,23 @@ See [SIGNING.md](./SIGNING.md) for the full cryptographic details.
 | | |
 |---|---|
 | **Location** | `.github/workflows/` |
-| **Triggers** | Push to `main` (website only), push `v*` tag (full release) |
+| **Triggers** | Push to the website deployment branch (`master` in the current setup), push `v*` tag (full release) |
 
 **Workflows:**
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `deploy.yml` | `main` push + `v*` tag | Orchestrates the full pipeline |
-| `build-extension.yml` | `v*` tag | Package CRX, upload to R2, regenerate `updates.xml` |
-| `build-installers.yml` | `v*` tag | `make build-all`, upload binaries + checksums to R2 |
-| `deploy-worker.yml` | `v*` tag | Deploy Workers API via Wrangler |
+| `deploy.yml` | website-branch push (`master` in the current setup) + `v*` tag | Orchestrates the full pipeline. Contains jobs: `build-extension`, `build-installers`, `create-release`, `deploy-website-main`, `deploy-website-release`, `deploy-worker` |
+| `build-extension.yml` | `pull_request` + `workflow_dispatch` | CI build & test for PRs touching `extension/` (no secrets, no release) |
+| `build-installers.yml` | `pull_request` + `workflow_dispatch` | CI build for PRs touching `installer/` (no secrets, no release) |
+| `deploy-worker.yml` | `workflow_dispatch` | Manual Worker deploy outside of tagged releases |
 
 **Required GitHub Secrets:**
 
 | Secret | Purpose |
 |---|---|
 | `CF_ACCOUNT_ID` | Cloudflare account identifier |
-| `CF_API_TOKEN` | Cloudflare API token (Pages + R2 + Workers permissions) |
+| `CF_API_TOKEN` | Cloudflare API token (Pages + Workers permissions) |
 | `EXTENSION_PRIVATE_KEY` | PEM private key content for CRX signing |
 | `EXTENSION_ID` | Derived 32-character extension ID |
 
@@ -286,13 +305,13 @@ See [SIGNING.md](./SIGNING.md) for the full cryptographic details.
 flowchart TD
     START["User visits autocr.nicx.me"] --> CHOICE{"Install method?"}
 
-    CHOICE -->|"Option A: Native installer"| DL["Website calls\napi.autocr.nicx.me/api/download/:os"]
-    DL --> STREAM["Worker streams binary\nfrom R2 releases-bucket"]
-    STREAM --> RUN["User runs installer"]
+    CHOICE -->|"Option A: Native installer"| DL["Website calls\nautocr-api.nicx.me/api/download/:os"]
+    DL --> REDIRECT["Worker redirects (302)\nto GitHub Releases binary"]
+    REDIRECT --> RUN["User runs installer"]
     RUN --> DETECT["Installer detects OS +\ninstalled browsers"]
     DETECT --> WRITE_A["Writes ExtensionInstallForcelist policy"]
 
-    CHOICE -->|"Option B: Terminal one-liner"| CURL["curl/irm downloads script\nfrom autocr.nicx.me/scripts/"]
+    CHOICE -->|"Option B: Advanced terminal script"| CURL["curl/irm downloads script\nfrom autocr.nicx.me/scripts/"]
     CURL --> WRITE_B["Script writes\nExtensionInstallForcelist policy"]
 
     WRITE_A --> POLICY["Policy written"]
@@ -300,7 +319,7 @@ flowchart TD
 
     POLICY --> RESTART["User restarts browser"]
     RESTART --> READ["Browser reads policy on startup"]
-    READ --> FETCH["Fetches cdn.autocr.nicx.me/updates.xml"]
+    READ --> FETCH["Fetches autocr-cdn.nicx.me/updates.xml"]
     FETCH --> DOWNLOAD["Downloads CRX from URL\nin updates.xml"]
     DOWNLOAD --> INSTALLED["Extension installed and active"]
 
@@ -311,26 +330,26 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    TAG["Developer pushes git tag v1.8.0"] --> BUILD["CI: build-extension"]
+    TAG["Developer pushes git tag vX.Y.Z"] --> BUILD["CI: build-extension"]
     TAG --> INST["CI: build-installers"]
     TAG --> DWEB["CI: deploy-website"]
     TAG --> DWKR["CI: deploy-worker"]
 
-    BUILD --> VER["Extract version from tag → 1.8.0"]
-    VER --> CRX["package-crx.sh → auto-coursera_1.8.0.crx + .sha256"]
-    CRX --> XML["generate-updates-xml.sh → updates.xml v1.8.0"]
-    XML --> UP1["Upload CRX + updates.xml\nto R2 extensions-bucket"]
+    BUILD --> VER["Extract version from tag → X.Y.Z"]
+    VER --> CRX["package-crx.sh → auto_coursera_X.Y.Z.crx + .sha256"]
+    CRX --> GHREL["Upload CRX + checksums\nto GitHub Release vX.Y.Z"]
 
-    INST --> MAKE["make build-all → 5 binaries"]
+    INST --> MAKE["make build-all → 6 binaries"]
     MAKE --> SHA["Generate SHA256 checksums"]
-    SHA --> UP2["Upload binaries + checksums\nto R2 releases-bucket"]
+    SHA --> GHREL
 
     DWEB --> PAGES["Build & deploy Astro site\nto Cloudflare Pages"]
     DWKR --> WORKERS["Deploy Workers API\nvia wrangler"]
 
-    UP1 --> AUTO["Browsers auto-update"]
-    AUTO --> CHECK["Check cdn.autocr.nicx.me/updates.xml"]
-    CHECK --> NEWER["1.8.0 > installed version\n→ download CRX"]
+    GHREL --> AUTO["Browsers auto-update"]
+    AUTO --> CHECK["Check autocr-cdn.nicx.me/updates.xml"]
+    CHECK --> XML["Worker generates updates.xml\nwith version from env vars"]
+    XML --> NEWER["X.Y.Z > installed version\n→ redirect to GitHub CRX"]
     NEWER --> UPDATED["Extension updated silently"]
 ```
 
@@ -344,9 +363,9 @@ flowchart LR
     WEB --> D["GET /api/download/:os"]
 
     V --> VR["{ version, extensionId,\nupdateUrl, downloadUrl }"]
-    R --> RR["List R2 extensions-bucket CRXs\nsorted newest-first"]
+    R --> RR["List CRX releases\nfrom GitHub API (cached)"]
     S --> SR["{ totalReleases,\nlatestVersion, lastUpdated }"]
-    D --> DR["Stream installer binary\nfrom R2 releases-bucket"]
+    D --> DR["302 redirect to\nGitHub Release binary"]
 ```
 
 ---
@@ -358,14 +377,14 @@ All domains are subdomains of `nicx.me`, managed in Cloudflare DNS.
 | Domain | Service | Purpose |
 |---|---|---|
 | `autocr.nicx.me` | Cloudflare Pages | User-facing website. Landing page, install instructions, download links, documentation. Serves static install scripts from `/scripts/`. |
-| `cdn.autocr.nicx.me` | R2 custom domain | Hosts the CRX extension files and `updates.xml`. Browsers poll `updates.xml` to discover new versions. This is the URL embedded in browser policies. |
-| `api.autocr.nicx.me` | Cloudflare Workers | REST API. Provides version info, release listings, and proxied installer downloads from R2. Called by the website's JavaScript. |
+| `autocr-cdn.nicx.me` | Cloudflare Worker (CDN route) | Serves dynamically generated `updates.xml` and redirects CRX download requests to GitHub Releases. Browsers poll `updates.xml` to discover new versions. This URL is embedded in browser policies. |
+| `autocr-api.nicx.me` | Cloudflare Workers | REST API. Provides version info, release listings, and installer download redirects (302 to GitHub). Called by the website's JavaScript. |
 
 **Why three separate subdomains?**
 
-- **Separation of concerns** — the website, extension files, and API are independent services that can be scaled, cached, and secured differently.
-- **Caching** — `updates.xml` needs a short TTL (5 min) while CRX files can be cached for 24 hours. Static website assets have their own cache rules.
-- **CORS** — the API allows requests only from `autocr.nicx.me`. Extension files are requested directly by the browser (no CORS needed).
+- **Separation of concerns** — the website, CDN endpoints, and API are independent services that can be scaled, cached, and secured differently.
+- **Caching** — `updates.xml` needs a short TTL (5 min) while CRX files are served via GitHub Releases with its own CDN. Static website assets have their own cache rules.
+- **CORS** — the API allows requests only from `autocr.nicx.me`. CDN endpoints are requested directly by the browser (no CORS needed).
 
 ---
 
@@ -382,7 +401,7 @@ The policy value format is:
 For this project:
 
 ```
-alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.me/updates.xml
+alojpdnpiddmekflpagdblmaehbdfcge;https://autocr-cdn.nicx.me/updates.xml
 ```
 
 Once the policy is set, the browser:
@@ -426,12 +445,12 @@ Policy is a JSON file in the browser's managed policy directory. The file must b
 | Brave | `/etc/brave/policies/managed/` |
 | Chromium | `/etc/chromium/policies/managed/` |
 
-The installer writes `auto_coursera.json` (or `auto_coursera_policy.json` from scripts):
+The installer and Linux shell scripts both write `auto_coursera.json`:
 
 ```json
 {
     "ExtensionInstallForcelist": [
-        "alojpdnpiddmekflpagdblmaehbdfcge;https://cdn.autocr.nicx.me/updates.xml"
+        "alojpdnpiddmekflpagdblmaehbdfcge;https://autocr-cdn.nicx.me/updates.xml"
     ]
 }
 ```
@@ -457,10 +476,10 @@ Commands used:
 
 ```bash
 # Create new policy array
-defaults write com.google.Chrome ExtensionInstallForcelist -array "EXTENSION_ID;https://cdn.autocr.nicx.me/updates.xml"
+defaults write com.google.Chrome ExtensionInstallForcelist -array "EXTENSION_ID;https://autocr-cdn.nicx.me/updates.xml"
 
 # Append to existing array
-defaults write com.google.Chrome ExtensionInstallForcelist -array-add "EXTENSION_ID;https://cdn.autocr.nicx.me/updates.xml"
+defaults write com.google.Chrome ExtensionInstallForcelist -array-add "EXTENSION_ID;https://autocr-cdn.nicx.me/updates.xml"
 
 # Read current policy
 defaults read com.google.Chrome ExtensionInstallForcelist

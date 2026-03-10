@@ -4,13 +4,21 @@
  */
 
 import type { APICompletionResponse, ChatMessage } from '../types/api';
-import { AI_MAX_TOKENS, AI_TEMPERATURE, API_URLS, OPENROUTER_HEADERS } from '../utils/constants';
+import {
+	AI_MAX_TOKENS,
+	AI_TEMPERATURE,
+	AI_TOP_P,
+	API_URLS,
+	OPENROUTER_HEADERS,
+} from '../utils/constants';
 import type { RateLimiter } from '../utils/rate-limiter';
 import { BaseAIProvider } from './base-provider';
 
 export class OpenRouterProvider extends BaseAIProvider {
 	readonly name = 'openrouter';
 	readonly supportsVision = true;
+	protected apiUrl = `${API_URLS.OPENROUTER}/chat/completions`;
+	protected displayName = 'OpenRouter';
 
 	constructor(apiKey: string, model: string, rateLimiter: RateLimiter) {
 		super(apiKey, model, rateLimiter, 'OpenRouterProvider');
@@ -40,9 +48,10 @@ export class OpenRouterProvider extends BaseAIProvider {
 		messages: ChatMessage[],
 		maxTokens: number = AI_MAX_TOKENS,
 		responseFormat?: Record<string, unknown>,
+		signal?: AbortSignal,
 	): Promise<APICompletionResponse> {
 		return this.fetchWithRetry(
-			`${API_URLS.OPENROUTER}/chat/completions`,
+			this.apiUrl,
 			{
 				Authorization: `Bearer ${this.apiKey}`,
 				'Content-Type': 'application/json',
@@ -57,11 +66,13 @@ export class OpenRouterProvider extends BaseAIProvider {
 				messages,
 				temperature: AI_TEMPERATURE,
 				max_tokens: maxTokens,
-				top_p: 0.95,
+				top_p: AI_TOP_P,
 				...(responseFormat && { response_format: responseFormat }),
 				plugins: [{ id: 'response-healing' }],
 			},
 			'OpenRouter',
+			undefined,
+			signal,
 		);
 	}
 }

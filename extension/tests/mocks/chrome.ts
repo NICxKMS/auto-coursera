@@ -67,6 +67,9 @@ export const chromeMock = {
 	tabs: {
 		query: vi.fn(async () => []),
 		sendMessage: vi.fn(),
+		onRemoved: {
+			addListener: vi.fn(),
+		},
 	},
 	action: {
 		setBadgeText: vi.fn(),
