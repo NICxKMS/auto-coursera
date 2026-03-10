@@ -8,7 +8,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [1.8.0] — 2026-03-10
 
-> Release candidate prepared locally; push `master` to `auto-coursera` and tag `v1.8.0` to publish these extension changes.
 
 ### Added
 - **Settings overlay wiring** — popup Settings link now opens the in-page settings overlay on Coursera tabs via `OPEN_SETTINGS` Chrome message, with fallback to legacy options page on non-Coursera tabs or when the content script isn't loaded
@@ -38,7 +37,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Content script wired to floating widget** (`src/content/content.ts`) — creates `ContentBridge` (scan/retry/refresh) and mounts `WidgetHost` in a try/catch after existing initialization; existing popup→content message flow preserved
 - **Widget panel uses shared error utility** (`src/ui/widget-panel.ts`) — replaced local `ERROR_PATTERNS` and `getUserFriendlyError` with import from `src/utils/error-messages.ts`
 - **Popup redesigned as slim fallback** (`src/popup/`) — context-aware view: shows status, stats, and scan/retry on Coursera pages; shows guidance message on non-Coursera pages; removed provider/model/confidence display (now in floating widget panel); removed Refresh button and onboarding hint (replaced by widget panel); narrowed to 300px; compact horizontal stats with color-coded icons
-- **Release-status documentation** — the extension changelog and README now describe the frozen `v1.8.0` release line, including the floating widget, slim popup fallback, and scoped runtime-state model shipped in this candidate
+- **Release-status documentation** — the extension changelog and README now describe the `v1.8.0` release line, including the floating widget, slim popup fallback, and scoped runtime-state model shipped in this release
 
 ### Architecture
 - New `src/ui/` module with 7 files: `widget-types`, `widget-state`, `widget-styles`, `widget-host`, `widget-fab`, `widget-panel`, `settings-overlay`
@@ -61,6 +60,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Solve runtimeContext validation hardening** — `SOLVE_BATCH` now rejects malformed `pageInstanceId`/`pageUrl` values before scope resolution, and `SOLVE_QUESTION` rejects malformed optional `runtimeContext` instead of creating garbage scoped state
 - **OpenRouter URL inconsistency (C4)** — `callAPI()` override hardcoded URL via `` `${API_URLS.OPENROUTER}/chat/completions` `` instead of using `this.apiUrl` like every other provider; now sets `protected apiUrl` and `displayName` fields consistent with Cerebras, Groq, Gemini, and NVIDIA NIM patterns
 - **Scoped runtime follow-up hardening** — removed non-background `_lastStatus` writers, added closed-tab scope cleanup, added timed recovery for solved batches that never report apply outcome, closed the disable-time batch-apply race in the content script, and added direct `SOLVE_BATCH` runtime contract tests (requestId echo, invalid scope rejection, and cancellation path)
+- **README metadata alignment** — removed remaining `v1.8.0` pre-release wording and corrected the public README's license and Biome lint references
 
 ### Removed
 - **Legacy runtime bridge projection** — background runtime persistence no longer writes flattened `_last*` or aggregate counter keys into `chrome.storage.session`; scoped runtime maps are now the only product runtime truth

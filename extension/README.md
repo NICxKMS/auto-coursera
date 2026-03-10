@@ -2,7 +2,7 @@
 
 AI-powered answer assistant for Coursera quizzes. It detects questions, sends them to supported AI providers, and helps apply answers.
 
-> **Release status:** This workspace is the **`v1.8.0` release candidate**. It includes the floating widget, in-page settings overlay, slim popup fallback, and scoped runtime-state model that will ship once `master` is pushed to `auto-coursera` and tagged as `v1.8.0`.
+> **Current release:** **`v1.8.0`** includes the floating widget, in-page settings overlay, slim popup fallback, and scoped runtime-state model.
 
 ## Features
 
@@ -58,7 +58,7 @@ pnpm build
 
 ### Configure
 
-If you build and load the **current branch locally**, the `v1.8.0` release-candidate surfaces are available:
+In `v1.8.0`, the primary controls are available directly on supported Coursera quiz pages:
 
 1. Navigate to any Coursera quiz page
 2. Click the floating **Auto-Coursera** pill at the bottom-right of the page
@@ -69,8 +69,6 @@ If you build and load the **current branch locally**, the `v1.8.0` release-candi
 7. Adjust confidence threshold and behavior settings
 8. Click **Save Settings** and enable the extension via the toggle
 
-> **RC note:** This repository snapshot is frozen for the `v1.8.0` release. The remaining publish step is to push `master` to `auto-coursera` and tag `v1.8.0` after validation.
-
 > **Tip:** You can also access settings from the browser action popup or the dedicated options page (`chrome://extensions` → Auto-Coursera → Details → Extension options).
 
 ## Development
@@ -80,7 +78,7 @@ pnpm dev        # Watch mode (auto-rebuild on changes)
 pnpm build      # Production build
 pnpm typecheck  # TypeScript type checking
 pnpm test       # Run unit tests
-pnpm lint       # ESLint
+pnpm lint       # Biome lint
 pnpm format     # Biome format
 ```
 
@@ -137,7 +135,7 @@ src/
 
 ## Architecture
 
-> This section describes the **`v1.8.0` release-candidate architecture** frozen in this workspace.
+> This section describes the **`v1.8.0` extension architecture**.
 
 ```mermaid
 flowchart LR
@@ -149,7 +147,7 @@ flowchart LR
 
 In the `v1.8.0` release line, the floating widget lives in a closed Shadow DOM, communicating with the content script via a `ContentBridge` interface (scan, retry, refresh). All API calls originate from the service worker (bypasses page CSP). Content scripts handle DOM interaction and widget orchestration.
 
-Runtime state for active Coursera pages is background-owned and scoped per tab/page instance in the `v1.8.0` candidate. Content scripts register the current page context, send `runtimeContext` metadata with each batch solve, and report apply/cancel/error outcomes back to the service worker. The popup now reads the active tab's scoped runtime state directly, and the floating widget is bound to the current page scope instead of a flattened session summary. Scoped batch cancellation also covers disable-time batch dropping, closed-tab cleanup, service-worker restart hydration from scoped storage, and timed recovery when a solved batch never reports its apply outcome back to the service worker. The **Test Connection** buttons in both settings surfaces use a dedicated isolated path that exercises the selected provider configuration without mutating live quiz runtime counters, status, or badge state. The settings overlay, fallback options page, and widget onboarding banner now all depend on a single shared settings-domain module, so provider catalogs, masked-key handling, staged save/test payloads, and onboarding semantics remain in sync.
+Runtime state for active Coursera pages is background-owned and scoped per tab/page instance in `v1.8.0`. Content scripts register the current page context, send `runtimeContext` metadata with each batch solve, and report apply/cancel/error outcomes back to the service worker. The popup now reads the active tab's scoped runtime state directly, and the floating widget is bound to the current page scope instead of a flattened session summary. Scoped batch cancellation also covers disable-time batch dropping, closed-tab cleanup, service-worker restart hydration from scoped storage, and timed recovery when a solved batch never reports its apply outcome back to the service worker. The **Test Connection** buttons in both settings surfaces use a dedicated isolated path that exercises the selected provider configuration without mutating live quiz runtime counters, status, or badge state. The settings overlay, fallback options page, and widget onboarding banner now all depend on a single shared settings-domain module, so provider catalogs, masked-key handling, staged save/test payloads, and onboarding semantics remain in sync.
 
 ## Supported Models
 
@@ -170,4 +168,4 @@ Runtime state for active Coursera pages is background-owned and scoped per tab/p
 
 ## License
 
-Private — for educational purposes only.
+[MIT](../LICENSE) © 2024-2026 nicx

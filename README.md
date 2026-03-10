@@ -2,7 +2,7 @@
 
 A complete browser extension distribution platform for **Auto-Coursera Assistant**, an AI-powered Chrome extension that helps with Coursera quizzes. This monorepo contains the extension source, CRX packaging scripts, installer service, Worker-routed update/download infrastructure, and landing website.
 
-> **Release status:** This workspace is frozen as the **`v1.8.0` release candidate**. It includes the floating widget redesign, in-page settings overlay, slim popup fallback, scoped runtime-state lifecycle, and the GitHub Releases distribution migration. Push `master` to `auto-coursera` and tag `v1.8.0` when you're ready to publish.
+> **Current release:** **`v1.8.0`** includes the floating widget redesign, in-page settings overlay, slim popup fallback, scoped runtime-state lifecycle, and the GitHub Releases distribution migration.
 
 ## Architecture
 

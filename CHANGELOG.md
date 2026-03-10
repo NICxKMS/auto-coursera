@@ -14,10 +14,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [1.8.0] — 2026-03-10
 
-> Release candidate prepared locally on `master`; push/tag publication is the remaining step.
-
 ### Added
-- **Extension UI redesign release line** — The `v1.8.0` candidate now carries the floating contextual widget, in-page settings overlay, context-aware popup, Shadow DOM isolation, and reactive state store as first-class release features (see [`extension/CHANGELOG.md`](extension/CHANGELOG.md))
+- **Extension UI redesign release line** — `v1.8.0` carries the floating contextual widget, in-page settings overlay, context-aware popup, Shadow DOM isolation, and reactive state store as first-class release features (see [`extension/CHANGELOG.md`](extension/CHANGELOG.md))
 - **Extension: Scoped runtime-state lifecycle** — Service worker now owns per-page runtime scopes, batch solve messages carry page/request context, and settings connection tests run through an isolated `TEST_CONNECTION` path without polluting live runtime state (see [`extension/CHANGELOG.md`](extension/CHANGELOG.md))
 - **Eliminate R2 — GitHub Releases migration** — All binary artifacts (CRX extension + Go installers) are now served via GitHub Releases instead of Cloudflare R2 buckets
 - **`create-release` CI job** — New GitHub Actions job that creates a GitHub Release with all assets (CRX, checksums, installers) after both `build-extension` and `build-installers` complete
@@ -44,7 +42,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Install/distribution docs and website copy cleanup** — Architecture, setup, troubleshooting, website pages, and component READMEs now consistently describe the real policy-based install/update flow (`ExtensionInstallForcelist` → Worker-served `updates.xml` → GitHub Release assets), keep native installers as the primary path, and frame terminal/manual paths as advanced options
 - **`.github/workflows/deploy.yml` static update-manifest cleanup** — Tagged releases no longer generate, upload as artifacts, or attach a static `updates.xml`; the canonical production manifest remains the Worker-served `https://autocr-cdn.nicx.me/updates.xml`
 - **Release/docs/script guidance for `updates.xml`** — Root README, scripts docs, signing docs, architecture docs, shell-script review notes, and script help/output now consistently describe `generate-updates-xml.sh` as local/manual testing-only instead of a normal production release step
-- **Version-truth documentation surfaces** — Root README, extension README, architecture examples, and changelog wording now consistently point at the `1.8.0` release line and the frozen release-candidate snapshot prepared on `master`
+- **Version-truth documentation surfaces** — Root README, extension README, architecture examples, and changelog wording now consistently point at the published `1.8.0` release line
 - **Extension: scoped runtime cleanup** — Popup and floating widget now read scoped runtime state directly, and the extension README no longer describes a temporary compatibility bridge that no longer exists (see [`extension/CHANGELOG.md`](extension/CHANGELOG.md))
 - **Extension: Runtime-state cleanup follow-up** — Scoped batch solves keep direct contract coverage, stale scopes are cleaned on closed tabs / missing apply outcomes, and the remaining flattened runtime projection has now been removed entirely in favor of scoped-only UI/runtime reads (see [`extension/CHANGELOG.md`](extension/CHANGELOG.md))
 - **Extension: shared settings-domain cleanup** — Settings overlay, fallback options page, and widget onboarding now share one canonical settings-domain module for provider catalogs, masked-key resolution, staged save/test payloads, and onboarding semantics (see [`extension/CHANGELOG.md`](extension/CHANGELOG.md))
@@ -112,6 +110,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Workers Biome formatting** — Auto-formatted `download.ts` (collapsed multi-line `errorResponse()` call) and `stats.ts` (collapsed multi-line `reduce()` callback) to pass `biome check`
 - **`docs/SIGNING.md` stale R2 reference** — Removed sentence referencing "R2 storage infrastructure" that was missed in the initial documentation sweep
 - **Extension: 7 widget reliability fixes** — FAB visibility on storage sync failure, `derivePillState` crash on unexpected status, session storage failure, enabled state after session restart, popup Settings response handling, URL detection mismatch, widget host reference timing (see [`extension/CHANGELOG.md`](extension/CHANGELOG.md))
+- **Release-facing documentation wording** — Removed remaining `v1.8.0` pre-release wording from active public docs and aligned the extension README's license and lint-tool references with the current MIT/Biome setup
 
 ### Security
 - **SHA-pin all GitHub Actions (S6)** — All 33 third-party action references across 4 workflow files (`deploy.yml`, `build-extension.yml`, `build-installers.yml`, `deploy-worker.yml`) are now pinned to exact commit SHAs instead of mutable major version tags, preventing supply-chain attacks via compromised upstream maintainers
