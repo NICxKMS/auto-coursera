@@ -103,7 +103,7 @@ jobs:
         run: rm -f extension-key.pem
 
       - name: Upload CRX artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: crx-package
           path: |
@@ -136,7 +136,7 @@ jobs:
         run: cd installer/dist && sha256sum * > checksums.sha256
 
       - name: Upload installer artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: installers
           path: installer/dist/
