@@ -214,7 +214,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages deploy website/dist --project-name=auto-coursera
+          command: pages deploy website/dist --project-name=auto-coursera --branch=master
 
   # ===========================================================================
   # DEPLOY WEBSITE (release tag) — After extension + installers
@@ -251,7 +251,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages deploy website/dist --project-name=auto-coursera
+          command: pages deploy website/dist --project-name=auto-coursera --branch=master
 
   # ===========================================================================
   # DEPLOY WORKER — Production Cloudflare Worker (tags only)

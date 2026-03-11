@@ -15,3 +15,10 @@ routes = [
   { pattern = "autocr-api.nicx.me/*", zone_name = "nicx.me" },
   { pattern = "autocr-cdn.nicx.me/*", zone_name = "nicx.me" }
 ]
+
+[env.production.vars]
+EXTENSION_ID = "alojpdnpiddmekflpagdblmaehbdfcge"
+CURRENT_VERSION = "1.8.0"
+ALLOWED_ORIGIN = "https://autocr.nicx.me"
+CDN_BASE_URL = "https://autocr-cdn.nicx.me"
+GITHUB_REPO = "NICxKMS/auto-coursera"

@@ -12,6 +12,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **Cloudflare Pages production branch targeting** — `.github/workflows/deploy.yml` now passes `--branch=master` on both Pages deploy paths so CI deployments attach to the production Pages branch/custom-domain environment instead of creating detached deployments
+- **Worker production environment vars** — `workers/wrangler.toml` now duplicates required runtime values under `[env.production.vars]` because Wrangler does not inherit top-level `[vars]` into named environments
+- **Cloudflare deployment docs** — Root README plus setup guides now document the explicit Pages branch flag and the requirement to duplicate production Worker vars
+
 ## [1.8.0] — 2026-03-10
 
 ### Added

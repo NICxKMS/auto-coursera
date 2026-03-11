@@ -177,7 +177,7 @@ The website can be deployed via GitHub integration or direct upload.
 cd website
 pnpm install
 pnpm build
-wrangler pages deploy dist --project-name auto-coursera
+wrangler pages deploy dist --project-name auto-coursera --branch=master
 ```
 
 ---
@@ -244,7 +244,16 @@ routes = [
   { pattern = "autocr-api.nicx.me/*", zone_name = "nicx.me" },
   { pattern = "autocr-cdn.nicx.me/*", zone_name = "nicx.me" }
 ]
+
+[env.production.vars]
+EXTENSION_ID = "alojpdnpiddmekflpagdblmaehbdfcge"
+CURRENT_VERSION = "1.8.0"
+ALLOWED_ORIGIN = "https://autocr.nicx.me"
+CDN_BASE_URL = "https://autocr-cdn.nicx.me"
+GITHUB_REPO = "NICxKMS/auto-coursera"
 ```
+
+Wrangler does not inherit top-level `[vars]` into named environments, so keep the production values duplicated under `[env.production.vars]` for `wrangler deploy --env production`.
 
 Deploy with the production environment:
 

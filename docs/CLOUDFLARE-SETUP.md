@@ -65,6 +65,12 @@
 
 5. Click **Save and Deploy**
 
+If you deploy Pages via Wrangler/CI instead of the Git integration, target the production branch explicitly so the deployment binds to the `master` environment and custom domain:
+
+```bash
+wrangler pages deploy website/dist --project-name=auto-coursera --branch=master
+```
+
 ### Custom domain
 
 1. After project is created, go to project **Settings** → **Custom domains**
@@ -122,11 +128,18 @@ routes = [
   { pattern = "autocr-api.nicx.me/*", zone_name = "nicx.me" },
   { pattern = "autocr-cdn.nicx.me/*", zone_name = "nicx.me" }
 ]
+
+[env.production.vars]
+EXTENSION_ID = "alojpdnpiddmekflpagdblmaehbdfcge"
+CURRENT_VERSION = "1.8.0"
+ALLOWED_ORIGIN = "https://autocr.nicx.me"
+CDN_BASE_URL = "https://autocr-cdn.nicx.me"
+GITHUB_REPO = "NICxKMS/auto-coursera"
 ```
 
 ### Route setup
 
-The `[env.production]` block maps both `autocr-api.nicx.me/*` and `autocr-cdn.nicx.me/*` to the Worker. When deploying with `--env production`, Wrangler creates the routes automatically.
+The `[env.production]` block maps both `autocr-api.nicx.me/*` and `autocr-cdn.nicx.me/*` to the Worker. When deploying with `--env production`, Wrangler creates the routes automatically. Keep the production `vars` duplicated under `[env.production.vars]` as well — Wrangler does not inherit top-level `[vars]` into named environments.
 
 If you need to add or verify routes manually:
 

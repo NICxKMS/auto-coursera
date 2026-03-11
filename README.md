@@ -129,8 +129,8 @@ Deployment guides are available in the `docs/` directory:
 1. **Build extension** → `cd extension && pnpm build`
 2. **Package CRX** → `bash scripts/package-crx.sh -v <ver> -k extension-key.pem`
 3. **Upload to GitHub Releases** → CI/CD creates a GitHub Release with the CRX, CRX checksum, installers, and installer checksums
-4. **Deploy website** → Cloudflare Pages auto-deploys from `website/`
-5. **Deploy workers** → `cd workers && wrangler deploy`
+4. **Deploy website** → CI runs `wrangler pages deploy website/dist --project-name=auto-coursera --branch=master` so the deployment stays attached to the production Pages branch/custom domain
+5. **Deploy workers** → `cd workers && wrangler deploy --env production` (production `vars` are duplicated under `[env.production.vars]` because Wrangler does not inherit them)
 
 GitHub Releases stores the CRX and installer binaries, while the dual-domain Cloudflare Worker fronts `autocr-api.nicx.me` for website/download APIs and `autocr-cdn.nicx.me` for the canonical `updates.xml` and compatibility download routes.
 
