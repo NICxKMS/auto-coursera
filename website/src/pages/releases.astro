@@ -2,6 +2,45 @@
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import Base from '../layouts/Base.astro';
+
+// Fetch releases at build time from GitHub API
+let releases: Array<{ version: string; date: string; url: string; file: string; size: number }> =
+	[];
+try {
+	const res = await fetch(
+		'https://api.github.com/repos/NICxKMS/auto-coursera/releases?per_page=50',
+	);
+	if (res.ok) {
+		const data = await res.json();
+		releases = data.map((release: any) => {
+			const crxAsset = release.assets?.find((a: any) => a.name.endsWith('.crx'));
+			return {
+				version: release.tag_name?.replace(/^v/, '') || 'unknown',
+				date: release.published_at || release.created_at || '',
+				url: crxAsset?.browser_download_url || release.html_url || '',
+				file: crxAsset?.name || '',
+				size: crxAsset?.size || 0,
+			};
+		});
+	}
+} catch {
+	// Build continues with empty array — shows "no releases" state
+}
+
+function formatDate(dateStr: string): string {
+	try {
+		const d = new Date(dateStr);
+		return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+	} catch {
+		return dateStr;
+	}
+}
+
+function formatSize(bytes: number): string {
+	if (bytes < 1024) return `${bytes} B`;
+	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 ---
 
 <Base title="Releases" description="Release history for Auto-Coursera Assistant. Download previous versions and see what's changed.">
@@ -18,57 +57,43 @@ import Base from '../layouts/Base.astro';
         </p>
       </div>
 
-      <!-- Releases container -->
-      <div id="releases-container" class="space-y-4">
-        <!-- Shimmer skeleton cards -->
-        <div class="skeleton-card card-interactive relative overflow-hidden">
-          <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary-500 via-primary-400/50 to-transparent" aria-hidden="true"></div>
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex flex-col gap-3 pl-2">
-              <div class="h-6 w-24 rounded bg-surface-800 shimmer"></div>
-              <div class="h-4 w-36 rounded bg-surface-800 shimmer"></div>
-            </div>
-            <div class="h-10 w-28 rounded-lg bg-surface-800 shimmer"></div>
-          </div>
+      {releases.length > 0 ? (
+        <div class="space-y-4">
+          {releases.map((release, i) => (
+            <article class="card-interactive relative overflow-hidden animate-slide-up" style={`animation-delay: ${i * 80}ms`}>
+              <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary-500 via-primary-400/50 to-transparent" aria-hidden="true"></div>
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex flex-col gap-2 pl-2">
+                  <div class="flex items-center gap-3">
+                    <h3 class="text-xl font-bold text-white font-mono tracking-tight">v{release.version}</h3>
+                    {i === 0 && <span class="badge text-[11px]">Latest</span>}
+                  </div>
+                  <time datetime={release.date} class="text-sm text-surface-400">{formatDate(release.date)}</time>
+                </div>
+                <a href={release.url} class="btn-secondary shrink-0 gap-2 px-5 py-2.5 text-sm">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Download
+                </a>
+              </div>
+              {release.size > 0 && (
+                <div class="mt-4 pt-4 border-t border-white/[0.04] pl-2">
+                  <span class="text-xs text-surface-500 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    {formatSize(release.size)}
+                  </span>
+                </div>
+              )}
+            </article>
+          ))}
         </div>
-        <div class="skeleton-card card-interactive relative overflow-hidden">
-          <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary-500 via-primary-400/50 to-transparent" aria-hidden="true"></div>
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex flex-col gap-3 pl-2">
-              <div class="h-6 w-20 rounded bg-surface-800 shimmer"></div>
-              <div class="h-4 w-32 rounded bg-surface-800 shimmer"></div>
-            </div>
-            <div class="h-10 w-28 rounded-lg bg-surface-800 shimmer"></div>
-          </div>
-        </div>
-        <div class="skeleton-card card-interactive relative overflow-hidden">
-          <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary-500 via-primary-400/50 to-transparent" aria-hidden="true"></div>
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex flex-col gap-3 pl-2">
-              <div class="h-6 w-28 rounded bg-surface-800 shimmer"></div>
-              <div class="h-4 w-40 rounded bg-surface-800 shimmer"></div>
-            </div>
-            <div class="h-10 w-28 rounded-lg bg-surface-800 shimmer"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Error state (hidden by default) -->
-      <div id="releases-error" class="hidden">
-        <div class="card text-center py-12">
-          <svg class="w-12 h-12 text-surface-600 mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <h2 class="text-lg font-semibold text-white mb-2">Failed to load releases</h2>
-          <p class="text-surface-400 text-sm mb-6">Could not fetch release data from the server.</p>
-          <button id="releases-retry" class="btn-secondary text-sm px-6 py-2.5">Try Again</button>
-        </div>
-      </div>
-
-      <!-- Empty state (hidden by default) -->
-      <div id="releases-empty" class="hidden">
+      ) : (
         <div class="card text-center py-12">
           <svg class="w-12 h-12 text-surface-600 mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -77,133 +102,9 @@ import Base from '../layouts/Base.astro';
           <h2 class="text-lg font-semibold text-white mb-2">No releases found</h2>
           <p class="text-surface-400 text-sm">Check back later for new releases.</p>
         </div>
-      </div>
+      )}
     </div>
   </main>
 
   <Footer />
 </Base>
-
-<script>
-  interface ReleaseData {
-    version: string;
-    date: string;
-    url: string;
-    file: string;
-    size: number;
-  }
-
-  const container = document.getElementById('releases-container')!;
-  const errorEl = document.getElementById('releases-error')!;
-  const emptyEl = document.getElementById('releases-empty')!;
-  const retryBtn = document.getElementById('releases-retry')!;
-
-  function escapeHtml(str: string): string {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  function formatDate(dateStr: string): string {
-    try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    } catch {
-      return dateStr;
-    }
-  }
-
-  function formatSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  function renderRelease(release: ReleaseData, isLatest: boolean): string {
-    const dateFormatted = escapeHtml(formatDate(release.date));
-    const version = escapeHtml(release.version);
-    const dateAttr = escapeHtml(release.date);
-    const downloadUrl = escapeHtml(release.url);
-    const size = release.size ? escapeHtml(formatSize(release.size)) : '';
-    return `
-      <article class="card-interactive relative overflow-hidden animate-slide-up">
-        <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary-500 via-primary-400/50 to-transparent" aria-hidden="true"></div>
-        <div class="flex items-start justify-between gap-4">
-          <div class="flex flex-col gap-2 pl-2">
-            <div class="flex items-center gap-3">
-              <h3 class="text-xl font-bold text-white font-mono tracking-tight">v${version}</h3>
-              ${isLatest ? '<span class="badge text-[11px]">Latest</span>' : ''}
-            </div>
-            <time datetime="${dateAttr}" class="text-sm text-surface-400">${dateFormatted}</time>
-          </div>
-          <a href="${downloadUrl}" class="btn-secondary shrink-0 gap-2 px-5 py-2.5 text-sm">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Download
-          </a>
-        </div>
-        ${size ? `
-        <div class="mt-4 pt-4 border-t border-white/[0.04] pl-2">
-          <span class="text-xs text-surface-500 flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-            </svg>
-            ${size}
-          </span>
-        </div>` : ''}
-      </article>
-    `;
-  }
-
-  function showError() {
-    container.classList.add('hidden');
-    emptyEl.classList.add('hidden');
-    errorEl.classList.remove('hidden');
-  }
-
-  function showEmpty() {
-    container.classList.add('hidden');
-    errorEl.classList.add('hidden');
-    emptyEl.classList.remove('hidden');
-  }
-
-  async function fetchReleases() {
-    // Reset to loading
-    container.classList.remove('hidden');
-    errorEl.classList.add('hidden');
-    emptyEl.classList.add('hidden');
-    container.querySelectorAll('.skeleton-card').forEach((el) => el.classList.remove('hidden'));
-    container.querySelectorAll('.release-card').forEach((el) => el.remove());
-
-    try {
-      const res = await fetch('https://autocr-api.nicx.me/api/releases', {
-        signal: AbortSignal.timeout(10000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const data = await res.json();
-      const releases: ReleaseData[] = data.releases;
-
-      // Remove skeleton
-      container.querySelectorAll('.skeleton-card').forEach((el) => el.remove());
-
-      if (!releases || releases.length === 0) {
-        showEmpty();
-        return;
-      }
-
-      container.innerHTML = releases
-        .map((r, i) => `<div class="release-card" style="animation-delay: ${i * 80}ms">${renderRelease(r, i === 0)}</div>`)
-        .join('');
-    } catch {
-      showError();
-    }
-  }
-
-  retryBtn.addEventListener('click', fetchReleases);
-  fetchReleases();
-</script>

@@ -2,7 +2,7 @@
 
 AI-powered answer assistant for Coursera quizzes. It detects questions, sends them to supported AI providers, and helps apply answers.
 
-> **Current release:** **`v1.8.0`** includes the floating widget, in-page settings overlay, slim popup fallback, and scoped runtime-state model.
+> **Current release:** **`v1.9.1`** includes the floating widget, in-page settings overlay, slim popup fallback, and scoped runtime-state model, now packaged on the synchronized canonical release line.
 
 ## Features
 

@@ -1,59 +1,13 @@
 ---
 interface Props {
-	version?: string;
+	version: string;
 }
 
 const { version } = Astro.props;
 ---
 
-{version ? (
-  <span class="badge animate-fade-in">
-    <span class="font-mono">v{version}</span>
-    <span class="text-primary-400/50">&middot;</span>
-    <span class="text-primary-400/70">Latest Release</span>
-  </span>
-) : (
-  <span
-    class="badge"
-    data-version-auto
-  >
-    <span class="font-mono version-text shimmer">
-      <span class="invisible">v0.0.0</span>
-    </span>
-    <span class="text-primary-400/50">&middot;</span>
-    <span class="text-primary-400/70">Latest Release</span>
-  </span>
-)}
-
-<script>
-  const autoBadges = document.querySelectorAll<HTMLElement>('[data-version-auto]');
-
-  if (autoBadges.length > 0) {
-    fetch('https://autocr-api.nicx.me/api/latest-version', {
-      signal: AbortSignal.timeout(5000),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data: { version?: string }) => {
-        const ver = data.version || 'unknown';
-        autoBadges.forEach((badge) => {
-          const textEl = badge.querySelector('.version-text');
-          if (textEl) {
-            textEl.classList.remove('shimmer');
-            textEl.textContent = `v${ver}`;
-          }
-        });
-      })
-      .catch(() => {
-        autoBadges.forEach((badge) => {
-          const textEl = badge.querySelector('.version-text');
-          if (textEl) {
-            textEl.classList.remove('shimmer');
-            textEl.textContent = 'v1.8.0';
-          }
-        });
-      });
-  }
-</script>
+<span class="badge animate-fade-in">
+  <span class="font-mono">v{version}</span>
+  <span class="text-primary-400/50">&middot;</span>
+  <span class="text-primary-400/70">Latest Release</span>
+</span>

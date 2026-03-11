@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.9.1] — 2026-03-11
+
+### Changed
+- **Release metadata alignment** — `manifest.json` and package versioning now advance to `1.9.1` so the published extension artifact stays in lockstep with the canonical release line used by the website update manifest and installer distribution surfaces
+
 ## [1.8.0] — 2026-03-10
 
 

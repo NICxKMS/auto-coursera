@@ -1,4 +1,6 @@
 ---
+import { readFile } from 'node:fs/promises';
+
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import InstallButton from '../components/InstallButton.astro';
@@ -6,12 +8,20 @@ import OSDetector from '../components/OSDetector.astro';
 import ScriptBlock from '../components/ScriptBlock.astro';
 import Base from '../layouts/Base.astro';
 
-const githubReleaseBase = 'https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0';
+const versionInfo = JSON.parse(
+  await readFile(new URL('../../../version.json', import.meta.url), 'utf-8'),
+) as {
+  version: string;
+  githubRepo: string;
+};
+
+const currentVersion = versionInfo.version;
+const githubReleaseBase = `https://github.com/${versionInfo.githubRepo}/releases/download/v${currentVersion}`;
 const installerDownloads = {
-  windows: `${githubReleaseBase}/installer-windows-amd64.exe`,
-  macosArm64: `${githubReleaseBase}/installer-macos-arm64`,
-  macosIntel: `${githubReleaseBase}/installer-macos-amd64`,
-  linux: `${githubReleaseBase}/installer-linux-amd64`,
+	windows: `${githubReleaseBase}/installer-windows-amd64.exe`,
+	macosArm64: `${githubReleaseBase}/installer-macos-arm64`,
+	macosIntel: `${githubReleaseBase}/installer-macos-amd64`,
+	linux: `${githubReleaseBase}/installer-linux-amd64`,
 } as const;
 ---
 

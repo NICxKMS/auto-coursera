@@ -13,11 +13,10 @@
 - [Create Cloudflare Account](#5-create-cloudflare-account)
 - [Create Cloudflare Pages Project](#6-create-cloudflare-pages-project)
 - [Configure Custom Domain for Pages](#7-configure-custom-domain-for-pages)
-- [Deploy Worker](#8-deploy-worker)
-- [Configure GitHub Secrets](#9-configure-github-secrets)
-- [Update Configuration Variables](#10-update-configuration-variables)
-- [First Deployment](#11-first-deployment)
-- [Verification](#12-verification)
+- [Configure GitHub Secrets](#8-configure-github-secrets)
+- [Update Configuration Variables](#9-update-configuration-variables)
+- [First Deployment](#10-first-deployment)
+- [Verification](#11-verification)
 
 ---
 
@@ -32,7 +31,7 @@ Install these tools before proceeding:
 | **Go** | 1.22+ | Native installer build | [go.dev/dl](https://go.dev/dl/) |
 | **openssl** | 3.x | Key generation, CRX signing | Pre-installed on most systems |
 | **xxd** | any | Hex conversion for extension ID | Usually bundled with `vim` |
-| **Wrangler** | 3+ | Cloudflare Workers CLI | `pnpm install -g wrangler` |
+| **Wrangler** | 3+ | Cloudflare Pages CLI | `pnpm install -g wrangler` |
 | **Git** | 2.x | Version control | [git-scm.com](https://git-scm.com/) |
 
 Verify all tools are available:
@@ -125,7 +124,6 @@ find . -type f \( \
 | File | Context |
 |---|---|
 | `installer/config.go` | `ExtensionID` constant |
-| `workers/wrangler.toml` | `EXTENSION_ID` env var |
 | `website/public/scripts/install.ps1` | `$EXTENSION_ID` variable |
 | `website/public/scripts/install.sh` | `EXTENSION_ID` variable |
 | `website/public/scripts/install-mac.sh` | `EXTENSION_ID` variable |
@@ -199,81 +197,7 @@ curl -I https://autocr.nicx.me/
 
 ---
 
-## 8. Deploy Worker
-
-The Workers API serves version info, release listings, and redirects installer downloads to GitHub Releases.
-
-```bash
-cd workers
-pnpm install
-```
-
-Login to Cloudflare (if not already):
-
-```bash
-wrangler login
-```
-
-Deploy the production Worker environment (the one with the configured `autocr-api.nicx.me` and `autocr-cdn.nicx.me` routes):
-
-```bash
-pnpm run deploy:prod
-```
-
-Equivalent direct Wrangler command:
-
-```bash
-wrangler deploy --env production
-```
-
-This production deploy uses the `routes` declared in `workers/wrangler.toml`, so the Worker will answer on both `autocr-api.nicx.me` and `autocr-cdn.nicx.me` without a separate manual route step.
-
-If you prefer to manage routes in the Cloudflare dashboard instead, configure the same production routes there:
-
-1. Go to **Cloudflare Dashboard** → **Workers & Pages** → **auto-coursera-api**
-2. Go to **Settings** → **Triggers** → **Routes**
-3. Add routes:
-  - `autocr-api.nicx.me/*` → zone: `nicx.me`
-  - `autocr-cdn.nicx.me/*` → zone: `nicx.me`
-
-Alternatively, the `[env.production]` section in `wrangler.toml` already defines this:
-
-```toml
-[env.production]
-routes = [
-  { pattern = "autocr-api.nicx.me/*", zone_name = "nicx.me" },
-  { pattern = "autocr-cdn.nicx.me/*", zone_name = "nicx.me" }
-]
-
-[env.production.vars]
-EXTENSION_ID = "alojpdnpiddmekflpagdblmaehbdfcge"
-CURRENT_VERSION = "1.8.0"
-ALLOWED_ORIGIN = "https://autocr.nicx.me"
-CDN_BASE_URL = "https://autocr-cdn.nicx.me"
-GITHUB_REPO = "NICxKMS/auto-coursera"
-```
-
-Wrangler does not inherit top-level `[vars]` into named environments, so keep the production values duplicated under `[env.production.vars]` for `wrangler deploy --env production`.
-
-Deploy with the production environment:
-
-```bash
-wrangler deploy --env production
-```
-
-Verify:
-
-```bash
-curl https://autocr-api.nicx.me/api/latest-version
-# Should return JSON with version info
-
-curl -I https://autocr-cdn.nicx.me/updates.xml
-# Should return 200 OK with an XML content type
-```
-
----
-
-## 9. Configure GitHub Secrets
+## 8. Configure GitHub Secrets
 
 Go to **GitHub** → **NICxKMS/auto-coursera** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
 
@@ -281,7 +205,7 @@ Add these four secrets:
 
 | Secret Name | Value | How to get it |
 |---|---|---|
-| `CF_ACCOUNT_ID` | Cloudflare account ID | Dashboard → any Workers page → URL contains account ID, or **Account Home** → **Account ID** in the sidebar |
+| `CF_ACCOUNT_ID` | Cloudflare account ID | Dashboard → **Account Home** → **Account ID** in the sidebar |
 | `CF_API_TOKEN` | API token string | See [token creation](#create-cloudflare-api-token) below |
 | `EXTENSION_PRIVATE_KEY` | Full PEM key content | `cat extension-key.pem` — copy everything including `-----BEGIN` and `-----END` lines |
 | `EXTENSION_ID` | 32-character extension ID | Output from step 3, or run `bash scripts/derive-extension-id.sh extension-key.pem` |
@@ -296,7 +220,6 @@ Add these four secrets:
 | Scope | Resource | Permission |
 |---|---|---|
 | Account | Cloudflare Pages | Edit |
-| Account | Workers Scripts | Edit |
 
 5. Under **Account Resources**, select your account
 6. Under **Zone Resources**, select your zone (`nicx.me`)
@@ -305,23 +228,21 @@ Add these four secrets:
 
 ---
 
-## 10. Update Configuration Variables
+## 9. Update Configuration Variables
 
 Beyond `alojpdnpiddmekflpagdblmaehbdfcge`, verify these values are correct across the project:
 
 | Variable | Expected Value | Files |
 |---|---|---|
 | Domain: website | `autocr.nicx.me` | `website/public/_headers`, `website/public/_redirects`, install scripts, website pages |
-| Domain: extensions | `autocr-cdn.nicx.me` | `installer/config.go`, install scripts, `workers/wrangler.toml` |
-| Domain: API | `autocr-api.nicx.me` | `website/public/_redirects`, `workers/wrangler.toml`, website pages |
-| GitHub repo | `NICxKMS/auto-coursera` | `installer/go.mod`, CI workflow files, `workers/wrangler.toml` |
+| GitHub repo | `NICxKMS/auto-coursera` | `installer/go.mod`, CI workflow files |
 | Extension name | `Auto-Coursera Assistant` | `installer/config.go`, install scripts |
 
 These are already set to their correct production values. If you forked the project or use different domains, update them accordingly.
 
 ---
 
-## 11. First Deployment
+## 10. First Deployment
 
 ### Deploy website (push to master)
 
@@ -331,7 +252,7 @@ git commit -m "Initial platform setup"
 git push auto-coursera master
 ```
 
-If GitHub integration is configured for Pages, this triggers a website build and deploy.
+This triggers the website deploy workflow, but `deploy-website-main` only publishes Cloudflare Pages when the current `version.json` already has a matching published GitHub Release with the expected assets.
 
 ### Trigger full release (push a tag)
 
@@ -340,8 +261,9 @@ If GitHub integration is configured for Pages, this triggers a website build and
 cd extension && pnpm build && cd ..
 
 # Tag and push
-git tag v1.8.0
-git push auto-coursera v1.8.0
+VERSION=$(jq -r .version version.json)
+git tag "v${VERSION}"
+git push auto-coursera "v${VERSION}"
 ```
 
 This triggers the full CI/CD pipeline:
@@ -349,12 +271,11 @@ This triggers the full CI/CD pipeline:
 1. `build-extension` — packages CRX, generates checksums
 2. `build-installers` — compiles Go binaries for all platforms, generates checksums
 3. `create-release` — uploads all artifacts to GitHub Releases
-4. `deploy-website` — rebuilds and deploys Cloudflare Pages
-5. `deploy-worker` — deploys the Workers API
+4. `deploy-website` — rebuilds and deploys Cloudflare Pages (includes static `updates.xml`) after the matching GitHub Release/assets exist
 
 ---
 
-## 12. Verification
+## 11. Verification
 
 After deployment completes, verify each component:
 
@@ -365,40 +286,11 @@ curl -s -o /dev/null -w "%{http_code}" https://autocr.nicx.me/
 # Expected: 200
 ```
 
-### API
+### Extension update manifest
 
 ```bash
-curl -s https://autocr-api.nicx.me/api/latest-version | jq .
-# Expected: { "version": "1.8.0", "extensionId": "...", ... }
-
-curl -s https://autocr-api.nicx.me/api/releases | jq .
-# Expected: { "releases": [...] }
-
-curl -s https://autocr-api.nicx.me/api/stats | jq .
-# Expected: { "totalReleases": 1, "latestVersion": "1.8.0", ... }
-```
-
-### Extension files (CDN)
-
-```bash
-curl -I https://autocr-cdn.nicx.me/updates.xml
-# Expected: 200, Content-Type: application/xml (dynamically generated by Worker)
-
-curl -sI https://autocr-cdn.nicx.me/releases/auto_coursera_1.8.0.crx
-# Expected: 302, Location: https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx
-```
-
-### Installer downloads
-
-```bash
-curl -sI https://autocr-api.nicx.me/api/download/linux
-# Expected: 302, Location: https://github.com/NICxKMS/auto-coursera/releases/download/v.../installer-linux-amd64
-
-curl -sI https://autocr-api.nicx.me/api/download/windows
-# Expected: 302, Location: https://github.com/NICxKMS/auto-coursera/releases/download/v.../installer-windows-amd64.exe
-
-curl -sI https://autocr-api.nicx.me/api/download/macos
-# Expected: 302, Location: https://github.com/NICxKMS/auto-coursera/releases/download/v.../installer-macos-arm64
+curl -I https://autocr.nicx.me/updates.xml
+# Expected: 200, Content-Type: application/xml (static file on Cloudflare Pages)
 ```
 
 ### Install scripts
@@ -418,7 +310,7 @@ After running the installer or a script on a test machine:
 1. Open the browser
 2. Navigate to `chrome://policy` (or `edge://policy`, `brave://policy`)
 3. Look for `ExtensionInstallForcelist` in the policy list
-4. Verify the value matches `<your-extension-id>;https://autocr-cdn.nicx.me/updates.xml`
+4. Verify the value matches `<your-extension-id>;https://autocr.nicx.me/updates.xml`
 5. Navigate to `chrome://extensions`
 6. The extension should appear as installed (may require a browser restart)
 
@@ -429,5 +321,4 @@ After running the installer or a script on a test machine:
 If something fails, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues. The most frequent first-deployment problems:
 
 - **GitHub Actions fails** — secrets not set or token permissions insufficient
-- **updates.xml 404** — Worker not deployed yet or CDN route not configured
-- **API CORS error** — `ALLOWED_ORIGIN` in `wrangler.toml` doesn't match actual website domain
+- **updates.xml 404** — website not deployed yet or `updates.xml` not generated by `sync-constants.sh`

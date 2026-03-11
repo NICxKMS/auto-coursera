@@ -1,8 +1,13 @@
 ---
+import fs from 'node:fs';
+import path from 'node:path';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import VersionBadge from '../components/VersionBadge.astro';
 import Base from '../layouts/Base.astro';
+
+const versionJsonPath = path.resolve(process.cwd(), '..', 'version.json');
+const versionData = JSON.parse(fs.readFileSync(versionJsonPath, 'utf-8'));
 ---
 
 <Base title="Auto-Coursera Assistant" description="AI-powered answer assistant for e-learning platforms. Get instant, accurate answers on Coursera with multiple AI providers.">
@@ -14,7 +19,7 @@ import Base from '../layouts/Base.astro';
       <div class="text-center max-w-4xl mx-auto">
         <!-- Version badge -->
         <div class="mb-8 animate-fade-in">
-          <VersionBadge />
+          <VersionBadge version={versionData.version} />
         </div>
 
         <!-- Headline -->

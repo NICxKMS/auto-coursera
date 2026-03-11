@@ -1,4 +1,6 @@
 > ✅ **IMPLEMENTED** — This plan was fully implemented on 2026-03-10. See CHANGELOG.md for details.
+>
+> ⚠️ **SUPERSEDED** — The Cloudflare Worker described here was itself eliminated in a later migration. All infrastructure now runs on static Cloudflare Pages at `autocr.nicx.me`. Domain references below are historical.
 
 # Plan: Eliminate R2 — Option E Implementation
 

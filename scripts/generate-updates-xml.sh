@@ -7,8 +7,8 @@ set -euo pipefail
 #
 # Produces a local/manual updates.xml fixture for enterprise policy installs
 # or self-hosted extension testing.
-# Production uses the Worker-served endpoint at https://autocr-cdn.nicx.me/updates.xml
-# and no longer publishes a static updates.xml artifact in release CI.
+# Production serves the static updates.xml via https://autocr.nicx.me/updates.xml
+# on Cloudflare Pages. This script generates a local fixture for testing.
 # See: https://developer.chrome.com/docs/extensions/how-to/distribute/host-on-linux
 
 # Colors
@@ -29,12 +29,12 @@ usage() {
     echo -e "${BOLD}Usage:${NC} $0 -i <extension-id> -v <version> -u <crx-url> [-o <output-file>] [-h]"
     echo ""
     echo "Generate a Chrome extension updates.xml auto-update manifest for local/manual testing."
-    echo "Production uses the Worker-served endpoint at https://autocr-cdn.nicx.me/updates.xml."
+    echo "Production serves updates.xml via https://autocr.nicx.me/updates.xml (Cloudflare Pages)."
     echo "This helper is not used by the tagged-release CI workflow."
     echo ""
     echo -e "${BOLD}Required:${NC}"
     echo "  -i <extension-id>   Chrome extension ID (32 lowercase letters a-p)"
-    echo "  -v <version>        Extension version (e.g., 1.8.0)"
+    echo "  -v <version>        Extension version (e.g., 1.9.1)"
     echo "  -u <crx-url>        Full URL to the CRX file"
     echo ""
     echo -e "${BOLD}Optional:${NC}"
@@ -42,8 +42,8 @@ usage() {
     echo "  -h                  Show this help message"
     echo ""
     echo -e "${BOLD}Examples:${NC}"
-    echo "  $0 -i abcdefghijklmnopabcdefghijklmnop -v 1.8.0 -u https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx"
-    echo "  $0 -i abcdefghijklmnopabcdefghijklmnop -v 1.8.0 -u https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx -o updates.xml"
+    echo "  $0 -i abcdefghijklmnopabcdefghijklmnop -v <version> -u https://github.com/NICxKMS/auto-coursera/releases/download/v<version>/auto_coursera_<version>.crx"
+    echo "  $0 -i abcdefghijklmnopabcdefghijklmnop -v <version> -u https://github.com/NICxKMS/auto-coursera/releases/download/v<version>/auto_coursera_<version>.crx -o updates.xml"
     echo ""
     echo -e "${BOLD}Output format:${NC}"
     echo '  <?xml version="1.0" encoding="UTF-8"?>'
@@ -122,7 +122,7 @@ fi
 # Validate version format
 if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
     log_error "Invalid version format: ${VERSION}"
-    echo -e "${YELLOW}Expected format: X.Y.Z or X.Y.Z.W (e.g., 1.8.0)${NC}" >&2
+    echo -e "${YELLOW}Expected format: X.Y.Z or X.Y.Z.W (e.g., 1.9.1)${NC}" >&2
     exit 1
 fi
 

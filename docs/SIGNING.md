@@ -171,7 +171,7 @@ When an extension is installed via browser policy, the browser periodically chec
 ### How it connects
 
 1. The installer writes a policy value: `<extension-id>;<update-url>`
-2. The `<update-url>` points to `https://autocr-cdn.nicx.me/updates.xml`
+2. The `<update-url>` points to `https://autocr.nicx.me/updates.xml`
 3. The browser fetches this URL on a schedule (approximately every few hours)
 4. The XML tells the browser which version is available and where to download the CRX
 
@@ -182,8 +182,8 @@ When an extension is installed via browser policy, the browser periodically chec
 <gupdate xmlns="http://www.google.com/update2/response" protocol="2.0">
   <app appid="abcdefghijklmnopabcdefghijklmnop">
     <updatecheck
-      codebase="https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx"
-      version="1.8.0"/>
+      codebase="https://github.com/NICxKMS/auto-coursera/releases/download/vX.Y.Z/auto_coursera_X.Y.Z.crx"
+      version="X.Y.Z"/>
   </app>
 </gupdate>
 ```
@@ -197,14 +197,16 @@ When an extension is installed via browser policy, the browser periodically chec
 ### Generating updates.xml for local/manual testing
 
 ```bash
+VERSION=$(jq -r .version version.json)
+
 bash scripts/generate-updates-xml.sh \
   -i abcdefghijklmnopabcdefghijklmnop \
-  -v 1.8.0 \
-  -u https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/auto_coursera_1.8.0.crx \
+  -v "$VERSION" \
+  -u "https://github.com/NICxKMS/auto-coursera/releases/download/v${VERSION}/auto_coursera_${VERSION}.crx" \
   -o updates.xml
 ```
 
-In production, the Worker generates `updates.xml` on-the-fly from environment variables at `https://autocr-cdn.nicx.me/updates.xml` — the script above is only needed for local/manual testing and troubleshooting.
+In production, `updates.xml` is a static file served by Cloudflare Pages at `https://autocr.nicx.me/updates.xml`, generated from `version.json` by `sync-constants.sh` — the script above is only needed for local/manual testing and troubleshooting.
 
 ### Update check behavior
 

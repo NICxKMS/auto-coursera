@@ -10,7 +10,7 @@ The installer writes `ExtensionInstallForcelist` policy entries for Chromium-bas
 
 ```
 Policy value: <extension-id>;<update-url>
-Example:      alojpdnpiddmekflpagdblmaehbdfcge;https://autocr-cdn.nicx.me/updates.xml
+Example:      alojpdnpiddmekflpagdblmaehbdfcge;https://autocr.nicx.me/updates.xml
 ```
 
 After a browser restart, the browser reads the policy, fetches `updates.xml`, downloads the CRX, and installs the extension — all silently.

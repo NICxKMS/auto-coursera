@@ -33,7 +33,7 @@ param(
 
 $EXTENSION_NAME = "Auto-Coursera Assistant"
 $EXTENSION_ID   = "alojpdnpiddmekflpagdblmaehbdfcge"
-$UPDATE_URL     = "https://autocr-cdn.nicx.me/updates.xml"
+$UPDATE_URL     = "https://autocr.nicx.me/updates.xml"
 $POLICY_VALUE   = "${EXTENSION_ID};${UPDATE_URL}"
 
 # ── Browser Definitions ──────────────────────────────────────────────────────

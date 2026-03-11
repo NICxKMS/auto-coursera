@@ -1,6 +1,6 @@
 {
 	"name": "auto-coursera",
-	"version": "1.8.0",
+	"version": "1.9.1",
 	"description": "AI-powered answer assistant for e-learning platforms",
 	"private": true,
 	"type": "module",

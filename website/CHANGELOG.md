@@ -8,8 +8,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.9.1] — 2026-03-11
+
 ### Fixed
-- **Website download hotfix** — `/install`, `/downloads`, and `public/_redirects` now bypass `autocr-api.nicx.me` for installer downloads by pointing directly at the published `v1.8.0` GitHub Release assets; the downloads page uses relative `/scripts/...` links, and the install page’s copied terminal commands resolve against the current website origin so the main install/download surfaces stay functional while API DNS is still recovering
+- **Master website release gate** — `deploy-website-main` now skips Cloudflare Pages publishes until the current `version.json` already has a matching published GitHub Release with the expected CRX/installer assets, preventing release-link drift on `master`
+- **Website download hotfix hardening** — `/install` and `/downloads` now derive their GitHub Release URLs from root `version.json` at build time instead of embedding a specific release tag in page source
+- **Static Pages release artifacts** — `public/_redirects` and `public/updates.xml` are now regenerated from `version.json` by `scripts/sync-constants.sh`, keeping shortcut downloads and browser auto-update discovery aligned for the current hotfix release
+- **Website release-truth validation** — `scripts/check-version.sh` now verifies the generated `_redirects` targets, `updates.xml` contents, and the install/download page wiring so release-surface drift is caught before deploy
 
 ## [1.8.0] — 2026-03-10
 

@@ -3,22 +3,22 @@
 #
 # Checks that version, extensionId, extensionName, updateUrl, and domains
 # are consistent across every file in the monorepo — including hardcoded
-# domain URLs in .astro pages, CSP headers, and route config — and also
-# guards a few operational branch/source-link truths that recently drifted.
+# domain URLs in .astro pages, CSP headers — and also guards a few
+# operational branch/source-link truths that recently drifted.
 # Run from root. CI (deploy.yml) runs this as a gate before builds.
 set -euo pipefail
 
 command -v jq >/dev/null 2>&1 || { echo "❌ jq is required"; exit 1; }
 
 # Validate version.json schema — catch missing fields before they silently become "null"
-jq -e '.version, .extensionId, .extensionName, .updateUrl, .githubRepo, .domains.website, .domains.cdn, .domains.api' version.json > /dev/null 2>&1 || {
+jq -e '.version, .extensionId, .extensionName, .updateUrl, .githubRepo, .domains.website' version.json > /dev/null 2>&1 || {
   echo "❌ version.json is missing required fields"
   exit 1
 }
 
 ERRORS=0
 CHECKS=0
-EXPECTED_CHECKS=51
+EXPECTED_CHECKS=56
 
 check() {
   local file=$1 actual=$2 actual_display
@@ -60,32 +60,20 @@ check_not_contains() {
   fi
 }
 
-extract_unique_toml_var_values() {
-  local key=$1 file=$2
-  grep -E -- "^[[:space:]]*$key[[:space:]]*=" "$file" \
-    | sed -n 's/^[^"]*"\([^"]*\)".*$/\1/p' \
-    | awk '!seen[$0]++'
-}
-
-extract_astro_single_quoted_const() {
-  local const_name=$1 file=$2
-  sed -nE "s/^[[:space:]]*const[[:space:]]+${const_name}[[:space:]]*=[[:space:]]*'([^']*)'.*$/\1/p" "$file" | head -n 1
-}
-
-extract_astro_textcontent_version() {
+check_file_exists() {
   local file=$1
-  sed -nE "s/.*textContent = 'v([^']*)'.*/\1/p" "$file" | head -n 1
+  CHECKS=$((CHECKS + 1))
+  if [[ -f "$file" ]]; then
+    echo "✅ $file exists"
+  else
+    echo "❌ FILE NOT FOUND: $file"
+    ERRORS=$((ERRORS + 1))
+  fi
 }
 
-extract_downloads_version() {
-  local file=$1 version
-  version=$(extract_astro_single_quoted_const 'currentVersion' "$file")
-  if [[ -n "$version" ]]; then
-    printf '%s' "$version"
-    return 0
-  fi
-
-  extract_astro_textcontent_version "$file"
+extract_updates_xml_attribute() {
+  local attribute=$1 file=$2
+  grep -oE "${attribute}=\"[^\"]*\"" "$file" | tail -n 1 | sed -E "s/^${attribute}=\"([^\"]*)\"$/\1/"
 }
 
 # ── Version ──────────────────────────────────────────────────────────────────
@@ -95,20 +83,18 @@ echo "Checking version ($EXPECTED)..."
 
 check "extension/manifest.json" "$(jq -r .version extension/manifest.json)"
 check "extension/package.json"  "$(jq -r .version extension/package.json)"
-check "workers/package.json"    "$(jq -r .version workers/package.json)"
 check "website/package.json"    "$(jq -r .version website/package.json)"
 
 GO_VERSION=$(grep 'AppVersion\s*=' installer/config.go | sed 's/.*"\(.*\)".*/\1/')
 check "installer/config.go (AppVersion)" "$GO_VERSION"
 
-TOML_VERSION=$(extract_unique_toml_var_values 'CURRENT_VERSION' workers/wrangler.toml)
-check "workers/wrangler.toml (CURRENT_VERSION)" "$TOML_VERSION"
+echo ""
+echo "Checking website release-source wiring..."
 
-BADGE_VERSION=$(extract_astro_textcontent_version website/src/components/VersionBadge.astro)
-check "website/src/components/VersionBadge.astro (fallback)" "$BADGE_VERSION"
-
-DL_VERSION=$(extract_downloads_version website/src/pages/downloads.astro)
-check "website/src/pages/downloads.astro (version source)" "$DL_VERSION"
+check_contains "website/src/pages/install.astro" "versionInfo.version"
+check_contains "website/src/pages/install.astro" "versionInfo.githubRepo"
+check_contains "website/src/pages/downloads.astro" "versionInfo.version"
+check_contains "website/src/pages/downloads.astro" "versionInfo.githubRepo"
 
 # ── Extension ID ─────────────────────────────────────────────────────────────
 
@@ -118,9 +104,6 @@ echo "Checking Extension ID ($EXPECTED)..."
 
 GO_EXT_ID=$(grep 'ExtensionID\s*=' installer/config.go | sed 's/.*"\(.*\)".*/\1/')
 check "installer/config.go (ExtensionID)" "$GO_EXT_ID"
-
-TOML_EXT_ID=$(extract_unique_toml_var_values 'EXTENSION_ID' workers/wrangler.toml)
-check "workers/wrangler.toml (EXTENSION_ID)" "$TOML_EXT_ID"
 
 INSTALL_SH_ID=$(grep '^EXTENSION_ID=' website/public/scripts/install.sh | sed 's/^EXTENSION_ID="\(.*\)"/\1/')
 check "website/public/scripts/install.sh (EXTENSION_ID)" "$INSTALL_SH_ID"
@@ -200,31 +183,8 @@ echo "Checking Domains..."
 
 EXPECTED=$(jq -r .domains.website version.json)
 
-TOML_ORIGIN=$(extract_unique_toml_var_values 'ALLOWED_ORIGIN' workers/wrangler.toml)
-check "workers/wrangler.toml (ALLOWED_ORIGIN)" "$TOML_ORIGIN"
-
 ASTRO_SITE=$(grep "site:" website/astro.config.mjs | sed "s/.*'\(.*\)'.*/\1/")
 check "website/astro.config.mjs (site)" "$ASTRO_SITE"
-
-EXPECTED=$(jq -r .domains.cdn version.json)
-
-TOML_CDN=$(extract_unique_toml_var_values 'CDN_BASE_URL' workers/wrangler.toml)
-check "workers/wrangler.toml (CDN_BASE_URL)" "$TOML_CDN"
-
-# ── domains.api ─────────────────────────────────────────────────────────────
-
-DOMAIN_API=$(jq -r '.domains.api' version.json)
-DOMAIN_API_HOST="${DOMAIN_API#https://}"
-
-echo ""
-echo "Checking API domain ($DOMAIN_API)..."
-
-check_contains "website/src/components/VersionBadge.astro" "$DOMAIN_API"
-check_not_contains "website/src/pages/install.astro" "$DOMAIN_API"
-check_not_contains "website/src/pages/downloads.astro" "$DOMAIN_API"
-check_contains "website/src/pages/releases.astro" "$DOMAIN_API"
-check_contains "website/public/_headers" "$DOMAIN_API"
-check_contains "workers/wrangler.toml" "$DOMAIN_API_HOST"
 
 # ── domains.website in pages ────────────────────────────────────────────────
 
@@ -237,22 +197,35 @@ check_not_contains "website/src/pages/install.astro" "$DOMAIN_WEBSITE"
 check_not_contains "website/src/pages/downloads.astro" "$DOMAIN_WEBSITE"
 check_contains "website/src/pages/docs/troubleshoot.astro" "$DOMAIN_WEBSITE"
 
-# ── domains.cdn in pages ────────────────────────────────────────────────────
-
-DOMAIN_CDN=$(jq -r '.domains.cdn' version.json)
+# ── Static assets ───────────────────────────────────────────────────────────
 
 echo ""
-echo "Checking CDN domain in pages ($DOMAIN_CDN)..."
+echo "Checking static assets..."
 
-check_contains "website/src/pages/docs/manual.astro" "$DOMAIN_CDN"
-# ── GitHub Repo ──────────────────────────────────────────────────────────────────
+check_file_exists "website/public/updates.xml"
+check_file_exists "website/public/_redirects"
 
-EXPECTED=$(jq -r .githubRepo version.json)
-echo ""
-echo "Checking GitHub Repo ($EXPECTED)..."
+EXPECTED=$(jq -r .version version.json)
+UPDATES_XML_VERSION=$(extract_updates_xml_attribute 'version' website/public/updates.xml)
+check "website/public/updates.xml (version)" "$UPDATES_XML_VERSION"
 
-TOML_GITHUB_REPO=$(extract_unique_toml_var_values 'GITHUB_REPO' workers/wrangler.toml)
-check "workers/wrangler.toml (GITHUB_REPO)" "$TOML_GITHUB_REPO"
+EXPECTED=$(jq -r .extensionId version.json)
+UPDATES_XML_APPID=$(extract_updates_xml_attribute 'appid' website/public/updates.xml)
+check "website/public/updates.xml (appid)" "$UPDATES_XML_APPID"
+
+EXPECTED="https://github.com/$(jq -r .githubRepo version.json)/releases/download/v$(jq -r .version version.json)/auto_coursera_$(jq -r .version version.json).crx"
+UPDATES_XML_CODEBASE=$(extract_updates_xml_attribute 'codebase' website/public/updates.xml)
+check "website/public/updates.xml (codebase)" "$UPDATES_XML_CODEBASE"
+
+check_contains "website/public/_redirects" "https://github.com/$(jq -r .githubRepo version.json)/releases/download/v$(jq -r .version version.json)/installer-windows-amd64.exe"
+check_contains "website/public/_redirects" "https://github.com/$(jq -r .githubRepo version.json)/releases/download/v$(jq -r .version version.json)/installer-macos-arm64"
+check_contains "website/public/_redirects" "https://github.com/$(jq -r .githubRepo version.json)/releases/download/v$(jq -r .version version.json)/installer-linux-amd64"
+check_contains "website/public/_redirects" "https://github.com/$(jq -r .githubRepo version.json)/releases/download/v$(jq -r .version version.json)/installer-windows-arm64.exe"
+check_contains "website/public/_redirects" "https://github.com/$(jq -r .githubRepo version.json)/releases/download/v$(jq -r .version version.json)/installer-linux-arm64"
+check_contains "website/public/_redirects" "https://github.com/$(jq -r .githubRepo version.json)/releases/download/v$(jq -r .version version.json)/installer-macos-amd64"
+check_contains "website/public/_redirects" "/ps                      /scripts/install.ps1"
+check_contains "website/public/_redirects" "/sh                      /scripts/install.sh"
+check_contains "website/src/pages/docs/manual.astro" "autocr.nicx.me"
 
 # ── Policy Filename Consistency ──────────────────────────────────────────────
 
@@ -276,6 +249,8 @@ check_contains "docs/CLOUDFLARE-SETUP.md" '| **Production branch** | `master` |'
 check_contains "docs/ARCHITECTURE.md" 'website deployment branch (`master` in the current setup)'
 check_contains "website/README.md" '- **Production branch:** `master`'
 check_contains "website/src/components/Footer.astro" "blob/master/LICENSE"
+check_contains ".github/workflows/deploy.yml" "needs: [create-release]"
+check_contains ".github/workflows/deploy.yml" "Gate master Pages deploy on published GitHub Release assets"
 
 # ── Git Tag (CI only) ───────────────────────────────────────────────────────
 
@@ -298,8 +273,10 @@ if [[ $ERRORS -gt 0 ]]; then
   echo "❌ $ERRORS constant mismatch(es) found!"
   exit 1
 fi
+
 if [[ $CHECKS -ne $EXPECTED_CHECKS ]]; then
-  echo "⚠️  Expected $EXPECTED_CHECKS checks but only ran $CHECKS"
+  echo "❌ Expected $EXPECTED_CHECKS checks, but ran $CHECKS — update EXPECTED_CHECKS!"
   exit 1
 fi
-echo "✅ $CHECKS/$EXPECTED_CHECKS checks passed — all constants match version.json"
+
+echo "✅ All $CHECKS checks passed!"

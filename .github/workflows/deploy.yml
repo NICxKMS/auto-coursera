@@ -3,7 +3,7 @@
 # =============================================================================
 # Triggers:
 #   - push to master → deploy website only
-#   - push tag v*   → full release pipeline (extension + installers + website + worker)
+#   - push tag v*   → full release pipeline (extension + installers + website)
 #
 # Required Secrets:
 #   CF_ACCOUNT_ID, CF_API_TOKEN, EXTENSION_PRIVATE_KEY, EXTENSION_ID
@@ -180,7 +180,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ===========================================================================
-  # DEPLOY WEBSITE (master branch) — No dependencies
+  # DEPLOY WEBSITE (master branch) — Only after current version is published
   # ===========================================================================
   deploy-website-main:
     if: github.ref == 'refs/heads/master'
@@ -191,12 +191,62 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Gate master Pages deploy on published GitHub Release assets
+        id: release_gate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          VERSION=$(jq -r .version version.json)
+          TAG="v${VERSION}"
+          RELEASE_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}"
+          REQUIRED_ASSETS=(
+            "auto_coursera_${VERSION}.crx"
+            "auto_coursera_${VERSION}.crx.sha256"
+            "installer-windows-amd64.exe"
+            "installer-windows-arm64.exe"
+            "installer-macos-arm64"
+            "installer-macos-amd64"
+            "installer-linux-amd64"
+            "installer-linux-arm64"
+            "checksums.sha256"
+          )
+
+          if ! RELEASE_JSON=$(curl -fsSL \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            "$RELEASE_URL"); then
+            echo "::notice::Skipping Cloudflare Pages deploy for ${TAG}: matching GitHub Release does not exist yet."
+            echo "release_ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "$(jq -r '.draft' <<<"$RELEASE_JSON")" != "false" || "$(jq -r '.prerelease' <<<"$RELEASE_JSON")" != "false" ]]; then
+            echo "::notice::Skipping Cloudflare Pages deploy for ${TAG}: release exists but is not published yet."
+            echo "release_ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          for ASSET in "${REQUIRED_ASSETS[@]}"; do
+            if ! jq -e --arg name "$ASSET" '.assets[] | select(.name == $name)' <<<"$RELEASE_JSON" > /dev/null; then
+              echo "::notice::Skipping Cloudflare Pages deploy for ${TAG}: required release asset '$ASSET' is missing."
+              echo "release_ready=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+
+          echo "release_ready=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::GitHub Release ${TAG} is published with the expected assets; continuing with Pages deploy."
+
       - name: Setup pnpm
+        if: steps.release_gate.outputs.release_ready == 'true'
         uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c # v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
+        if: steps.release_gate.outputs.release_ready == 'true'
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -204,12 +254,15 @@ jobs:
           cache-dependency-path: 'website/pnpm-lock.yaml'
 
       - name: Install website dependencies
+        if: steps.release_gate.outputs.release_ready == 'true'
         run: cd website && pnpm install --frozen-lockfile
 
       - name: Build website
+        if: steps.release_gate.outputs.release_ready == 'true'
         run: cd website && pnpm build
 
       - name: Deploy to Cloudflare Pages
+        if: steps.release_gate.outputs.release_ready == 'true'
         uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
@@ -217,46 +270,9 @@ jobs:
           command: pages deploy website/dist --project-name=auto-coursera --branch=master
 
   # ===========================================================================
-  # DEPLOY WEBSITE (release tag) — After extension + installers
+  # DEPLOY WEBSITE (release tag) — After GitHub Release/assets exist
   # ===========================================================================
   deploy-website-release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [build-extension, build-installers]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c # v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-          cache-dependency-path: 'website/pnpm-lock.yaml'
-
-      - name: Install website dependencies
-        run: cd website && pnpm install --frozen-lockfile
-
-      - name: Build website
-        run: cd website && pnpm build
-
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages deploy website/dist --project-name=auto-coursera --branch=master
-
-  # ===========================================================================
-  # DEPLOY WORKER — Production Cloudflare Worker (tags only)
-  # ===========================================================================
-  deploy-worker:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [create-release]
     runs-on: ubuntu-latest
@@ -275,15 +291,17 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
-          cache-dependency-path: 'workers/pnpm-lock.yaml'
+          cache-dependency-path: 'website/pnpm-lock.yaml'
 
-      - name: Install worker dependencies
-        run: cd workers && pnpm install --frozen-lockfile
+      - name: Install website dependencies
+        run: cd website && pnpm install --frozen-lockfile
 
-      - name: Deploy worker to production
+      - name: Build website
+        run: cd website && pnpm build
+
+      - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: deploy --env production
-          workingDirectory: workers
+          command: pages deploy website/dist --project-name=auto-coursera --branch=master

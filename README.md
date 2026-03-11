@@ -1,8 +1,8 @@
 # Auto-Coursera Assistant — Distribution Platform
 
-A complete browser extension distribution platform for **Auto-Coursera Assistant**, an AI-powered Chrome extension that helps with Coursera quizzes. This monorepo contains the extension source, CRX packaging scripts, installer service, Worker-routed update/download infrastructure, and landing website.
+A complete browser extension distribution platform for **Auto-Coursera Assistant**, an AI-powered Chrome extension that helps with Coursera quizzes. This monorepo contains the extension source, CRX packaging scripts, native installer tooling, and the static website/update surfaces that ship releases.
 
-> **Current release:** **`v1.8.0`** includes the floating widget redesign, in-page settings overlay, slim popup fallback, scoped runtime-state lifecycle, and the GitHub Releases distribution migration.
+> **Current release:** **`v1.9.1`** carries the `v1.8.0` widget/runtime work plus the release-coherence fixes that synchronize static website install/download/update surfaces from `version.json`.
 
 ## Architecture
 
@@ -10,9 +10,11 @@ A complete browser extension distribution platform for **Auto-Coursera Assistant
 flowchart LR
     EXT["Extension\n(extension/src/)"] --> CRX["CRX Packaging\n(scripts/)"]
     CRX --> GH["GitHub Releases\nNICxKMS/auto-coursera"]
-    GH --> WORKER["Cloudflare Worker\nAPI + CDN domains"]
-    WORKER --> XML["updates.xml\n(dynamic)"]
-    WORKER --> WEB["Website\nautocr.nicx.me"]
+    VERSION["version.json\n(canonical release truth)"] --> SYNC["sync-constants.sh"]
+    SYNC --> XML["updates.xml\n(static)"]
+    SYNC --> REDIRECTS["_redirects\n(static shortcuts)"]
+    GH --> XML
+    REDIRECTS --> WEB["Website\nautocr.nicx.me"]
     XML --> BROWSER["Browser Policy\nInstall / Update"]
     WEB --> BROWSER
     CICD["CI/CD\nGitHub Actions"] -.->|"Build + Package"| CRX
@@ -47,7 +49,7 @@ bash scripts/package-crx.sh -v <version> -k extension-key.pem -s extension/dist
 | Node.js              | 20+      | Extension build, CRX packaging       |
 | pnpm                 | 9+       | Package manager                      |
 | Go                   | 1.22+    | Installer service                    |
-| Cloudflare account   | —        | Workers, Pages                       |
+| Cloudflare account   | —        | Pages hosting                        |
 | GitHub account       | —        | Source control, CI/CD, Releases      |
 | OpenSSL              | 3+       | CRX signing, key generation          |
 
@@ -55,12 +57,11 @@ bash scripts/package-crx.sh -v <version> -k extension-key.pem -s extension/dist
 
 | Component        | Path             | Description                                          |
 |------------------|------------------|------------------------------------------------------|
-| **Extension**    | `extension/`     | Chrome MV3 extension with multi-provider AI, floating widget controls, in-page settings overlay, slim popup fallback, and scoped runtime-state UX for the `v1.8.0` release line |
+| **Extension**    | `extension/`     | Chrome MV3 extension with multi-provider AI, floating widget controls, in-page settings overlay, slim popup fallback, and scoped runtime-state UX for the `v1.9.1` release line |
 | **Source**       | `extension/src/` | Extension TypeScript source files                    |
 | **Scripts**      | `scripts/`       | CRX packaging, key generation, and local/manual update XML tooling |
-| **Website**      | `website/`       | Installer-first Astro landing page, advanced script/manual docs, and download portal at autocr.nicx.me |
+| **Website**      | `website/`       | Installer-first Astro landing page, advanced script/manual docs, download portal, and static update manifest at autocr.nicx.me |
 | **Installer**    | `installer/`     | Go-based browser-policy installer binaries           |
-| **Workers**      | `workers/`       | Cloudflare Worker deployment that serves the API at `autocr-api.nicx.me` and the CDN/update routes at `autocr-cdn.nicx.me` |
 | **Docs**         | `docs/`          | Architecture, deployment, and operations guides      |
 | **CI/CD**        | `.github/`       | GitHub Actions workflows and agent definitions       |
 
@@ -129,12 +130,9 @@ Deployment guides are available in the `docs/` directory:
 1. **Build extension** → `cd extension && pnpm build`
 2. **Package CRX** → `bash scripts/package-crx.sh -v <ver> -k extension-key.pem`
 3. **Upload to GitHub Releases** → CI/CD creates a GitHub Release with the CRX, CRX checksum, installers, and installer checksums
-4. **Deploy website** → CI runs `wrangler pages deploy website/dist --project-name=auto-coursera --branch=master` so the deployment stays attached to the production Pages branch/custom domain
-5. **Deploy workers** → `cd workers && wrangler deploy --env production` (production `vars` are duplicated under `[env.production.vars]` because Wrangler does not inherit them)
+4. **Deploy website** → CI runs `wrangler pages deploy website/dist --project-name=auto-coursera --branch=master`, but `deploy-website-main` only publishes when the current `version.json` already has a matching published GitHub Release with the expected assets
 
-GitHub Releases stores the CRX and installer binaries, while the dual-domain Cloudflare Worker fronts `autocr-api.nicx.me` for website/download APIs and `autocr-cdn.nicx.me` for the canonical `updates.xml` and compatibility download routes.
-
-Production browser updates continue to use the canonical Worker-served endpoint at `https://autocr-cdn.nicx.me/updates.xml`; the repository does not publish a static `updates.xml` release asset anymore.
+GitHub Releases stores the CRX and installer binaries, while the static Astro website on Cloudflare Pages serves the landing page, docs, and the canonical `updates.xml` update manifest at `https://autocr.nicx.me/updates.xml`.
 
 End-user installs and updates are driven by browser policy entries (`ExtensionInstallForcelist`) written by the native installer, install scripts, or manual policy steps. The site intentionally treats installers as the primary path; scripts and manual steps remain available for advanced or automated environments.
 
@@ -145,9 +143,7 @@ End-user installs and updates are driven by browser policy entries (`ExtensionIn
 | `PROJECT_NAME`         | `auto-coursera`             | Repository and project name         |
 | `EXTENSION_NAME`       | `Auto-Coursera Assistant`   | Chrome extension display name       |
 | `EXTENSION_ID`         | `alojpdnpiddmekflpagdblmaehbdfcge`  | Chrome extension ID (from key)      |
-| `DOMAIN_WEBSITE`       | `autocr.nicx.me`          | Landing page domain                 |
-| `DOMAIN_EXTENSIONS`    | `autocr-cdn.nicx.me`       | CDN / update domain served by the Worker |
-| `DOMAIN_API`           | `autocr-api.nicx.me`       | API domain on the same Worker deployment |
+| `DOMAIN_WEBSITE`       | `autocr.nicx.me`          | Landing page and update manifest domain |
 | `GITHUB_REPO`          | `NICxKMS/auto-coursera`    | GitHub repository (Releases host)   |
 
 ## License
