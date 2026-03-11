@@ -19,6 +19,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Cloudflare Pages production branch targeting** — `.github/workflows/deploy.yml` now passes `--branch=master` on both Pages deploy paths so CI deployments attach to the production Pages branch/custom-domain environment instead of creating detached deployments
 - **Worker production environment vars** — `workers/wrangler.toml` now duplicates required runtime values under `[env.production.vars]` because Wrangler does not inherit top-level `[vars]` into named environments
 - **Cloudflare deployment docs** — Root README plus setup guides now document the explicit Pages branch flag and the requirement to duplicate production Worker vars
+- **Website install/download outage hotfix** — The Astro install/download surfaces and Pages redirect shortcuts now bypass `autocr-api.nicx.me` for installer binaries by linking directly to deterministic `v1.8.0` GitHub Release assets, while website-hosted script downloads stay on relative `/scripts/...` paths and the install page’s copied one-liners resolve against the active website origin
 
 ## [1.8.0] — 2026-03-10
 

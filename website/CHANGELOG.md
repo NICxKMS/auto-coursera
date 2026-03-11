@@ -6,6 +6,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **Website download hotfix** — `/install`, `/downloads`, and `public/_redirects` now bypass `autocr-api.nicx.me` for installer downloads by pointing directly at the published `v1.8.0` GitHub Release assets; the downloads page uses relative `/scripts/...` links, and the install page’s copied terminal commands resolve against the current website origin so the main install/download surfaces stay functional while API DNS is still recovering
+
 ## [1.8.0] — 2026-03-10
 
 ### Changed

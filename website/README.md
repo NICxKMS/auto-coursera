@@ -28,8 +28,8 @@ pnpm preview      # Preview production build locally
 | Route | File | Description |
 |---|---|---|
 | `/` | `src/pages/index.astro` | Landing page — hero, features, CTA |
-| `/install` | `src/pages/install.astro` | OS detection, recommended installer downloads, advanced terminal one-liners |
-| `/downloads` | `src/pages/downloads.astro` | Native installers first, plus advanced scripts and direct download shortcuts |
+| `/install` | `src/pages/install.astro` | OS detection, recommended installer downloads pinned directly to the `v1.8.0` GitHub Release, advanced terminal one-liners resolved against the current website host |
+| `/downloads` | `src/pages/downloads.astro` | Native installers pinned directly to the `v1.8.0` GitHub Release, plus advanced scripts and direct download shortcuts |
 | `/releases` | `src/pages/releases.astro` | Version history fetched from API |
 | `/support` | `src/pages/support.astro` | Help and contact info |
 | `/privacy` | `src/pages/privacy.astro` | Privacy policy |
@@ -98,11 +98,16 @@ Shortcut URLs:
 
 | Shortcut | Target | Status |
 |---|---|---|
-| `/download/windows` | `autocr-api.nicx.me/api/download/windows` | 302 |
-| `/download/macos` | `autocr-api.nicx.me/api/download/macos` | 302 |
-| `/download/linux` | `autocr-api.nicx.me/api/download/linux` | 302 |
+| `/download/windows` | `github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/installer-windows-amd64.exe` | 302 |
+| `/download/macos` | `github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/installer-macos-arm64` | 302 |
+| `/download/linux` | `github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/installer-linux-amd64` | 302 |
+| `/download/windows-arm64` | `github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/installer-windows-arm64.exe` | 302 |
+| `/download/macos-intel` | `github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/installer-macos-amd64` | 302 |
+| `/download/linux-arm64` | `github.com/NICxKMS/auto-coursera/releases/download/v1.8.0/installer-linux-arm64` | 302 |
 | `/ps` | `/scripts/install.ps1` | 200 (rewrite) |
 | `/sh` | `/scripts/install.sh` | 200 (rewrite) |
+
+The current outage hotfix deliberately pins installer links to the published `v1.8.0` GitHub Release assets so the website can keep serving working downloads even while `autocr-api.nicx.me` remains degraded externally.
 
 ## Deployment
 

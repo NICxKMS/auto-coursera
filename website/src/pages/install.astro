@@ -5,6 +5,14 @@ import InstallButton from '../components/InstallButton.astro';
 import OSDetector from '../components/OSDetector.astro';
 import ScriptBlock from '../components/ScriptBlock.astro';
 import Base from '../layouts/Base.astro';
+
+const githubReleaseBase = 'https://github.com/NICxKMS/auto-coursera/releases/download/v1.8.0';
+const installerDownloads = {
+  windows: `${githubReleaseBase}/installer-windows-amd64.exe`,
+  macosArm64: `${githubReleaseBase}/installer-macos-arm64`,
+  macosIntel: `${githubReleaseBase}/installer-macos-amd64`,
+  linux: `${githubReleaseBase}/installer-linux-amd64`,
+} as const;
 ---
 
 <Base title="Install" description="Download and install Auto-Coursera Assistant for your operating system. One-click installers for Windows, macOS, and Linux, with ARM64 variants available from the full downloads matrix.">
@@ -36,16 +44,16 @@ import Base from '../layouts/Base.astro';
 
         <div id="install-buttons" class="grid sm:grid-cols-3 gap-4">
           <div data-install-os="windows">
-            <InstallButton os="windows" label="Windows Installer" href="https://autocr-api.nicx.me/api/download/windows" size=".exe — ~8 MB" />
+            <InstallButton os="windows" label="Windows Installer" href={installerDownloads.windows} size=".exe — ~8 MB" />
           </div>
           <div data-install-os="macos">
-            <InstallButton os="macos" label="macOS (Apple Silicon)" href="https://autocr-api.nicx.me/api/download/macos" size="M1/M2/M3/M4 — ~8 MB" />
+            <InstallButton os="macos" label="macOS (Apple Silicon)" href={installerDownloads.macosArm64} size="M1/M2/M3/M4 — ~8 MB" />
           </div>
           <div data-install-os="macos-intel">
-            <InstallButton os="macos" label="macOS (Intel)" href="https://autocr-api.nicx.me/api/download/macos-intel" size="Intel x86_64 — ~8 MB" />
+            <InstallButton os="macos" label="macOS (Intel)" href={installerDownloads.macosIntel} size="Intel x86_64 — ~8 MB" />
           </div>
           <div data-install-os="linux">
-            <InstallButton os="linux" label="Linux Installer" href="https://autocr-api.nicx.me/api/download/linux" size="x64 — ~8 MB" />
+            <InstallButton os="linux" label="Linux Installer" href={installerDownloads.linux} size="x64 — ~8 MB" />
           </div>
         </div>
 
@@ -69,13 +77,13 @@ import Base from '../layouts/Base.astro';
           <div id="script-blocks" class="space-y-6 pl-11">
             <p class="text-sm text-surface-500">These scripts write the same <code>ExtensionInstallForcelist</code> policy as the native installer. Use them for automation or shell-first environments, not as a separate install mechanism.</p>
             <div data-script-os="windows">
-              <ScriptBlock command="irm https://autocr.nicx.me/scripts/install.ps1 | iex" label="Windows (PowerShell)" />
+              <ScriptBlock command="irm __WEBSITE_ORIGIN__/scripts/install.ps1 | iex" label="Windows (PowerShell)" />
             </div>
             <div data-script-os="linux">
-              <ScriptBlock command="curl -fsSL https://autocr.nicx.me/scripts/install.sh | sudo bash" label="Linux" />
+              <ScriptBlock command="curl -fsSL __WEBSITE_ORIGIN__/scripts/install.sh | sudo bash" label="Linux" />
             </div>
             <div data-script-os="macos">
-              <ScriptBlock command="curl -fsSL https://autocr.nicx.me/scripts/install-mac.sh | bash" label="macOS" />
+              <ScriptBlock command="curl -fsSL __WEBSITE_ORIGIN__/scripts/install-mac.sh | bash" label="macOS" />
             </div>
           </div>
         </details>
@@ -136,6 +144,12 @@ import Base from '../layouts/Base.astro';
 </Base>
 
 <script>
+  document.querySelectorAll<HTMLElement>('#script-blocks code').forEach((codeEl) => {
+    const text = codeEl.textContent;
+    if (!text?.includes('__WEBSITE_ORIGIN__')) return;
+    codeEl.textContent = text.replace(/__WEBSITE_ORIGIN__/g, window.location.origin);
+  });
+
   document.addEventListener('os-detected', (e: Event) => {
     const { os } = (e as CustomEvent<{ os: string }>).detail;
     if (os === 'unknown') return;
