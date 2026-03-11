@@ -45,6 +45,13 @@ check_contains() {
   fi
 }
 
+extract_unique_toml_var_values() {
+  local key=$1 file=$2
+  grep -E -- "^[[:space:]]*$key[[:space:]]*=" "$file" \
+    | sed -n 's/^[^"]*"\([^"]*\)".*$/\1/p' \
+    | awk '!seen[$0]++'
+}
+
 # ── Version ──────────────────────────────────────────────────────────────────
 
 EXPECTED=$(jq -r .version version.json)
@@ -58,7 +65,7 @@ check "website/package.json"    "$(jq -r .version website/package.json)"
 GO_VERSION=$(grep 'AppVersion\s*=' installer/config.go | sed 's/.*"\(.*\)".*/\1/')
 check "installer/config.go (AppVersion)" "$GO_VERSION"
 
-TOML_VERSION=$(grep 'CURRENT_VERSION' workers/wrangler.toml | sed 's/.*"\(.*\)".*/\1/')
+TOML_VERSION=$(extract_unique_toml_var_values 'CURRENT_VERSION' workers/wrangler.toml)
 check "workers/wrangler.toml (CURRENT_VERSION)" "$TOML_VERSION"
 
 BADGE_VERSION=$(grep "textContent = 'v" website/src/components/VersionBadge.astro | sed "s/.*'v\(.*\)'.*/\1/")
@@ -76,7 +83,7 @@ echo "Checking Extension ID ($EXPECTED)..."
 GO_EXT_ID=$(grep 'ExtensionID\s*=' installer/config.go | sed 's/.*"\(.*\)".*/\1/')
 check "installer/config.go (ExtensionID)" "$GO_EXT_ID"
 
-TOML_EXT_ID=$(grep 'EXTENSION_ID' workers/wrangler.toml | sed 's/.*"\(.*\)".*/\1/')
+TOML_EXT_ID=$(extract_unique_toml_var_values 'EXTENSION_ID' workers/wrangler.toml)
 check "workers/wrangler.toml (EXTENSION_ID)" "$TOML_EXT_ID"
 
 INSTALL_SH_ID=$(grep '^EXTENSION_ID=' website/public/scripts/install.sh | sed 's/^EXTENSION_ID="\(.*\)"/\1/')
@@ -157,7 +164,7 @@ echo "Checking Domains..."
 
 EXPECTED=$(jq -r .domains.website version.json)
 
-TOML_ORIGIN=$(grep 'ALLOWED_ORIGIN' workers/wrangler.toml | sed 's/.*"\(.*\)".*/\1/')
+TOML_ORIGIN=$(extract_unique_toml_var_values 'ALLOWED_ORIGIN' workers/wrangler.toml)
 check "workers/wrangler.toml (ALLOWED_ORIGIN)" "$TOML_ORIGIN"
 
 ASTRO_SITE=$(grep "site:" website/astro.config.mjs | sed "s/.*'\(.*\)'.*/\1/")
@@ -165,7 +172,7 @@ check "website/astro.config.mjs (site)" "$ASTRO_SITE"
 
 EXPECTED=$(jq -r .domains.cdn version.json)
 
-TOML_CDN=$(grep 'CDN_BASE_URL' workers/wrangler.toml | sed 's/.*"\(.*\)".*/\1/')
+TOML_CDN=$(extract_unique_toml_var_values 'CDN_BASE_URL' workers/wrangler.toml)
 check "workers/wrangler.toml (CDN_BASE_URL)" "$TOML_CDN"
 
 # ── domains.api ─────────────────────────────────────────────────────────────
@@ -208,7 +215,7 @@ EXPECTED=$(jq -r .githubRepo version.json)
 echo ""
 echo "Checking GitHub Repo ($EXPECTED)..."
 
-TOML_GITHUB_REPO=$(grep 'GITHUB_REPO' workers/wrangler.toml | sed 's/.*"\(.*\)".*/\1/')
+TOML_GITHUB_REPO=$(extract_unique_toml_var_values 'GITHUB_REPO' workers/wrangler.toml)
 check "workers/wrangler.toml (GITHUB_REPO)" "$TOML_GITHUB_REPO"
 
 # ── Policy Filename Consistency ──────────────────────────────────────────────

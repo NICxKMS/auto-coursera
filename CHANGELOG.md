@@ -15,6 +15,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Fixed
+- **`scripts/check-version.sh` wrangler env-var dedupe regression** — top-level `[vars]` plus `[env.production.vars]` now collapse identical quoted values during validation, while still failing when the same key resolves to divergent values across TOML scopes
 - **Cloudflare Pages production branch targeting** — `.github/workflows/deploy.yml` now passes `--branch=master` on both Pages deploy paths so CI deployments attach to the production Pages branch/custom-domain environment instead of creating detached deployments
 - **Worker production environment vars** — `workers/wrangler.toml` now duplicates required runtime values under `[env.production.vars]` because Wrangler does not inherit top-level `[vars]` into named environments
 - **Cloudflare deployment docs** — Root README plus setup guides now document the explicit Pages branch flag and the requirement to duplicate production Worker vars
