@@ -21,10 +21,11 @@ CHECKS=0
 EXPECTED_CHECKS=51
 
 check() {
-  local file=$1 actual=$2
+  local file=$1 actual=$2 actual_display
   CHECKS=$((CHECKS + 1))
+  actual_display=${actual:-<missing>}
   if [[ "$actual" != "$EXPECTED" ]]; then
-    echo "❌ MISMATCH: $file has '$actual', expected '$EXPECTED'"
+    echo "❌ MISMATCH: $file has '$actual_display', expected '$EXPECTED'"
     ERRORS=$((ERRORS + 1))
   else
     echo "✅ $file: $actual"
@@ -45,11 +46,46 @@ check_contains() {
   fi
 }
 
+check_not_contains() {
+  local file=$1 unexpected=$2
+  CHECKS=$((CHECKS + 1))
+  if [[ ! -f "$file" ]]; then
+    echo "❌ FILE NOT FOUND: $file"
+    ERRORS=$((ERRORS + 1))
+  elif grep -qF -- "$unexpected" "$file"; then
+    echo "❌ $file should not contain: $unexpected"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "✅ $file does not contain: $unexpected"
+  fi
+}
+
 extract_unique_toml_var_values() {
   local key=$1 file=$2
   grep -E -- "^[[:space:]]*$key[[:space:]]*=" "$file" \
     | sed -n 's/^[^"]*"\([^"]*\)".*$/\1/p' \
     | awk '!seen[$0]++'
+}
+
+extract_astro_single_quoted_const() {
+  local const_name=$1 file=$2
+  sed -nE "s/^[[:space:]]*const[[:space:]]+${const_name}[[:space:]]*=[[:space:]]*'([^']*)'.*$/\1/p" "$file" | head -n 1
+}
+
+extract_astro_textcontent_version() {
+  local file=$1
+  sed -nE "s/.*textContent = 'v([^']*)'.*/\1/p" "$file" | head -n 1
+}
+
+extract_downloads_version() {
+  local file=$1 version
+  version=$(extract_astro_single_quoted_const 'currentVersion' "$file")
+  if [[ -n "$version" ]]; then
+    printf '%s' "$version"
+    return 0
+  fi
+
+  extract_astro_textcontent_version "$file"
 }
 
 # ── Version ──────────────────────────────────────────────────────────────────
@@ -68,11 +104,11 @@ check "installer/config.go (AppVersion)" "$GO_VERSION"
 TOML_VERSION=$(extract_unique_toml_var_values 'CURRENT_VERSION' workers/wrangler.toml)
 check "workers/wrangler.toml (CURRENT_VERSION)" "$TOML_VERSION"
 
-BADGE_VERSION=$(grep "textContent = 'v" website/src/components/VersionBadge.astro | sed "s/.*'v\(.*\)'.*/\1/")
+BADGE_VERSION=$(extract_astro_textcontent_version website/src/components/VersionBadge.astro)
 check "website/src/components/VersionBadge.astro (fallback)" "$BADGE_VERSION"
 
-DL_VERSION=$(grep "textContent = 'v" website/src/pages/downloads.astro | sed "s/.*'v\(.*\)'.*/\1/")
-check "website/src/pages/downloads.astro (fallback)" "$DL_VERSION"
+DL_VERSION=$(extract_downloads_version website/src/pages/downloads.astro)
+check "website/src/pages/downloads.astro (version source)" "$DL_VERSION"
 
 # ── Extension ID ─────────────────────────────────────────────────────────────
 
@@ -184,8 +220,8 @@ echo ""
 echo "Checking API domain ($DOMAIN_API)..."
 
 check_contains "website/src/components/VersionBadge.astro" "$DOMAIN_API"
-check_contains "website/src/pages/install.astro" "$DOMAIN_API"
-check_contains "website/src/pages/downloads.astro" "$DOMAIN_API"
+check_not_contains "website/src/pages/install.astro" "$DOMAIN_API"
+check_not_contains "website/src/pages/downloads.astro" "$DOMAIN_API"
 check_contains "website/src/pages/releases.astro" "$DOMAIN_API"
 check_contains "website/public/_headers" "$DOMAIN_API"
 check_contains "workers/wrangler.toml" "$DOMAIN_API_HOST"
@@ -197,8 +233,8 @@ DOMAIN_WEBSITE=$(jq -r '.domains.website' version.json)
 echo ""
 echo "Checking website domain in pages ($DOMAIN_WEBSITE)..."
 
-check_contains "website/src/pages/install.astro" "$DOMAIN_WEBSITE"
-check_contains "website/src/pages/downloads.astro" "$DOMAIN_WEBSITE"
+check_not_contains "website/src/pages/install.astro" "$DOMAIN_WEBSITE"
+check_not_contains "website/src/pages/downloads.astro" "$DOMAIN_WEBSITE"
 check_contains "website/src/pages/docs/troubleshoot.astro" "$DOMAIN_WEBSITE"
 
 # ── domains.cdn in pages ────────────────────────────────────────────────────

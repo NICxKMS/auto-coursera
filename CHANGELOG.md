@@ -15,6 +15,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Fixed
+- **`scripts/check-version.sh` parser/website-hotfix false failures** — The version guard now reads `website/src/pages/downloads.astro` from its real `currentVersion` constant, falls back to the legacy `textContent = 'v...'` pattern if present, reports `<missing>` mismatches instead of aborting on empty matches, and validates that the install/download pages do not regress back to hardcoded website/API domains while the relative-origin/GitHub-release outage hotfix remains in place
 - **`scripts/check-version.sh` wrangler env-var dedupe regression** — top-level `[vars]` plus `[env.production.vars]` now collapse identical quoted values during validation, while still failing when the same key resolves to divergent values across TOML scopes
 - **Cloudflare Pages production branch targeting** — `.github/workflows/deploy.yml` now passes `--branch=master` on both Pages deploy paths so CI deployments attach to the production Pages branch/custom-domain environment instead of creating detached deployments
 - **Worker production environment vars** — `workers/wrangler.toml` now duplicates required runtime values under `[env.production.vars]` because Wrangler does not inherit top-level `[vars]` into named environments
