@@ -1,5 +1,7 @@
 # Setup Guide
 
+> Public summary: [`/docs/setup`](https://autocr.nicx.me/docs/setup) provides a shorter live overview for operators; this file remains the full repository walkthrough.
+
 > Step-by-step instructions to deploy the Auto-Coursera Assistant distribution platform from scratch.
 
 ---

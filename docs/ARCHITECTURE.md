@@ -1,5 +1,7 @@
 # Architecture
 
+> Public summary: [`/docs/architecture`](https://autocr.nicx.me/docs/architecture) provides a shorter live overview; this file remains the full repository reference.
+
 > Auto-Coursera Assistant — Extension Distribution Platform
 
 ---
@@ -107,7 +109,7 @@ The website is the user-facing entry point. It provides:
 - **Install page** — OS detection, native installers as the recommended path, with advanced terminal commands for scripted installs
 - **Downloads page** — native installers first, plus advanced scripts and direct download shortcuts
 - **Releases page** — version history fetched from the GitHub API at build time, rendered as static HTML
-- **Documentation** — advanced manual install steps, troubleshooting guides, policy file paths
+- **Documentation** — public setup and architecture summaries, advanced manual install steps, troubleshooting guides, and policy file paths
 - **Static install scripts** — served from `/scripts/` (install.ps1, install.sh, install-mac.sh, uninstall.ps1, uninstall.sh)
 
 Security headers are configured in `website/public/_headers` (HSTS, CSP, X-Frame-Options).
@@ -174,7 +176,7 @@ Advanced one-liner scripts for users who prefer the terminal, need automation, o
 
 Each script:
 
-- Checks for required privileges (Administrator on Windows, root on Linux)
+- Checks for required privileges and requests elevation where practical (Windows relaunches through UAC, saved local Linux scripts can hand off to `sudo`, piped Linux one-liners should still start with `sudo`)
 - Detects installed browsers
 - Writes browser policy (registry on Windows, JSON on Linux, `defaults write` on macOS)
 - Handles idempotency — skips if the policy already exists

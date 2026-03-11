@@ -6,7 +6,10 @@
 # Assistant extension for Chromium-based browsers on Linux.
 #
 # Usage:
-#   sudo ./install.sh [chrome|edge|brave|chromium|all] [--uninstall]
+#   ./install.sh [chrome|edge|brave|chromium|all] [--uninstall]
+#
+# If run from a saved file without root privileges, the script will request
+# sudo and relaunch itself. Piped one-liners should still use `| sudo bash`.
 #
 # Author:  nicx
 # Project: Auto-Coursera Assistant
@@ -53,17 +56,64 @@ banner() {
 }
 
 usage() {
-    echo "Usage: sudo $0 [browser] [--uninstall]"
+    echo "Usage: $0 [browser] [--uninstall]"
     echo ""
     echo "Browsers:  chrome, edge, brave, chromium, all (default: all)"
     echo "Options:   --uninstall   Remove the extension policy"
     echo ""
     echo "Examples:"
-    echo "  sudo $0                 # Install for all detected browsers"
-    echo "  sudo $0 chrome          # Install for Chrome only"
-    echo "  sudo $0 --uninstall     # Remove from all browsers"
-    echo "  sudo $0 edge --uninstall"
+    echo "  $0                      # Install for all detected browsers (sudo requested if needed)"
+    echo "  $0 chrome               # Install for Chrome only"
+    echo "  $0 --uninstall          # Remove from all browsers"
+    echo "  $0 edge --uninstall"
+    echo "  curl -fsSL https://autocr.nicx.me/scripts/install.sh | sudo bash"
     echo ""
+}
+
+resolve_script_path() {
+    local candidate="${BASH_SOURCE[0]:-${0:-}}"
+
+    if [[ -n "$candidate" && -f "$candidate" ]]; then
+        printf '%s\n' "$candidate"
+        return 0
+    fi
+
+    return 1
+}
+
+ensure_root() {
+    if [[ $EUID -eq 0 ]]; then
+        return 0
+    fi
+
+    err "Root privileges are required to write managed browser policy files under /etc."
+
+    if ! command -v sudo &>/dev/null; then
+        echo ""
+        echo "  'sudo' is not available on this system."
+        echo "  Re-run this script as root or use 'su -c \"bash ./install.sh $*\"'."
+        echo ""
+        exit 1
+    fi
+
+    local script_path
+    if script_path=$(resolve_script_path); then
+        local bash_path="${BASH:-/bin/bash}"
+        info "Requesting sudo so the installer can continue..."
+        exec sudo "$bash_path" "$script_path" "$@"
+    fi
+
+    warn "This shell is running the script from stdin, so it cannot safely relaunch itself with sudo."
+    echo ""
+    echo "  Re-run the one-liner like this:"
+    echo "    curl -fsSL https://autocr.nicx.me/scripts/install.sh | sudo bash"
+    echo ""
+    echo "  Or save the script first, then run it normally and let it request sudo:"
+    echo "    curl -fsSLO https://autocr.nicx.me/scripts/install.sh"
+    echo "    chmod +x install.sh"
+    echo "    ./install.sh"
+    echo ""
+    exit 1
 }
 
 # ── Browser Definitions ─────────────────────────────────────────────────────
@@ -326,13 +376,7 @@ done
 banner
 
 # Check root
-if [[ $EUID -ne 0 ]]; then
-    err "This script must be run as root."
-    echo ""
-    echo "  Run with: sudo $0 $*"
-    echo ""
-    exit 1
-fi
+ensure_root "$@"
 
 # Detect JSON tool
 detect_json_tool

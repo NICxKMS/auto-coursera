@@ -4,7 +4,7 @@ import Header from '../../components/Header.astro';
 import Base from '../../layouts/Base.astro';
 ---
 
-<Base title="Documentation" description="Documentation hub for Auto-Coursera Assistant. Installation guides, troubleshooting, and more.">
+<Base title="Documentation" description="Documentation hub for Auto-Coursera Assistant. Public setup, architecture, install, and troubleshooting references.">
   <Header />
 
   <main id="main-content" class="py-16 sm:py-24 px-4">
@@ -14,7 +14,7 @@ import Base from '../../layouts/Base.astro';
         <p class="section-label">Docs</p>
         <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Documentation</h1>
         <p class="text-lg text-surface-400 max-w-xl mx-auto">
-          Recommended installers first, plus advanced script, manual, and troubleshooting references when you need them.
+          Recommended installers first, plus public setup, architecture, manual, and troubleshooting references when you need them.
         </p>
       </div>
 
@@ -56,6 +56,34 @@ import Base from '../../layouts/Base.astro';
           </div>
           <h3 class="text-lg font-semibold text-white mb-1.5">Troubleshooting</h3>
           <p class="text-sm text-surface-400 leading-relaxed">Common issues and their solutions. Fix problems quickly.</p>
+        </a>
+
+        <!-- Setup -->
+        <a href="/docs/setup" class="card-interactive group block">
+          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 mb-4 group-hover:bg-primary-500/20 transition-colors">
+            <svg class="w-6 h-6 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 6v12"></path>
+              <path d="M6 12h12"></path>
+              <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white mb-1.5">Setup Guide</h3>
+          <p class="text-sm text-surface-400 leading-relaxed">Public deployment summary for operators who need the self-hosted stack, secrets, and release flow at a glance.</p>
+        </a>
+
+        <!-- Architecture -->
+        <a href="/docs/architecture" class="card-interactive group block">
+          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 mb-4 group-hover:bg-primary-500/20 transition-colors">
+            <svg class="w-6 h-6 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="4" width="7" height="7" rx="1"></rect>
+              <rect x="8.5" y="13" width="7" height="7" rx="1"></rect>
+              <path d="M10 7.5h4"></path>
+              <path d="M12 11v2"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white mb-1.5">Architecture</h3>
+          <p class="text-sm text-surface-400 leading-relaxed">High-level map of the website, installers, scripts, GitHub Releases, and browser policy update flow.</p>
         </a>
 
         <!-- Downloads -->

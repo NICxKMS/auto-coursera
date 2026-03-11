@@ -1,0 +1,144 @@
+---
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import Base from '../../layouts/Base.astro';
+
+const repoSetupDoc = 'https://github.com/NICxKMS/auto-coursera/blob/master/docs/SETUP.md';
+const repoSigningDoc = 'https://github.com/NICxKMS/auto-coursera/blob/master/docs/SIGNING.md';
+---
+
+<Base title="Setup Guide" description="Public setup summary for the Auto-Coursera Assistant distribution platform.">
+  <Header />
+
+  <main id="main-content" class="py-16 sm:py-24 px-4">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-16 animate-fade-in">
+        <p class="section-label">Docs</p>
+        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Setup Guide</h1>
+        <p class="text-lg text-surface-400 max-w-2xl mx-auto">
+          Public deployment summary for operators who want to self-host the Auto-Coursera Assistant distribution stack. This page is intentionally shorter than the full repository guide.
+        </p>
+      </div>
+
+      <div class="glass p-6 mb-10 animate-slide-up">
+        <div class="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
+          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-primary-500/15 text-primary-400 shrink-0">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          </div>
+          <div class="text-sm text-surface-400 leading-relaxed space-y-2">
+            <p><strong class="text-surface-200">What this page covers:</strong> the shortest accurate path to getting your own deployment online.</p>
+            <p><strong class="text-surface-200">What it does not replace:</strong> the full step-by-step operator checklist in <a href={repoSetupDoc} target="_blank" rel="noopener noreferrer" class="text-primary-400 hover:text-primary-300">docs/SETUP.md</a>, which includes every secret, verification step, and deeper troubleshooting path.</p>
+          </div>
+        </div>
+      </div>
+
+      <section class="mb-10 animate-slide-up delay-100">
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="glass p-6">
+            <h2 class="text-lg font-semibold text-white mb-3">Who this is for</h2>
+            <ul class="space-y-2 text-sm text-surface-400 leading-relaxed list-disc pl-5">
+              <li>Maintainers deploying the public website and update manifest</li>
+              <li>Operators packaging signed CRX releases and native installers</li>
+              <li>Fork owners changing the extension ID, domains, or release repo</li>
+            </ul>
+          </div>
+          <div class="glass p-6">
+            <h2 class="text-lg font-semibold text-white mb-3">Core prerequisites</h2>
+            <ul class="space-y-2 text-sm text-surface-400 leading-relaxed list-disc pl-5">
+              <li>Node.js 20+, pnpm 9+, Go 1.22+, OpenSSL, Git</li>
+              <li>A Cloudflare account and Pages project</li>
+              <li>A GitHub repository where releases will be published</li>
+              <li>A private signing key for the CRX extension ID</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-12 animate-slide-up delay-200">
+        <div class="glass-strong p-8 md:p-10 relative overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-br from-primary-600/5 to-transparent" aria-hidden="true"></div>
+          <div class="relative">
+            <h2 class="text-xl font-semibold text-white mb-6">Deployment checklist</h2>
+            <ol class="space-y-5">
+              <li class="flex gap-4">
+                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">1</span>
+                <div>
+                  <p class="text-surface-200 font-medium">Clone the repository and install dependencies</p>
+                  <p class="text-sm text-surface-500">You need the website, extension, and installer workspaces available locally before you can build release assets or publish Pages output.</p>
+                  <div class="glass p-3 mt-3 overflow-x-auto"><code class="text-sm font-mono text-surface-200 whitespace-nowrap">git clone https://github.com/NICxKMS/auto-coursera.git &amp;&amp; cd auto-coursera</code></div>
+                </div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">2</span>
+                <div>
+                  <p class="text-surface-200 font-medium">Generate or import the extension signing key</p>
+                  <p class="text-sm text-surface-500">The key determines the extension ID used by installers, scripts, and manual policy instructions. Keep it private and backed up.</p>
+                  <div class="glass p-3 mt-3 overflow-x-auto"><code class="text-sm font-mono text-surface-200 whitespace-nowrap">bash scripts/generate-key.sh</code></div>
+                </div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">3</span>
+                <div>
+                  <p class="text-surface-200 font-medium">Configure your release truth</p>
+                  <p class="text-sm text-surface-500">Confirm the extension ID, website domain, update URL, and GitHub repository values are correct everywhere before the first public deploy. The repository docs show the full list of files and secrets.</p>
+                </div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">4</span>
+                <div>
+                  <p class="text-surface-200 font-medium">Set up Cloudflare Pages and GitHub Actions secrets</p>
+                  <p class="text-sm text-surface-500">Pages serves the static website and canonical <code>updates.xml</code>; GitHub Releases hosts the CRX and native installer binaries that browsers and users download.</p>
+                </div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">5</span>
+                <div>
+                  <p class="text-surface-200 font-medium">Validate, publish, and verify</p>
+                  <p class="text-sm text-surface-500">Run the consistency checks, build the website, and confirm the live site, downloads, and update manifest all point at the same release version.</p>
+                  <div class="glass p-3 mt-3 overflow-x-auto"><code class="text-sm font-mono text-surface-200 whitespace-nowrap">bash scripts/check-version.sh</code></div>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-12 animate-slide-up delay-300">
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="glass p-6">
+            <h2 class="text-base font-semibold text-white mb-2">Website output</h2>
+            <p class="text-sm text-surface-400 leading-relaxed">Astro builds a static site that serves installs, docs, downloads, and the live <code>updates.xml</code> manifest from one domain.</p>
+          </div>
+          <div class="glass p-6">
+            <h2 class="text-base font-semibold text-white mb-2">Release assets</h2>
+            <p class="text-sm text-surface-400 leading-relaxed">GitHub Releases stores the signed CRX, checksums, and native installers used by both browser auto-update flow and direct downloads.</p>
+          </div>
+          <div class="glass p-6">
+            <h2 class="text-base font-semibold text-white mb-2">Policy installers</h2>
+            <p class="text-sm text-surface-400 leading-relaxed">Native installers, terminal scripts, and manual docs all write the same <code>ExtensionInstallForcelist</code> policy for supported Chromium browsers.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="animate-slide-up delay-400">
+        <div class="glass p-8">
+          <h2 class="text-lg font-semibold text-white mb-4">Need the full operator guide?</h2>
+          <p class="text-sm text-surface-400 leading-relaxed mb-6">Use the repository docs when you need the exact secret names, Cloudflare setup steps, extension-ID replacement guidance, or signing details.</p>
+          <div class="flex flex-wrap gap-3">
+            <a href={repoSetupDoc} target="_blank" rel="noopener noreferrer" class="btn-primary text-sm px-6 py-2.5 gap-2">
+              Full Setup Doc
+            </a>
+            <a href={repoSigningDoc} target="_blank" rel="noopener noreferrer" class="btn-secondary text-sm px-6 py-2.5 gap-2">
+              Signing Guide
+            </a>
+            <a href="/docs/architecture" class="btn-ghost text-sm px-5 py-2.5">
+              View Architecture Overview
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

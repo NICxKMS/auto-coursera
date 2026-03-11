@@ -34,6 +34,8 @@ pnpm preview      # Preview production build locally
 | `/support` | `src/pages/support.astro` | Help and contact info |
 | `/privacy` | `src/pages/privacy.astro` | Privacy policy |
 | `/docs/` | `src/pages/docs/index.astro` | Documentation index |
+| `/docs/setup` | `src/pages/docs/setup.astro` | Public deployment/setup summary with links to the full repo docs |
+| `/docs/architecture` | `src/pages/docs/architecture.astro` | Public architecture overview for the distribution platform |
 | `/docs/manual` | `src/pages/docs/manual.astro` | Advanced browser-policy installation steps |
 | `/docs/troubleshoot` | `src/pages/docs/troubleshoot.astro` | Troubleshooting guide |
 
@@ -128,3 +130,5 @@ Published by `.github/workflows/deploy.yml` to Cloudflare Pages:
 See [`docs/CLOUDFLARE-SETUP.md`](../docs/CLOUDFLARE-SETUP.md#2-cloudflare-pages-setup) for full setup instructions.
 
 The website keeps native installers as the default path. Terminal scripts and `/docs/manual` exist for advanced/manual deployments, and all three paths target the same supported browser set: Google Chrome, Microsoft Edge, Brave, and Chromium.
+
+Windows `install.ps1` now relaunches through UAC when it needs Administrator access. Linux `install.sh` can hand off to `sudo` when launched from a saved local file, while stdin one-liners should still use `curl ... | sudo bash`. macOS `install-mac.sh` remains non-root.

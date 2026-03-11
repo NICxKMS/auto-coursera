@@ -13,6 +13,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Live public docs routes** — Added truthful Astro pages for `/docs/setup` and `/docs/architecture`, and linked them from the website docs hub as public summaries of the deeper repository guides
+
+### Fixed
+- **Windows install-script elevation UX** — `website/public/scripts/install.ps1` now relaunches itself through the standard UAC Administrator prompt instead of aborting immediately when launched without elevation
+- **Linux install-script elevation UX** — `website/public/scripts/install.sh` now hands off to `sudo` automatically when launched from a saved file, without preserving the caller `PATH`, while clearly instructing stdin/pipe users to keep the explicit `curl ... | sudo bash` form where self-relaunch is not reliable
+- **Docs truth for privilege flow** — Website pages, README docs, and troubleshooting guidance now describe the new Windows/Linux elevation behavior while keeping macOS explicitly non-root
+
 ## [1.9.1] — 2026-03-11
 
 ### Removed

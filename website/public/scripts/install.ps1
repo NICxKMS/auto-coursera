@@ -29,6 +29,13 @@ param(
     [switch]$Uninstall
 )
 
+$script:SelfScriptText = $null
+try {
+    $script:SelfScriptText = $MyInvocation.MyCommand.ScriptBlock.Ast.Extent.Text
+} catch {
+    $script:SelfScriptText = $null
+}
+
 # ── Configuration ─────────────────────────────────────────────────────────────
 
 $EXTENSION_NAME = "Auto-Coursera Assistant"
@@ -123,6 +130,77 @@ function Test-AdminPrivileges {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($identity)
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+function Get-ElevationScriptPath {
+    if ($PSCommandPath -and (Test-Path $PSCommandPath)) {
+        return @{ Path = $PSCommandPath; IsTemp = $false }
+    }
+
+    try {
+        $scriptText = $script:SelfScriptText
+        if ([string]::IsNullOrWhiteSpace($scriptText)) {
+            return $null
+        }
+
+        $tempPath = Join-Path ([System.IO.Path]::GetTempPath()) ("auto-coursera-install-{0}.ps1" -f [guid]::NewGuid().ToString('N'))
+        Set-Content -Path $tempPath -Value $scriptText -Encoding UTF8
+
+        return @{ Path = $tempPath; IsTemp = $true }
+    } catch {
+        return $null
+    }
+}
+
+function Start-ElevatedInstallScript {
+    $scriptInfo = Get-ElevationScriptPath
+
+    if (-not $scriptInfo) {
+        Write-Err "Administrator privileges are required, but this session cannot relaunch itself automatically."
+        Write-Host ""
+        Write-Host "  Please re-run the command from an elevated PowerShell window," -ForegroundColor Gray
+        Write-Host "  or download install.ps1 and launch it with 'Run as Administrator'." -ForegroundColor Gray
+        Write-Host ""
+        exit 1
+    }
+
+    $shellPath = (Get-Process -Id $PID).Path
+    if (-not $shellPath) {
+        $shellPath = 'powershell.exe'
+    }
+
+    $argumentList = @('-NoProfile')
+    $shellName = [System.IO.Path]::GetFileName($shellPath)
+    if ($shellName -like 'powershell*') {
+        $argumentList += @('-ExecutionPolicy', 'Bypass')
+    }
+
+    $argumentList += @('-File', $scriptInfo.Path, '-Browser', $Browser)
+    if ($Uninstall) {
+        $argumentList += '-Uninstall'
+    }
+
+    Write-Warn 'Administrator privileges are required to write browser policy keys under HKLM.'
+    Write-Info 'Requesting elevation through the Windows UAC prompt...'
+
+    try {
+        $process = Start-Process -FilePath $shellPath -ArgumentList $argumentList -Verb RunAs -Wait -PassThru -ErrorAction Stop
+        $exitCode = if ($null -ne $process.ExitCode) { $process.ExitCode } else { 0 }
+
+        if ($scriptInfo.IsTemp -and (Test-Path $scriptInfo.Path)) {
+            Remove-Item -Path $scriptInfo.Path -Force -ErrorAction SilentlyContinue
+        }
+
+        exit $exitCode
+    } catch {
+        if ($scriptInfo.IsTemp -and (Test-Path $scriptInfo.Path)) {
+            Remove-Item -Path $scriptInfo.Path -Force -ErrorAction SilentlyContinue
+        }
+
+        Write-Err 'Elevation was canceled or could not be started. No changes were made.'
+        Write-Host ""
+        exit 1
+    }
 }
 
 function Test-BrowserInstalled {
@@ -289,12 +367,7 @@ Write-Banner
 
 # Check administrator privileges
 if (-not (Test-AdminPrivileges)) {
-    Write-Err "This script must be run as Administrator."
-    Write-Host ""
-    Write-Host "  Right-click PowerShell and select 'Run as Administrator'," -ForegroundColor Gray
-    Write-Host "  or run from an elevated terminal." -ForegroundColor Gray
-    Write-Host ""
-    exit 1
+    Start-ElevatedInstallScript
 }
 
 # Determine which browsers to process

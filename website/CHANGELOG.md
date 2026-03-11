@@ -8,6 +8,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Public docs summaries** — Added live `/docs/setup` and `/docs/architecture` routes and surfaced them from the docs hub so setup and architecture links no longer fall through to unrelated pages
+
+### Fixed
+- **Windows script elevation UX** — `public/scripts/install.ps1` now relaunches through the standard Administrator UAC prompt instead of immediately failing when not elevated
+- **Linux script elevation UX** — `public/scripts/install.sh` now re-runs through `sudo` when launched from a saved file without preserving the caller `PATH`, and gives clearer guidance for stdin/piped invocations that still need `| sudo bash`
+- **Install/docs copy alignment** — Install, downloads, support, and troubleshooting pages now explain the updated privilege flow without implying that macOS requires admin access
+
 ## [1.9.1] — 2026-03-11
 
 ### Fixed

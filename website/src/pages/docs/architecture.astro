@@ -1,0 +1,141 @@
+---
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import Base from '../../layouts/Base.astro';
+
+const repoArchitectureDoc = 'https://github.com/NICxKMS/auto-coursera/blob/master/docs/ARCHITECTURE.md';
+const repoSetupDoc = 'https://github.com/NICxKMS/auto-coursera/blob/master/docs/SETUP.md';
+---
+
+<Base title="Architecture" description="Public architecture overview for the Auto-Coursera Assistant distribution platform.">
+  <Header />
+
+  <main id="main-content" class="py-16 sm:py-24 px-4">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-16 animate-fade-in">
+        <p class="section-label">Docs</p>
+        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Architecture Overview</h1>
+        <p class="text-lg text-surface-400 max-w-2xl mx-auto">
+          High-level map of how the website, install flows, GitHub Releases, and browser policies fit together for Auto-Coursera Assistant.
+        </p>
+      </div>
+
+      <div class="glass p-6 mb-10 animate-slide-up">
+        <p class="text-sm text-surface-400 leading-relaxed">
+          This public page stays intentionally brief. For the full component diagrams, CI details, and deeper operator reference, use <a href={repoArchitectureDoc} target="_blank" rel="noopener noreferrer" class="text-primary-400 hover:text-primary-300">docs/ARCHITECTURE.md</a> in the repository.
+        </p>
+      </div>
+
+      <section class="mb-12 animate-slide-up delay-100">
+        <h2 class="text-xl font-semibold text-white mb-6">System at a glance</h2>
+        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div class="glass p-6">
+            <p class="text-xs uppercase tracking-[0.2em] text-surface-500 mb-2">Extension</p>
+            <h3 class="text-base font-semibold text-white mb-2">Browser extension</h3>
+            <p class="text-sm text-surface-400 leading-relaxed">The Manifest V3 extension lives in <code>extension/</code> and is what users ultimately receive in the browser.</p>
+          </div>
+          <div class="glass p-6">
+            <p class="text-xs uppercase tracking-[0.2em] text-surface-500 mb-2">Website</p>
+            <h3 class="text-base font-semibold text-white mb-2">Static Astro site</h3>
+            <p class="text-sm text-surface-400 leading-relaxed">The public website lives in <code>website/</code> and serves landing pages, docs, script downloads, and the canonical <code>updates.xml</code> manifest.</p>
+          </div>
+          <div class="glass p-6">
+            <p class="text-xs uppercase tracking-[0.2em] text-surface-500 mb-2">Installers</p>
+            <h3 class="text-base font-semibold text-white mb-2">Native Go binaries</h3>
+            <p class="text-sm text-surface-400 leading-relaxed">Cross-platform binaries in <code>installer/</code> detect supported browsers and write managed install policy for Chrome, Edge, Brave, and Chromium.</p>
+          </div>
+          <div class="glass p-6">
+            <p class="text-xs uppercase tracking-[0.2em] text-surface-500 mb-2">Scripts</p>
+            <h3 class="text-base font-semibold text-white mb-2">Advanced terminal path</h3>
+            <p class="text-sm text-surface-400 leading-relaxed">Hosted scripts under <code>/scripts/</code> provide shell-first automation. Windows relaunches through UAC when needed; Linux needs root and can only auto-handoff to <code>sudo</code> when run from a saved local file; macOS stays non-root.</p>
+          </div>
+          <div class="glass p-6">
+            <p class="text-xs uppercase tracking-[0.2em] text-surface-500 mb-2">Releases</p>
+            <h3 class="text-base font-semibold text-white mb-2">GitHub-hosted assets</h3>
+            <p class="text-sm text-surface-400 leading-relaxed">Signed CRX builds, checksums, and installer binaries are published as GitHub Release assets and referenced by the live site.</p>
+          </div>
+          <div class="glass p-6">
+            <p class="text-xs uppercase tracking-[0.2em] text-surface-500 mb-2">CI/CD</p>
+            <h3 class="text-base font-semibold text-white mb-2">Release pipeline</h3>
+            <p class="text-sm text-surface-400 leading-relaxed">GitHub Actions builds the extension and installers, creates the release, and deploys the website only when the release assets already exist.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-12 animate-slide-up delay-200">
+        <div class="glass-strong p-8 md:p-10 relative overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-br from-primary-600/5 to-transparent" aria-hidden="true"></div>
+          <div class="relative">
+            <h2 class="text-xl font-semibold text-white mb-6">Install flow</h2>
+            <ol class="space-y-5 text-sm text-surface-400 leading-relaxed">
+              <li class="flex gap-4">
+                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">1</span>
+                <div><strong class="text-surface-200">User starts on the website.</strong> The recommended path is the native installer, with scripts and manual policy setup kept as advanced options.</div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">2</span>
+                <div><strong class="text-surface-200">A policy entry is written.</strong> Every install method writes the same <code>&lt;extension-id&gt;;&lt;update-url&gt;</code> value into the browser's <code>ExtensionInstallForcelist</code>.</div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">3</span>
+                <div><strong class="text-surface-200">The browser restarts and reloads policy.</strong> On startup, Chrome-family browsers read the managed policy location for that operating system.</div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">4</span>
+                <div><strong class="text-surface-200">The browser fetches <code>updates.xml</code>.</strong> The website serves the canonical update manifest from the same public domain.</div>
+              </li>
+              <li class="flex gap-4">
+                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">5</span>
+                <div><strong class="text-surface-200">The CRX is downloaded from GitHub Releases.</strong> That release asset becomes the installed extension and future updates use the same path.</div>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-12 animate-slide-up delay-300">
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="glass p-6">
+            <h2 class="text-lg font-semibold text-white mb-3">Release flow</h2>
+            <ul class="space-y-2 text-sm text-surface-400 leading-relaxed list-disc pl-5">
+              <li>Build the extension bundle and sign/package the CRX</li>
+              <li>Build native installers for Windows, macOS, and Linux</li>
+              <li>Publish all release artifacts to GitHub Releases</li>
+              <li>Deploy the static website after the release assets are available</li>
+              <li>Serve matching install, download, and update surfaces from one version truth</li>
+            </ul>
+          </div>
+          <div class="glass p-6">
+            <h2 class="text-lg font-semibold text-white mb-3">Why this shape?</h2>
+            <ul class="space-y-2 text-sm text-surface-400 leading-relaxed list-disc pl-5">
+              <li>Static hosting keeps the public site simple and cache-friendly</li>
+              <li>GitHub Releases avoids maintaining a separate binary CDN</li>
+              <li>Managed browser policy enables self-hosted installs without the Chrome Web Store</li>
+              <li>One update URL keeps installer, script, and manual paths aligned</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="animate-slide-up delay-400">
+        <div class="glass p-8">
+          <h2 class="text-lg font-semibold text-white mb-4">Go deeper</h2>
+          <p class="text-sm text-surface-400 leading-relaxed mb-6">Use the repository docs if you need the full component diagrams, exact file locations, or the operator setup checklist.</p>
+          <div class="flex flex-wrap gap-3">
+            <a href={repoArchitectureDoc} target="_blank" rel="noopener noreferrer" class="btn-primary text-sm px-6 py-2.5 gap-2">
+              Full Architecture Doc
+            </a>
+            <a href={repoSetupDoc} target="_blank" rel="noopener noreferrer" class="btn-secondary text-sm px-6 py-2.5 gap-2">
+              Setup Walkthrough
+            </a>
+            <a href="/docs/manual" class="btn-ghost text-sm px-5 py-2.5">
+              Manual Install Details
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

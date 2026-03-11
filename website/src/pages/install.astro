@@ -95,6 +95,9 @@ const installerDownloads = {
             <div data-script-os="macos">
               <ScriptBlock command="curl -fsSL __WEBSITE_ORIGIN__/scripts/install-mac.sh | bash" label="macOS" />
             </div>
+            <p class="text-xs text-surface-500 leading-relaxed">
+              Windows will relaunch with an Administrator UAC prompt when needed. On Linux, a saved local <code>install.sh</code> can relaunch itself through <code>sudo</code>, but piped one-liners should still keep <code>| sudo bash</code> because stdin-run shells cannot safely self-elevate in every environment. macOS uses user defaults and does not require <code>sudo</code>.
+            </p>
           </div>
         </details>
       </section>

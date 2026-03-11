@@ -73,7 +73,7 @@ import Base from '../../layouts/Base.astro';
           </summary>
           <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
             <p><strong class="text-surface-200">Cause:</strong> Windows PowerShell execution policy restricts running scripts.</p>
-            <p><strong class="text-surface-200">Solution:</strong> Run this command in an elevated PowerShell window first:</p>
+            <p><strong class="text-surface-200">Solution:</strong> The hosted one-liner (<code>irm ... | iex</code>) avoids file-based execution policy checks and the installer now requests Administrator access through UAC when it needs to write policy keys. If you downloaded <code>install.ps1</code> as a file, run this command in the current PowerShell session first:</p>
             <div class="glass-strong p-3 overflow-x-auto">
               <code class="text-sm font-mono text-surface-200">Set-ExecutionPolicy Bypass -Scope Process -Force</code>
             </div>
@@ -92,11 +92,11 @@ import Base from '../../layouts/Base.astro';
           </summary>
           <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
             <p><strong class="text-surface-200">Cause:</strong> The installer needs root privileges to write to <code>/etc/opt/chrome/policies/managed/</code>.</p>
-            <p><strong class="text-surface-200">Solution:</strong> Run the install script with <code>sudo</code>:</p>
+            <p><strong class="text-surface-200">Solution:</strong> Saved local copies of <code>install.sh</code> now request <code>sudo</code> automatically when needed. For curl-pipe one-liners, keep using <code>sudo</code> explicitly:</p>
             <div class="glass-strong p-3 overflow-x-auto">
               <code class="text-sm font-mono text-surface-200">curl -fsSL https://autocr.nicx.me/scripts/install.sh | sudo bash</code>
             </div>
-            <p>If you ran the native installer, re-run it with <code>sudo ./installer</code>.</p>
+            <p>If you downloaded the script first, you can also run <code>./install.sh</code> and accept the <code>sudo</code> prompt when it appears. If you ran the native installer, re-run it with <code>sudo ./installer</code>.</p>
           </div>
         </details>
 

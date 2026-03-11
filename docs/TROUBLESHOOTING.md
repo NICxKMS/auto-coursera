@@ -484,7 +484,17 @@ Windows PowerShell's execution policy defaults to `Restricted` on some systems, 
 
 ### Fix
 
-**Option 1: Bypass for this session only (recommended for one-liners)**
+**Option 1: Use the hosted one-liner (recommended)**
+
+The hosted command:
+
+```powershell
+irm https://autocr.nicx.me/scripts/install.ps1 | iex
+```
+
+avoids file-based execution policy checks because it evaluates the script directly in memory. The script then requests Administrator access through the normal Windows UAC prompt when it needs to write policy keys.
+
+**Option 2: Bypass for this session only (recommended for downloaded files)**
 
 The `irm | iex` pattern (Invoke-RestMethod piped to Invoke-Expression) avoids execution policy because it evaluates the script as an expression — it does not run a `.ps1` file. If users are running this way, this error should not occur.
 
@@ -498,13 +508,13 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 .\install.ps1
 ```
 
-**Option 2: Bypass on the command line**
+**Option 3: Bypass on the command line**
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-**Option 3: Set policy permanently (requires admin)**
+**Option 4: Set policy permanently (requires admin)**
 
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine
@@ -526,7 +536,7 @@ Get-ExecutionPolicy
 Running the install script fails with:
 
 ```
-[ERR]  This script must be run as root. Use: sudo ./install.sh
+[ERR]  Root privileges are required to write managed browser policy files under /etc.
 ```
 
 ### Cause
@@ -541,7 +551,10 @@ Run with `sudo`:
 # One-liner install
 curl -fsSL https://autocr.nicx.me/scripts/install.sh | sudo bash
 
-# If already downloaded
+# If already downloaded, the saved local script can request sudo automatically
+./install.sh
+
+# Or elevate explicitly
 sudo bash install.sh
 
 # With arguments
@@ -552,6 +565,8 @@ sudo bash install.sh --uninstall
 **Why does it need root?**
 
 The policy directories (`/etc/opt/chrome/policies/managed/`, etc.) do not exist by default and must be created with proper ownership (root:root). The JSON policy files must be readable by the browser (permissions `644`), but only root can write to `/etc/`.
+
+If the script was launched from stdin (`curl ... | bash` without `sudo`), it cannot safely relaunch itself because there is no saved script file to re-exec as root. In that case, use the explicit `| sudo bash` form shown above.
 
 **MacOS note:** The `install-mac.sh` script does **not** require root. It uses `defaults write`, which writes to the current user's `~/Library/Preferences/` — no elevated privileges needed.
 

@@ -124,6 +124,7 @@ Deployment guides are available in the `docs/` directory:
 - **[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)** — System architecture details
 - **[`docs/SETUP.md`](docs/SETUP.md)** — Full deployment walkthrough
 - **[`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md)** — Troubleshooting common issues
+- **Live website summaries** — [`/docs/architecture`](https://autocr.nicx.me/docs/architecture) and [`/docs/setup`](https://autocr.nicx.me/docs/setup) provide shorter public overviews that link back to the full repository docs
 
 ### Quick Deployment Summary
 
