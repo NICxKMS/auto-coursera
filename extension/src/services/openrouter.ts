@@ -1,18 +1,11 @@
 /**
  * OpenRouter AI provider — chat/completions with vision support.
- * REQ: REQ-006
  */
 
 import type { APICompletionResponse, ChatMessage } from '../types/api';
-import {
-	AI_MAX_TOKENS,
-	AI_TEMPERATURE,
-	AI_TOP_P,
-	API_URLS,
-	OPENROUTER_HEADERS,
-} from '../utils/constants';
 import type { RateLimiter } from '../utils/rate-limiter';
 import { BaseAIProvider } from './base-provider';
+import { AI_MAX_TOKENS, AI_TEMPERATURE, AI_TOP_P, API_URLS, OPENROUTER_HEADERS } from './constants';
 
 export class OpenRouterProvider extends BaseAIProvider {
 	readonly name = 'openrouter';
@@ -40,9 +33,6 @@ export class OpenRouterProvider extends BaseAIProvider {
 
 	/**
 	 * Call OpenRouter API with exponential backoff retry.
-	 * AC-006.1: Authorization, HTTP-Referer, X-Title headers
-	 * AC-006.2: temperature 0.1
-	 * AC-008.1: Retry with exponential backoff on 429/5xx
 	 */
 	protected async callAPI(
 		messages: ChatMessage[],

@@ -1,206 +1,569 @@
 ---
-import Footer from '../../components/Footer.astro';
-import Header from '../../components/Header.astro';
-import Base from '../../layouts/Base.astro';
+import versionInfo from '@root/version.json';
+import DocsLayout from '../../layouts/DocsLayout.astro';
 ---
 
-<Base title="Troubleshooting" description="Common issues and solutions for Auto-Coursera Assistant installation and usage.">
-  <Header />
+<DocsLayout
+	title="Troubleshooting Common Issues"
+	description="Fix common Auto-Coursera issues. Solutions for API errors, detection problems, and browser compatibility."
+	breadcrumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Docs', href: '/docs/' },
+		{ label: 'Troubleshooting' },
+	]}
+	prev={{ label: 'Setup Guide', href: '/docs/setup/' }}
+	next={{ label: 'Architecture', href: '/docs/architecture/' }}
+>
+	<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
+	<h1>Troubleshooting</h1>
+	<p class="hero__lead">
+		Solutions for common API errors, detection issues, and browser compatibility problems.
+	</p>
+	<p>
+		Click any item below to expand the solution.
+		If your problem isn't listed, <a href="/support/">contact support</a>.
+	</p>
 
-  <main id="main-content" class="py-16 sm:py-24 px-4">
-    <div class="max-w-3xl mx-auto">
-      <!-- Title -->
-      <div class="text-center mb-16 animate-fade-in">
-        <p class="section-label">Docs</p>
-        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Troubleshooting</h1>
-        <p class="text-lg text-surface-400 max-w-xl mx-auto">
-          Common issues and how to fix them.
-        </p>
-      </div>
+	<aside class="callout callout--warning" role="note" aria-labelledby="ai-disclaimer">
+		<p class="callout__title" id="ai-disclaimer">AI answers are not guaranteed</p>
+		<p>Auto-Coursera uses AI models that can and do make mistakes. Always review the highlighted answers before submitting — especially on graded assessments. If answers seem wrong, see the troubleshooting entry below.</p>
+	</aside>
 
-      <!-- ═══════════════════ ISSUES ═══════════════════ -->
-      <div class="space-y-3 animate-slide-up delay-100">
+	<!-- ===== Quick triage ===== -->
+	<div class="triage" role="region" aria-labelledby="triage-heading">
+		<h2 id="triage-heading">Quick triage</h2>
+		<dl class="triage__list">
+			<dt>In a timed quiz right now?</dt>
+			<dd>
+				Verify your API key is set, try
+				<a href="#faq-provider-errors">switching providers</a>, and
+				<a href="#faq-wrong-answers">lower the confidence threshold</a>.
+			</dd>
 
-        <!-- Issue 1 -->
-        <details class="group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span class="flex items-center gap-3">
-              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">1</span>
-              Extension not appearing after install
-            </span>
-            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
-            <p><strong class="text-surface-200">Cause:</strong> The browser hasn't reloaded its policies.</p>
-            <p><strong class="text-surface-200">Solution:</strong></p>
-            <ol class="list-decimal pl-5 space-y-1.5">
-              <li>Close <strong class="text-white">all browser windows</strong> completely (check the system tray on Windows).</li>
-              <li>Reopen the browser and go to <code>chrome://extensions</code>.</li>
-              <li>If still missing, go to <code>chrome://policy</code> and click <strong class="text-white">"Reload policies"</strong>.</li>
-              <li>If the policy is missing too, re-run the installer with admin/sudo privileges.</li>
-            </ol>
-          </div>
-        </details>
+			<dt>Extension just installed?</dt>
+			<dd>
+				Restart your browser, then
+				<a href="#faq-no-api-key">set up an API key</a>. If the button doesn't
+				appear, see
+				<a href="#faq-nothing-happens">nothing happens on the quiz page</a>.
+			</dd>
 
-        <!-- Issue 2 -->
-        <details class="group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span class="flex items-center gap-3">
-              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">2</span>
-              Script blocked by antivirus
-            </span>
-            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
-            <p><strong class="text-surface-200">Cause:</strong> Some antivirus tools flag PowerShell scripts or downloaded executables.</p>
-            <p><strong class="text-surface-200">Solution:</strong></p>
-            <ul class="list-disc pl-5 space-y-1.5">
-              <li>Temporarily disable real-time protection while running the installer.</li>
-              <li>Add an exception for the installer file or script path.</li>
-              <li>Alternatively, use the <a href="/docs/manual" class="text-primary-400 hover:text-primary-300">manual installation</a> method to apply the policy directly.</li>
-            </ul>
-          </div>
-        </details>
+			<dt>Was working before, now stopped?</dt>
+			<dd>
+				Check for browser updates, try
+				<a href="#faq-extension-conflicts">disabling other extensions</a>, and
+				<a href="#faq-network-errors">check your network</a>.
+			</dd>
 
-        <!-- Issue 3 -->
-        <details class="group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span class="flex items-center gap-3">
-              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">3</span>
-              PowerShell execution policy error
-            </span>
-            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
-            <p><strong class="text-surface-200">Cause:</strong> Windows PowerShell execution policy restricts running scripts.</p>
-            <p><strong class="text-surface-200">Solution:</strong> The hosted one-liner (<code>irm ... | iex</code>) avoids file-based execution policy checks and the installer now requests Administrator access through UAC when it needs to write policy keys. If you downloaded <code>install.ps1</code> as a file, run this command in the current PowerShell session first:</p>
-            <div class="glass-strong p-3 overflow-x-auto">
-              <code class="text-sm font-mono text-surface-200">Set-ExecutionPolicy Bypass -Scope Process -Force</code>
-            </div>
-            <p>Then run the install command again. The <code>-Scope Process</code> flag means this only affects the current session.</p>
-          </div>
-        </details>
+			<dt>Answers seem off?</dt>
+			<dd>
+				AI models make mistakes — see
+				<a href="#faq-wrong-answers">answers seem wrong</a> for tips on
+				improving accuracy.
+			</dd>
+		</dl>
+	</div>
 
-        <!-- Issue 4 -->
-        <details class="group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span class="flex items-center gap-3">
-              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">4</span>
-              Permission errors on Linux
-            </span>
-            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
-            <p><strong class="text-surface-200">Cause:</strong> The installer needs root privileges to write to <code>/etc/opt/chrome/policies/managed/</code>.</p>
-            <p><strong class="text-surface-200">Solution:</strong> Saved local copies of <code>install.sh</code> now request <code>sudo</code> automatically when needed. For curl-pipe one-liners, keep using <code>sudo</code> explicitly:</p>
-            <div class="glass-strong p-3 overflow-x-auto">
-              <code class="text-sm font-mono text-surface-200">curl -fsSL https://autocr.nicx.me/scripts/install.sh | sudo bash</code>
-            </div>
-            <p>If you downloaded the script first, you can also run <code>./install.sh</code> and accept the <code>sudo</code> prompt when it appears. If you ran the native installer, re-run it with <code>sudo ./installer</code>.</p>
-          </div>
-        </details>
+	<!-- ===== FAQ items ===== -->
 
-        <!-- Issue 5 -->
-        <details class="group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span class="flex items-center gap-3">
-              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">5</span>
-              Browser not detecting policy
-            </span>
-            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
-            <p><strong class="text-surface-200">Cause:</strong> The policy file may be in the wrong location or have incorrect permissions.</p>
-            <p><strong class="text-surface-200">Solution:</strong></p>
-            <ul class="list-disc pl-5 space-y-1.5">
-              <li><strong class="text-surface-200">Windows:</strong> Verify the registry key exists at <code>HKLM\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist</code></li>
-              <li><strong class="text-surface-200">Linux:</strong> Check that the JSON file is at <code>/etc/opt/chrome/policies/managed/</code> with <code>644</code> permissions</li>
-              <li><strong class="text-surface-200">macOS:</strong> Run <code>defaults read com.google.Chrome</code> and look for <code>ExtensionInstallForcelist</code></li>
-            </ul>
-          </div>
-        </details>
+	<details class="docs-faq" id="faq-nothing-happens">
+		<summary>Nothing happens on the quiz page</summary>
+		<div class="docs-faq__body">
+			<p>
+				The extension appears active but nothing shows up — no highlights, no
+				errors, no response. This is the most common new-user issue.
+			</p>
+			<ol>
+				<li>
+					<strong>Verify the extension is enabled</strong> — check for the
+					Auto-Coursera icon in your browser toolbar, or visit
+					<code>chrome://extensions</code>
+				</li>
+				<li>
+					<strong>Make sure you're on a Coursera quiz page</strong> — the
+					extension only activates on graded or practice quiz pages, not
+					lectures or course homepages
+				</li>
+				<li>
+					<strong>Check that an API key is configured</strong> — click the
+					🎓 button, open Settings, and verify at least one provider has a
+					key entered
+				</li>
+				<li>
+					<strong>Open DevTools console</strong> — press
+					<kbd>F12</kbd>, switch to the Console tab, and look for any error
+					messages from the extension
+				</li>
+				<li>
+					<strong>Refresh the page</strong> — sometimes the content script
+					needs a fresh page load to initialize
+				</li>
+				<li>
+					<strong>Check if auto-start is enabled</strong> — if auto-start is
+					off in settings, you need to click the 🎓 FAB button and toggle
+					the extension on manually
+				</li>
+			</ol>
+		</div>
+	</details>
 
-        <!-- Issue 6 -->
-        <details class="group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span class="flex items-center gap-3">
-              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">6</span>
-              "Managed by organization" not showing
-            </span>
-            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
-            <p><strong class="text-surface-200">Cause:</strong> The policy hasn't been recognized by the browser yet.</p>
-            <p><strong class="text-surface-200">Solution:</strong></p>
-            <ol class="list-decimal pl-5 space-y-1.5">
-              <li>Open <code>chrome://policy</code> and click <strong class="text-white">"Reload policies"</strong>.</li>
-              <li>If no policies appear, the policy file isn't being read. Double-check the file path and format.</li>
-              <li>On macOS, you may need to log out and back in for <code>defaults write</code> changes to take effect.</li>
-              <li>On Windows, try running <code>gpupdate /force</code> in an admin Command Prompt.</li>
-            </ol>
-          </div>
-        </details>
+	<details class="docs-faq" id="faq-disabled-sideload">
+		<summary>Extension is disabled after I installed it</summary>
+		<div class="docs-faq__body">
+			<p>
+				Chrome may disable newly sideloaded extensions by default. To fix:
+			</p>
+			<ol>
+				<li>Go to <code>chrome://extensions</code></li>
+				<li>Find <strong>Auto-Coursera</strong> in the list</li>
+				<li>Click the toggle to <strong>Enable</strong> it</li>
+			</ol>
+			<p>
+				You may also see a banner at the top of Chrome saying "Disable developer
+				mode extensions." Click <strong>Keep</strong> to keep the extension active.
+			</p>
+		</div>
+	</details>
 
-        <!-- Issue 7 -->
-        <details class="group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span class="flex items-center gap-3">
-              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">7</span>
-              Extension installed but not working
-            </span>
-            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
-            <p><strong class="text-surface-200">Cause:</strong> The extension is installed but not configured, or permissions are missing.</p>
-            <p><strong class="text-surface-200">Solution:</strong></p>
-            <ol class="list-decimal pl-5 space-y-1.5">
-              <li>Click the extension icon in the toolbar and ensure you've entered a valid API key.</li>
-              <li>Select an AI provider from the dropdown (e.g., OpenRouter, Gemini, Groq).</li>
-              <li>Navigate to a Coursera quiz page and check if the extension activates.</li>
-              <li>Open the browser console (<kbd class="px-1.5 py-0.5 rounded bg-surface-800 text-surface-300 font-mono text-xs">F12</kbd> → Console) and look for any extension error messages.</li>
-            </ol>
-          </div>
-        </details>
+	<details class="docs-faq" id="faq-wrong-answers">
+		<summary>Answers seem wrong or inaccurate</summary>
+		<div class="docs-faq__body">
+			<p>
+				AI models are <strong>probabilistic</strong> — they can and do produce wrong answers,
+				especially for specialized or technical content. This is a fundamental limitation
+				of all large language models, not a bug in Auto-Coursera.
+			</p>
+			<ul>
+				<li>
+					<strong>Raise the confidence threshold</strong> — if you're seeing wrong answers
+					highlighted in green, go to Settings and raise the threshold above
+					<code>0.7</code> (the default). A higher threshold means fewer answers are
+					shown, but the ones that appear are more likely correct.
+				</li>
+				<li>
+					<strong>Try a different provider</strong> — switch between OpenRouter, Gemini,
+					Groq, Cerebras, and NVIDIA NIM in settings. Different models have different
+					strengths. OpenRouter gives access to the widest range of models.
+				</li>
+				<li>
+					<strong>Review before submitting</strong> — auto-select is on by default, but
+					you can disable it in settings and review each answer manually before submitting.
+				</li>
+				<li>
+					<strong>Specialized content is hardest</strong> — AI models struggle most with
+					domain-specific material, recently published content, and questions that require
+					exact recall of specific readings or lectures.
+				</li>
+			</ul>
+		</div>
+	</details>
 
-        <!-- Issue 8 -->
-        <details class="group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span class="flex items-center gap-3">
-              <span class="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold shrink-0">8</span>
-              How to check if policy is applied
-            </span>
-            <svg class="w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-6 border-t border-white/[0.04] pt-4 space-y-3 text-surface-400 text-sm leading-relaxed">
-            <p><strong class="text-surface-200">Steps to verify:</strong></p>
-            <ol class="list-decimal pl-5 space-y-1.5">
-              <li>Open <code>chrome://policy</code> in your browser's address bar.</li>
-              <li>Click the <strong class="text-white">"Reload policies"</strong> button.</li>
-              <li>Look for <code>ExtensionInstallForcelist</code> in the table.</li>
-              <li>The value should contain <code>alojpdnpiddmekflpagdblmaehbdfcge</code> followed by the update URL.</li>
-              <li>If the status shows <strong class="text-white">"OK"</strong>, the policy is active and working.</li>
-              <li>If the status shows an error, check the policy file format for syntax issues.</li>
-            </ol>
-          </div>
-        </details>
-      </div>
+	<details class="docs-faq" id="faq-no-api-key">
+		<summary>I haven't set up an API key yet</summary>
+		<div class="docs-faq__body">
+			<p>
+				The extension won't work without at least one API key. All providers
+				offer free tiers.
+			</p>
+			<ol>
+				<li>Click the 🎓 floating button on any Coursera page</li>
+				<li>Open <strong>Settings</strong></li>
+				<li>Add your API key</li>
+			</ol>
+			<p>
+				See the <a href="/docs/setup/">Setup Guide</a> for step-by-step
+				instructions for each provider.
+			</p>
+		</div>
+	</details>
 
-      <!-- ═══════════════════ STILL STUCK ═══════════════════ -->
-      <div class="mt-12 text-center glass p-8 animate-slide-up delay-200">
-        <h2 class="text-lg font-semibold text-white mb-3">Still stuck?</h2>
-        <p class="text-surface-400 text-sm mb-6">If none of the solutions above work, open an issue on GitHub with your OS, browser version, and the error you're seeing.</p>
-        <div class="flex flex-wrap justify-center gap-3">
-          <a href="https://github.com/nicxkms/auto-coursera/issues/new" target="_blank" rel="noopener noreferrer" class="btn-primary text-sm px-6 py-2.5 gap-2">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-            Open GitHub Issue
-          </a>
-          <a href="/support" class="btn-secondary text-sm px-6 py-2.5">
-            View FAQ
-          </a>
-        </div>
-      </div>
-    </div>
-  </main>
+	<details class="docs-faq" id="faq-not-detecting">
+		<summary>The extension doesn't see any questions on the page</summary>
+		<div class="docs-faq__body">
+			<p>The extension only works on Coursera quiz pages. Try these steps:</p>
+			<ul>
+				<li>Make sure you're on a <strong>graded quiz or practice quiz</strong> page — not just any Coursera page</li>
+				<li>Press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> to manually trigger a scan</li>
+				<li>Refresh the page and wait for the 🎓 button to appear</li>
+				<li>Check that the extension is enabled in <code>chrome://extensions</code></li>
+			</ul>
+		</div>
+	</details>
 
-  <Footer />
-</Base>
+	<details class="docs-faq" id="faq-api-key-errors">
+		<summary>I get an error about my API key</summary>
+		<div class="docs-faq__body">
+			<p>If you're seeing authentication or key-related errors:</p>
+			<ul>
+				<li>
+					<strong>Verify the key format</strong> — each provider has a
+					distinct prefix:
+					<code>sk-or-</code> (OpenRouter),
+					<code>AIza</code> (Gemini),
+					<code>gsk_</code> (Groq),
+					<code>cbs-</code> (Cerebras),
+					<code>nvapi-</code> (NVIDIA)
+				</li>
+				<li>Check that the key hasn't <strong>expired</strong> or been revoked</li>
+				<li>Use the <strong>🔌 Test Connection</strong> button in the settings overlay (click the 🎓 button → Settings → scroll to the bottom) to validate your key</li>
+				<li>Make sure you copied the <strong>entire</strong> key without trailing spaces</li>
+			</ul>
+		</div>
+	</details>
+
+	<details class="docs-faq" id="faq-not-auto-selecting">
+		<summary>Answers are highlighted but not auto-selected</summary>
+		<div class="docs-faq__body">
+			<ul>
+				<li>Check if <strong>auto-select is enabled</strong> in the extension settings</li>
+				<li>Some question types (text input, numeric) can't be auto-selected — answers are shown but must be entered manually</li>
+				<li>Verify that the confidence threshold isn't set too high — answers below the threshold won't be auto-selected</li>
+				<li>Green-highlighted answers are auto-selected; yellow and red are display-only</li>
+			</ul>
+		</div>
+	</details>
+
+	<details class="docs-faq" id="faq-network-errors">
+		<summary>I see network or timeout errors</summary>
+		<div class="docs-faq__body">
+			<ul>
+				<li>Check your <strong>internet connection</strong></li>
+				<li>Some corporate or university networks block AI provider APIs — try a different network or use a VPN</li>
+				<li>Try switching to a <strong>different provider</strong> in settings</li>
+				<li>If all providers fail, check <a href="https://status.openrouter.ai/" target="_blank" rel="noopener noreferrer">OpenRouter status</a> or the provider's status page</li>
+			</ul>
+		</div>
+	</details>
+
+	<details class="docs-faq" id="faq-widget-gone">
+		<summary>The extension icon/button disappeared</summary>
+		<div class="docs-faq__body">
+			<p>The floating 🎓 button may have been dragged off-screen. Try:</p>
+			<ul>
+				<li><strong>Refresh the page</strong> — the button resets to its default position</li>
+				<li>Press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> to open the popup directly</li>
+				<li>Check that the extension is still enabled in <code>chrome://extensions</code></li>
+			</ul>
+		</div>
+	</details>
+
+	<details class="docs-faq" id="faq-provider-errors">
+		<summary>My AI provider keeps showing errors</summary>
+		<div class="docs-faq__body">
+			<p>
+				The extension uses a <strong>circuit breaker</strong> pattern. When a
+				provider fails repeatedly, it's temporarily disabled and the next
+				provider in your priority list is tried automatically.
+			</p>
+			<ul>
+				<li>Wait a few minutes — the circuit breaker will attempt recovery (half-open state)</li>
+				<li>Try configuring a <strong>different provider</strong> as primary in settings</li>
+				<li>Check if the provider's free tier has hit its <strong>rate limit</strong> — most reset hourly or daily</li>
+			</ul>
+		</div>
+	</details>
+
+	<details class="docs-faq" id="faq-provider-outage">
+		<summary>AI provider went down during my quiz</summary>
+		<div class="docs-faq__body">
+			<p>
+				If your AI provider goes down mid-quiz, the extension has built-in
+				resilience — but there are limits.
+			</p>
+			<ol>
+				<li>
+					<strong>Automatic failover</strong> — the extension uses a circuit
+					breaker that automatically tries the next configured provider when
+					one fails
+				</li>
+				<li>
+					<strong>Queued retries</strong> — failed requests are queued and
+					retried, so answers may appear with a delay rather than being lost
+				</li>
+				<li>
+					<strong>If ALL providers are down</strong> — you'll need to answer
+					manually until at least one recovers
+				</li>
+			</ol>
+			<p><strong>To protect yourself on timed quizzes:</strong></p>
+			<ul>
+				<li>Always configure at least <strong>2 providers</strong> as backup — OpenRouter, Gemini, and Groq all offer free tiers</li>
+				<li>Check provider status pages if failures persist: <a href="https://status.openrouter.ai/" target="_blank" rel="noopener noreferrer">OpenRouter</a>, <a href="https://status.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud</a></li>
+			</ul>
+		</div>
+	</details>
+
+	<details class="docs-faq" id="faq-unsupported-browser">
+		<summary>Unsupported browser</summary>
+		<div class="docs-faq__body">
+			<p>
+				Auto-Coursera requires a <strong>Chromium-based browser</strong>. Supported browsers include:
+			</p>
+			<ul>
+				<li>Google Chrome</li>
+				<li>Microsoft Edge</li>
+				<li>Brave</li>
+				<li>Vivaldi</li>
+				<li>Arc</li>
+				<li>Opera / Opera GX</li>
+			</ul>
+			<p>
+				<strong>Firefox, Safari,</strong> and other non-Chromium browsers are
+				<strong>not compatible</strong>. The extension uses Manifest V3 Chrome APIs
+				that aren't available in other engines.
+			</p>
+		</div>
+	</details>
+
+	<details class="docs-faq" id="faq-org-message">
+		<summary>"Installed by your organization" message</summary>
+		<div class="docs-faq__body">
+			<p>
+				This message appears when the extension was installed via the
+				<a href="/docs/manual/#shell-installers">shell installer</a>. The
+				installers use Chrome browser policies to register the extension, which
+				triggers this message.
+			</p>
+			<ul>
+				<li>This is <strong>normal</strong> and doesn't affect functionality</li>
+				<li>The extension has the same permissions whether installed manually or via script</li>
+				<li>
+					To remove the message: uninstall using the uninstall script, then
+					<a href="/docs/manual/">install manually</a> via the unpacked method
+				</li>
+			</ul>
+		</div>
+	</details>
+
+	<details class="docs-faq" id="faq-incognito">
+		<summary>Extension not working in incognito</summary>
+		<div class="docs-faq__body">
+			<p>
+				Chrome disables extensions in incognito mode by default. To allow it:
+			</p>
+			<ol>
+				<li>Go to <code>chrome://extensions</code></li>
+				<li>Find <strong>Auto-Coursera</strong> and click <strong>Details</strong></li>
+				<li>Enable <strong>"Allow in Incognito"</strong></li>
+			</ol>
+		</div>
+	</details>
+
+	<details class="docs-faq" id="faq-extension-conflicts">
+		<summary>Another extension is interfering</summary>
+		<div class="docs-faq__body">
+			<p>Other extensions can occasionally interfere with Auto-Coursera:</p>
+			<ul>
+				<li><strong>Disable other Coursera-related extensions</strong> — they may conflict with question detection</li>
+				<li>Some <strong>ad blockers</strong> can interfere with API requests — try adding <code>coursera.org</code> to the allowlist</li>
+				<li><strong>Privacy extensions</strong> that block third-party requests may prevent AI provider calls</li>
+			</ul>
+		</div>
+	</details>
+
+	<details class="docs-faq" id="faq-check-version">
+		<summary>Checking your version</summary>
+		<div class="docs-faq__body">
+			<p>To check which version you have installed:</p>
+			<ul>
+				<li>Click the 🎓 button — the version appears in the panel header</li>
+				<li>Or go to <code>chrome://extensions</code> and find Auto-Coursera — the version is listed there</li>
+			</ul>
+			<p>
+				The latest version is <strong>v{versionInfo.version}</strong>. It's always available on the
+				<a href="/docs/manual/">Manual Install</a> page or the
+				<a href={`https://github.com/${versionInfo.githubRepo}/releases/latest`} target="_blank" rel="noopener noreferrer">GitHub releases page</a>.
+			</p>
+		</div>
+	</details>
+
+	<!-- ===== Still Stuck ===== -->
+	<h2>Still Stuck?</h2>
+	<p>
+		If none of the above solved your issue, we'd like to help:
+	</p>
+	<ul>
+		<li>
+			<a href={`https://github.com/${versionInfo.githubRepo}/issues/new`} target="_blank" rel="noopener noreferrer">
+				Report a bug on GitHub
+			</a>
+		</li>
+		<li>Visit the <a href="/support/">Support page</a> for more contact options</li>
+	</ul>
+	<p>When reporting a bug, please include:</p>
+	<ul>
+		<li>Browser name and version</li>
+		<li>Extension version (see above)</li>
+		<li>Any error messages from the extension panel or browser console</li>
+		<li>Steps to reproduce the issue</li>
+	</ul>
+
+	<!-- ===== Install CTA ===== -->
+	<aside class="install-cta" aria-label="Install Auto-Coursera">
+		<p class="install-cta__text">Need to reinstall? One command.</p>
+		<a href="/install/" class="btn btn--primary">Install Auto-Coursera</a>
+	</aside>
+</DocsLayout>
+
+<style>
+	/* ===== Product tagline ===== */
+	.hero__product {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-block-end: var(--space-2);
+	}
+
+	/* ===== Hero lead ===== */
+	.hero__lead {
+		color: var(--text-secondary);
+		font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+		margin-block-end: var(--space-5);
+	}
+
+	/* ===== Callout Boxes ===== */
+	.callout {
+		padding: var(--space-4) var(--space-5);
+		border-radius: var(--border-radius);
+		border: 1px solid var(--border);
+		background-color: var(--surface);
+		margin-block: var(--space-5);
+	}
+
+	.callout__title {
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		margin-block-end: var(--space-2);
+	}
+
+	.callout p {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		line-height: var(--leading-normal);
+	}
+
+	.callout--warning {
+		border-inline-start: 3px solid var(--warning);
+	}
+
+	.callout--warning .callout__title {
+		color: var(--warning);
+	}
+
+	/* ===== Quick triage ===== */
+	.triage {
+		padding: var(--space-4) var(--space-5);
+		border-radius: var(--border-radius);
+		border: 1px solid var(--border);
+		border-inline-start: 3px solid var(--accent);
+		background-color: var(--surface);
+		margin-block: var(--space-5);
+	}
+
+	.triage h2 {
+		font-size: var(--text-body);
+		font-weight: var(--weight-semibold);
+		color: var(--accent);
+		margin-block-end: var(--space-3);
+	}
+
+	.triage__list dt {
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		margin-block-start: var(--space-3);
+	}
+
+	.triage__list dt:first-child {
+		margin-block-start: 0;
+	}
+
+	.triage__list dd {
+		margin-inline-start: 0;
+		padding-inline-start: var(--space-4);
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		line-height: var(--leading-normal);
+	}
+
+	/* ===== FAQ accordion ===== */
+	details[id] {
+		scroll-margin-top: calc(var(--nav-height) + var(--space-4));
+	}
+
+	.docs-faq {
+		margin-block: var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		overflow: hidden;
+	}
+
+	.docs-faq + .docs-faq {
+		margin-block-start: 0;
+		border-top: none;
+		border-radius: 0;
+	}
+
+	.docs-faq:first-of-type {
+		border-radius: var(--border-radius) var(--border-radius) 0 0;
+	}
+
+	.docs-faq:last-of-type {
+		border-radius: 0 0 var(--border-radius) var(--border-radius);
+	}
+
+	.docs-faq:only-of-type {
+		border-radius: var(--border-radius);
+	}
+
+	.docs-faq summary {
+		padding: var(--space-4) var(--space-5);
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		cursor: pointer;
+		list-style: none;
+		transition: background-color var(--transition-fast);
+	}
+
+	.docs-faq summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.docs-faq summary::before {
+		content: "▸ ";
+		color: var(--text-muted);
+		font-family: var(--font-mono);
+	}
+
+	.docs-faq[open] summary::before {
+		content: "▾ ";
+	}
+
+	.docs-faq summary:hover {
+		background-color: var(--surface);
+	}
+
+	.docs-faq__body {
+		padding: 0 var(--space-5) var(--space-5);
+	}
+
+	/* ===== Install CTA ===== */
+
+	.install-cta {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-4);
+		padding: var(--space-8) var(--space-5);
+		text-align: center;
+		border-block-start: 1px solid var(--border);
+		background-color: var(--bg-void);
+	}
+
+	.install-cta__text {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		max-width: 40ch;
+	}
+</style>

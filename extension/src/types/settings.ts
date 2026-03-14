@@ -21,7 +21,6 @@ export interface AppSettings {
 	autoSelect: boolean;
 	/** Whether to automatically start solving when a Coursera page loads */
 	autoStartOnPageLoad: boolean;
-	maxRetries: number;
 	/** Requests per minute per provider */
 	rateLimitRpm: number;
 }
@@ -43,7 +42,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 	confidenceThreshold: 0.7,
 	autoSelect: true,
 	autoStartOnPageLoad: true,
-	maxRetries: 2,
 	rateLimitRpm: 20,
 };
 

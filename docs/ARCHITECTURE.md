@@ -2,6 +2,8 @@
 
 > Public summary: [`/docs/architecture`](https://autocr.nicx.me/docs/architecture) provides a shorter live overview; this file remains the full repository reference.
 
+> Current extension contributor rules live in [`docs/EXTENSION-GOVERNANCE.md`](./EXTENSION-GOVERNANCE.md).
+
 > Auto-Coursera Assistant — Extension Distribution Platform
 
 ---
@@ -12,6 +14,7 @@
 - [Component Diagram](#component-diagram)
 - [Component Descriptions](#component-descriptions)
   - [Chrome Extension](#chrome-extension)
+    - [Extension internal architecture](#extension-internal-architecture)
   - [Website](#website-cloudflare-pages)
   - [Native Installer](#native-installer-go)
   - [Terminal Scripts](#terminal-install-scripts)
@@ -83,14 +86,63 @@ flowchart TD
 | **Stack** | Manifest V3, TypeScript, Webpack |
 | **Version** | 1.9.1 |
 
-The extension is an AI-powered assistant for Coursera. It uses a background service worker, content scripts injected into `coursera.org`, a popup UI, and an options page. It communicates with multiple AI providers (OpenRouter, Gemini, Groq, Cerebras, NVIDIA NIM) to process quiz questions.
+The extension is an AI-powered assistant for Coursera. It uses a background service worker, content scripts injected into `coursera.org`, an in-page floating widget with a settings overlay, and a popup fallback surface. It communicates with multiple AI providers (OpenRouter, Gemini, Groq, Cerebras, NVIDIA NIM) to process quiz questions.
 
 Key release/distribution facts for the extension:
 
 - `version` — stamped by CI during the build.
-- Install and update discovery are **policy-driven**, not packaging-driven. The installer, terminal scripts, and manual steps all write `<extension-id>;<update-url>` into `ExtensionInstallForcelist`, and browsers then poll `https://autocr.nicx.me/updates.xml`.
+- Install bootstrap is **policy-driven**, and the packaged update authority is explicit. The installer, terminal scripts, and manual steps all write `<extension-id>;<update-url>` into `ExtensionInstallForcelist`, while the shipped `extension/manifest.json` repeats the same `update_url`. Initial install and later update checks therefore converge on `https://autocr.nicx.me/updates.xml`. No `ExtensionSettings` override is configured in this repo.
 
 The extension source code is **not modified** by this platform beyond the normal release build/signing flow. The platform wraps it for distribution.
+
+#### Extension internal architecture
+
+The extension follows these module boundaries:
+
+| Area | Current owner | Why it exists |
+|---|---|---|
+| Background bootstrap | `extension/src/background/background.ts` | Compose dependencies and register routes/listeners only |
+| Background services | `background/message-handlers.ts`, `lifecycle.ts`, `provider-service.ts`, `runtime-state.ts` | Keep business logic and mutable state out of the bootstrap file |
+| Shared runtime read model | `extension/src/runtime/projection.ts` | Give popup and widget one canonical interpretation of scoped runtime state |
+| Shared page/runtime scope contract | `extension/src/types/runtime.ts` + `types/messages.ts` | Keep content/background/widget scope metadata aligned instead of duplicating local page-context wrappers |
+| Batch solve/apply modality contract | `extension/src/content/question-contract.ts` + `selectionMode` in shared types | Keep answer modality explicit and separate from image presence |
+| Shared settings workflow | `extension/src/settings/domain.ts` | Reuse provider metadata, staged save/test logic, onboarding rules, and workflow orchestration for the settings overlay |
+
+The most important architectural rule is that the background remains the write authority while UI surfaces consume shared read models and shared workflow helpers.
+
+```mermaid
+flowchart LR
+  DOM["Coursera DOM"] --> DETECT["detector.ts / extractor.ts"]
+  DETECT --> CONTRACT["question-contract.ts\nselectionMode + image presence"]
+  CONTRACT --> CONTENT["content.ts\nSOLVE_BATCH + page scope"]
+
+  CONTENT --> BOOT["background.ts\nbootstrap only"]
+  BOOT --> HANDLERS["message-handlers.ts"]
+  BOOT --> LIFE["lifecycle.ts"]
+  BOOT --> RUNTIME["runtime-state.ts\nwrite authority\n+ scope resolution"]
+  BOOT --> PROVIDERS["provider-service.ts"]
+
+  HANDLERS --> PROVIDERS
+  HANDLERS --> RUNTIME
+  PROVIDERS --> APIS["AI provider APIs"]
+
+  RUNTIME --> PROJECTION["runtime/projection.ts\nshared read model"]
+  PROJECTION --> POPUP["popup.ts"]
+  PROJECTION --> WIDGET["widget-state.ts / widget UI"]
+
+  SETTINGS_UI["settings-overlay.ts"] --> SETTINGS_DOMAIN["settings/domain.ts\nshared controller + metadata"]
+  SETTINGS_DOMAIN --> STORAGE["encrypted storage"]
+  SETTINGS_DOMAIN --> HANDLERS
+```
+
+Current flow rules:
+
+1. **Background bootstrap vs services** — `background.ts` wires the system. Lifecycle logic, provider lifecycle, runtime mutation, and message-specific behavior belong in focused modules.
+2. **Shared runtime projection** — popup and widget must use `runtime/projection.ts` instead of deriving disabled, stale, or idle semantics independently.
+3. **Canonical batch contract** — batch solve/apply uses `selectionMode` (`single`, `multiple`, `text-input`, `unknown`) as the modality field. Image presence stays separate.
+4. **Shared settings workflow boundary** — the settings overlay acts as a thin host around `settings/domain.ts`, while `background/provider-service.ts` remains the live provider authority and executes isolated `TEST_CONNECTION` requests through the same batch provider contract used by live solving.
+
+See [`docs/EXTENSION-GOVERNANCE.md`](./EXTENSION-GOVERNANCE.md) for the contributor rules behind these boundaries.
 
 ---
 
@@ -113,7 +165,7 @@ The website is the user-facing entry point. It provides:
 - **Static install scripts** — served from `/scripts/` (install.ps1, install.sh, install-mac.sh, uninstall.ps1, uninstall.sh)
 
 Security headers are configured in `website/public/_headers` (HSTS, CSP, X-Frame-Options).
-Redirect shortcuts are defined in `website/public/_redirects` (e.g., `/download/windows` → API).
+Redirect shortcuts are defined in `website/public/_redirects` (for example, `/download/windows` → the current GitHub Release asset path).
 
 ---
 
@@ -197,10 +249,10 @@ Shell scripts that handle extension signing, packaging, and verification.
 | Script | Purpose |
 |---|---|
 | `generate-key.sh` | Generate RSA 2048 private key (`extension-key.pem`), print derived extension ID |
-| `derive-extension-id.sh` | Derive the 32-character extension ID from an existing private key |
 | `package-crx.sh` | Build a signed CRX3 file from `extension/dist/` using `npx crx3`, generate SHA256 checksum |
-| `generate-updates-xml.sh` | Produce a local/manual `updates.xml` fixture for testing; production uses a static `updates.xml` on Cloudflare Pages, generated by `sync-constants.sh` |
 | `verify-crx.sh` | Validate a CRX3 file: magic bytes, format version, manifest, file size, checksum |
+| `sync-constants.sh` | Propagate all `version.json` fields to every file in the monorepo; also generates `updates.xml` and `_redirects` |
+| `check-version.sh` | CI guard that validates 57 constant references match `version.json` |
 
 See [SIGNING.md](./SIGNING.md) for the full cryptographic details.
 
@@ -217,9 +269,17 @@ See [SIGNING.md](./SIGNING.md) for the full cryptographic details.
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `deploy.yml` | website-branch push (`master` in the current setup) + `v*` tag | Orchestrates the full pipeline. Contains jobs: `build-extension`, `build-installers`, `create-release`, `deploy-website-main`, `deploy-website-release`; the master website job only publishes when the current `version.json` already has a matching published GitHub Release with the expected assets |
-| `build-extension.yml` | `pull_request` + `workflow_dispatch` | CI build & test for PRs touching `extension/` (no secrets, no release) |
-| `build-installers.yml` | `pull_request` + `workflow_dispatch` | CI build for PRs touching `installer/` (no secrets, no release) |
+| `deploy.yml` | website-branch push (`master` in the current setup) + `v*` tag | Orchestrates the full pipeline. Contains jobs: `build-extension`, `build-installers`, `create-release`, `deploy-website-main`, `deploy-website-release`; the master website job only publishes when the current `version.json` already has a matching published GitHub Release with the expected assets, and the tag-release path reruns the extension typecheck/lint/test gates plus installer `go vet` before packaging/signing |
+| `build-extension.yml` | `pull_request` + `workflow_dispatch` | CI typecheck/lint/test/build for PRs touching `extension/` (no secrets, no release) |
+| `build-installers.yml` | `pull_request` + `workflow_dispatch` | CI `go vet` + cross-platform build for PRs touching `installer/` (no secrets, no release) |
+
+**Release governance invariants:**
+
+- `version-check` runs before both website deploys and tagged releases.
+- A tagged release reruns extension `typecheck`, `lint`, and `test` before CRX packaging.
+- A tagged release reruns installer `go vet` before `make build-all`.
+- `create-release` must complete before `deploy-website-release` publishes Pages.
+- `deploy-website-main` skips publication unless the matching GitHub Release already exists with the required CRX and installer assets.
 
 **Required GitHub Secrets:**
 
@@ -264,19 +324,21 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    TAG["Developer pushes git tag vX.Y.Z"] --> BUILD["CI: build-extension"]
-    TAG --> INST["CI: build-installers"]
-    TAG --> DWEB["CI: deploy-website"]
+    TAG["Developer pushes git tag vX.Y.Z"] --> VERSION["CI: version-check"]
+    VERSION --> BUILD["CI: build-extension"]
+    VERSION --> INST["CI: build-installers"]
 
-    BUILD --> VER["Extract version from tag → X.Y.Z"]
+    BUILD --> EXTCI["typecheck + lint + test"]
+    EXTCI --> VER["Extract version from tag → X.Y.Z"]
     VER --> CRX["package-crx.sh → auto_coursera_X.Y.Z.crx + .sha256"]
-    CRX --> GHREL["Upload CRX + checksums\nto GitHub Release vX.Y.Z"]
 
-    INST --> MAKE["make build-all → 6 binaries"]
+    INST --> GOVET["go vet ./..."]
+    GOVET --> MAKE["make build-all → 6 binaries"]
     MAKE --> SHA["Generate SHA256 checksums"]
-    SHA --> GHREL
 
-    DWEB --> PAGES["Build & deploy Astro site\nto Cloudflare Pages\n(includes static updates.xml)"]
+    CRX --> GHREL["create-release\nGitHub Release vX.Y.Z"]
+    SHA --> GHREL
+    GHREL --> PAGES["deploy-website-release\nBuild & deploy Astro site\n(includes static updates.xml)"]
 
     GHREL --> AUTO["Browsers auto-update"]
     AUTO --> CHECK["Check autocr.nicx.me/updates.xml"]
@@ -301,7 +363,7 @@ The entire platform runs on a single domain backed by Cloudflare Pages. All bina
 
 ## Browser Policy Mechanism
 
-Chromium-based browsers support enterprise policies that can **force-install** extensions without user interaction. The `ExtensionInstallForcelist` policy tells the browser: *"Install this extension from this URL and keep it updated."*
+Chromium-based browsers support enterprise policies that can **force-install** extensions without user interaction. In current Chromium/Edge semantics, `ExtensionInstallForcelist` bootstraps the install by naming the extension ID and an update manifest URL for the first fetch, while the packaged extension manifest's `update_url` governs subsequent checks unless a richer management policy such as `ExtensionSettings` overrides it.
 
 The policy value format is:
 
@@ -315,14 +377,24 @@ For this project:
 alojpdnpiddmekflpagdblmaehbdfcge;https://autocr.nicx.me/updates.xml
 ```
 
+The packaged extension intentionally matches that contract:
+
+```json
+{
+  "update_url": "https://autocr.nicx.me/updates.xml"
+}
+```
+
 Once the policy is set, the browser:
 
 1. Reads the policy on startup
-2. Fetches the `updates.xml` from the update URL
-3. Compares the version in `updates.xml` to any installed version
-4. Downloads the CRX file if the remote version is newer (or not yet installed)
-5. Verifies the CRX signature matches the extension ID
-6. Installs or updates the extension silently
+2. Uses the policy URL to bootstrap the initial install check
+3. Verifies the packaged extension manifest continues to point at `https://autocr.nicx.me/updates.xml`
+4. Polls `updates.xml` on its normal schedule for later update checks
+5. Compares the version in `updates.xml` to any installed version
+6. Downloads the CRX file if the remote version is newer (or not yet installed)
+7. Verifies the CRX signature matches the extension ID
+8. Installs or updates the extension silently
 
 Users can verify policies are active by visiting `chrome://policy` in their browser.
 

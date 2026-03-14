@@ -1,181 +1,636 @@
 ---
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
 import Base from '../layouts/Base.astro';
 ---
 
-<Base title="Privacy Policy" description="Privacy policy for Auto-Coursera Assistant. No data collection, no tracking, no analytics.">
-  <Header />
+<Base
+	title="Privacy Policy — Auto-Coursera Data Handling Practices"
+	description="Auto-Coursera's privacy policy. Zero analytics, zero tracking, zero accounts. Your data stays on your device."
+	canonicalPath="/privacy/"
+>
+	<!-- ================================================================
+	     HERO
+	     ================================================================ -->
+	<section class="hero" data-bg="deep" aria-labelledby="privacy-heading">
+		<div class="container-narrow">
+			<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
+			<Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Privacy' }]} />
+			<h1 id="privacy-heading">Privacy Policy</h1>
+			<p class="hero__effective">Effective date: March 14, 2026</p>
+			<p class="hero__lead">
+				No analytics, no tracking, no accounts. Everything the
+				extension knows stays on your device.
+			</p>
+		</div>
+	</section>
 
-  <main id="main-content" class="py-16 sm:py-24 px-4">
-    <div class="max-w-3xl mx-auto">
-      <!-- Title -->
-      <div class="text-center mb-16 animate-fade-in">
-        <p class="section-label">Legal</p>
-        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Privacy Policy</h1>
-        <p class="text-surface-400">Last updated: March 2026</p>
-      </div>
+	<!-- ================================================================
+	     WHAT STAYS ON YOUR DEVICE
+	     ================================================================ -->
+	<section class="section section--critical" data-bg="void" aria-labelledby="local-heading">
+		<div class="container-narrow">
+			<p class="section__label">Important</p>
+			<h2 id="local-heading">What stays on your device</h2>
+			<p>The following data never leaves your browser:</p>
+			<ul>
+				<li><strong>Settings and preferences</strong> — stored in Chrome's local storage</li>
+				<li><strong>API keys</strong> — encrypted at rest with AES-256-GCM before being stored in Chrome's local storage</li>
+				<li><strong>Quiz processing logic</strong> — all detection and DOM manipulation runs locally</li>
+				<li><strong>UI state</strong> — popup state, widget state, and user choices</li>
+			</ul>
+			<p>
+				The extension makes three types of outbound connections — all
+				documented below. Everything else stays on your device.
+			</p>
+		</div>
+	</section>
 
-      <!-- Content -->
-      <div class="space-y-12 animate-slide-up delay-100">
-        <!-- Intro -->
-        <section class="glass p-8">
-          <p class="text-surface-300 leading-relaxed">
-            Auto-Coursera Assistant is committed to protecting your privacy. This policy describes what data we collect (almost none), how it is used, and your rights. We believe privacy is a fundamental right and have designed the extension accordingly.
-          </p>
-        </section>
+	<!-- ================================================================
+	     WHAT LEAVES YOUR DEVICE
+	     ================================================================ -->
+	<section class="section section--critical" data-bg="deep" aria-labelledby="outbound-heading">
+		<div class="container-narrow">
+			<p class="section__label">Important</p>
+			<h2 id="outbound-heading">What leaves your device</h2>
+			<p>
+				Auto-Coursera makes exactly three types of network requests.
+				Nothing else.
+			</p>
 
-        <!-- Extension Data Collection -->
-        <section>
-          <h2 class="text-2xl font-semibold text-white mb-4 flex items-center gap-3">
-            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </span>
-            Extension Data Collection
-          </h2>
-          <div class="glass p-8 space-y-4">
-            <p class="text-surface-300 leading-relaxed">
-              <strong class="text-white">The extension collects zero personal data.</strong>
-            </p>
-            <ul class="space-y-3 text-surface-400 text-sm">
-              <li class="flex gap-3">
-                <span class="text-emerald-400 mt-1 shrink-0">✓</span>
-                <span>No personal information is collected or transmitted</span>
-              </li>
-              <li class="flex gap-3">
-                <span class="text-emerald-400 mt-1 shrink-0">✓</span>
-                <span>No analytics, no telemetry, no tracking pixels</span>
-              </li>
-              <li class="flex gap-3">
-                <span class="text-emerald-400 mt-1 shrink-0">✓</span>
-                <span>No browsing history is recorded or shared</span>
-              </li>
-              <li class="flex gap-3">
-                <span class="text-emerald-400 mt-1 shrink-0">✓</span>
-                <span>API keys are stored in Chrome's local storage on your device only</span>
-              </li>
-              <li class="flex gap-3">
-                <span class="text-emerald-400 mt-1 shrink-0">✓</span>
-                <span>Quiz data is sent directly from your browser to the AI provider you chose — never to our servers</span>
-              </li>
-            </ul>
-          </div>
-        </section>
+			<div class="data-paths">
+				<div class="data-path">
+					<h3>Quiz data → AI provider</h3>
+					<p>
+						When you solve a quiz, the extension sends the question
+						text (and images, if present) to the AI provider you
+						configured. This is the core function of the extension —
+						it happens only when you trigger it. Your API key
+						authenticates the request.
+					</p>
 
-        <!-- Website Data Collection -->
-        <section>
-          <h2 class="text-2xl font-semibold text-white mb-4 flex items-center gap-3">
-            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-500/15 text-primary-400">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-            </span>
-            Website Data Collection
-          </h2>
-          <div class="glass p-8 space-y-4">
-            <p class="text-surface-300 leading-relaxed">
-              This website is hosted on Cloudflare Pages. We do not use cookies, analytics scripts, or tracking tools.
-            </p>
-            <p class="text-surface-400 text-sm leading-relaxed">
-              Cloudflare may collect standard web server logs (IP address, user agent, accessed URL, timestamps) as part of its hosting infrastructure. These logs are managed by Cloudflare under their <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer" class="text-primary-400 hover:text-primary-300">Privacy Policy</a> and are not accessible to us for tracking purposes.
-            </p>
-          </div>
-        </section>
+					<div class="data-breakdown">
+						<div class="data-breakdown__group">
+							<h4>What the extension reads from Coursera pages</h4>
+							<ul>
+								<li><strong>Question text</strong> — the quiz question itself, extracted from the page</li>
+								<li><strong>Answer options</strong> — the text of each multiple-choice or checkbox option</li>
+								<li><strong>Question type metadata</strong> — single-choice, multiple-choice, or numeric, to determine how to process the response</li>
+								<li><strong>Image URLs</strong> — if questions or options contain images, fetched and sent to vision-capable AI models</li>
+								<li><strong>LaTeX / math expressions</strong> — rendered math blocks are converted back to LaTeX source text for the AI</li>
+								<li><strong>Code blocks</strong> — read-only code from embedded editors, included as context for the AI prompt</li>
+							</ul>
+						</div>
 
-        <!-- Third-Party Services -->
-        <section>
-          <h2 class="text-2xl font-semibold text-white mb-4 flex items-center gap-3">
-            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-500/15 text-primary-400">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-            </span>
-            Third-Party Services
-          </h2>
-          <div class="glass p-8 space-y-4">
-            <p class="text-surface-300 leading-relaxed">
-              When you use the extension, quiz data is sent to your selected AI provider for answer generation. Each provider has their own privacy policy:
-            </p>
-            <ul class="space-y-2 text-surface-400 text-sm">
-              <li class="flex items-center gap-2">
-                <span class="w-1.5 h-1.5 rounded-full bg-primary-500/50 shrink-0"></span>
-                <strong class="text-surface-300">OpenRouter</strong> — Routes requests to various AI models
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="w-1.5 h-1.5 rounded-full bg-primary-500/50 shrink-0"></span>
-                <strong class="text-surface-300">Google Gemini</strong> — Google's AI models
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="w-1.5 h-1.5 rounded-full bg-primary-500/50 shrink-0"></span>
-                <strong class="text-surface-300">Groq</strong> — Fast LLM inference
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="w-1.5 h-1.5 rounded-full bg-primary-500/50 shrink-0"></span>
-                <strong class="text-surface-300">Cerebras</strong> — AI accelerator models
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="w-1.5 h-1.5 rounded-full bg-primary-500/50 shrink-0"></span>
-                <strong class="text-surface-300">NVIDIA NIM</strong> — NVIDIA's inference microservices
-              </li>
-            </ul>
-            <p class="text-surface-500 text-xs mt-4">
-              We encourage you to review each provider's privacy policy before use. The extension sends only the quiz question text and answer options — never your identity, browsing history, or other personal data.
-            </p>
-          </div>
-        </section>
+						<div class="data-breakdown__group">
+							<h4>What the extension does NOT read</h4>
+							<ul>
+								<li>Your Coursera account credentials</li>
+								<li>Your course enrollment data</li>
+								<li>Your grades or submission history</li>
+								<li>Your browsing activity outside of quiz pages</li>
+								<li>Your personal profile information</li>
+								<li>Other students' data</li>
+							</ul>
+						</div>
 
-        <!-- Data Storage -->
-        <section>
-          <h2 class="text-2xl font-semibold text-white mb-4 flex items-center gap-3">
-            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-500/15 text-primary-400">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-            </span>
-            Data Storage
-          </h2>
-          <div class="glass p-8 space-y-4">
-            <p class="text-surface-300 leading-relaxed">
-              All extension settings and API keys are stored locally in your browser using Chrome's <code>chrome.storage.local</code> API. This data:
-            </p>
-            <ul class="space-y-2 text-surface-400 text-sm">
-              <li class="flex gap-3">
-                <span class="text-primary-400 mt-0.5 shrink-0">•</span>
-                <span>Never leaves your device (unless you use Chrome sync, which is controlled by your Google account settings)</span>
-              </li>
-              <li class="flex gap-3">
-                <span class="text-primary-400 mt-0.5 shrink-0">•</span>
-                <span>Is deleted when you uninstall the extension</span>
-              </li>
-              <li class="flex gap-3">
-                <span class="text-primary-400 mt-0.5 shrink-0">•</span>
-                <span>Can be inspected and deleted at any time via <code>chrome://extensions</code></span>
-              </li>
-            </ul>
-          </div>
-        </section>
+						<div class="data-breakdown__group">
+							<h4>What gets sent to the AI provider</h4>
+							<ul>
+								<li>The question text and answer options, formatted as a prompt</li>
+								<li>Image data, if image-based questions are detected and the provider supports vision</li>
+								<li>Code blocks, if present in the question container</li>
+								<li>Nothing else — no Coursera session tokens, no cookies, no personal identifiers</li>
+							</ul>
+							<p class="data-breakdown__note">
+								All requests go directly from your browser to the provider's API, authenticated with your own API key. Our server is never involved.
+							</p>
+						</div>
+					</div>
+				</div>
 
-        <!-- Contact -->
-        <section>
-          <h2 class="text-2xl font-semibold text-white mb-4 flex items-center gap-3">
-            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-500/15 text-primary-400">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </span>
-            Contact
-          </h2>
-          <div class="glass p-8">
-            <p class="text-surface-300 leading-relaxed">
-              If you have questions about this privacy policy or how your data is handled, contact us:
-            </p>
-            <div class="mt-4 flex flex-col sm:flex-row gap-4">
-              <a href="mailto:privacy@nicx.me" class="btn-secondary text-sm gap-2 px-5 py-2.5">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                privacy@nicx.me
-              </a>
-              <a href="mailto:security@nicx.me" class="btn-secondary text-sm gap-2 px-5 py-2.5">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                security@nicx.me
-              </a>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
-  </main>
+				<div class="data-path">
+					<h3>Version check → <code>autocr.nicx.me/version.json</code></h3>
+					<p>
+						Every 6 hours, the extension fetches a small JSON file
+						to check if a new version is available. This request
+						contains no user data — no identifiers, no cookies, no
+						analytics parameters. It's a plain HTTP GET.
+					</p>
+				</div>
 
-  <Footer />
+				<div class="data-path">
+					<h3>Browser auto-update → <code>autocr.nicx.me/updates.xml</code></h3>
+					<p>
+						Chromium's built-in extension update system periodically
+						checks for new versions. This is a browser-level
+						feature, not something our code controls. It sends a
+						standard Chromium update request with your extension ID
+						and current version.
+					</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     PERMISSIONS EXPLAINED
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="permissions-heading">
+		<div class="container-narrow">
+			<h2 id="permissions-heading">Permissions explained</h2>
+			<p>
+				Every permission Auto-Coursera requests, with a plain-language
+				explanation of why.
+			</p>
+
+			<dl class="permissions-list">
+				<div class="permission">
+					<dt><code>activeTab</code></dt>
+					<dd>
+						Grants temporary access to the tab you're currently
+						viewing — only when you click the extension icon. This
+						is how the extension reads quiz questions from the
+						Coursera page. It cannot access any other tab, and
+						access expires when you navigate away.
+					</dd>
+				</div>
+				<div class="permission">
+					<dt><code>alarms</code></dt>
+					<dd>
+						Allows the extension to schedule a repeating timer for
+						update checks. The alarm fires every 6 hours, triggering
+						a version-check request to our server. No user data is
+						sent with this request.
+					</dd>
+				</div>
+				<div class="permission">
+					<dt><code>storage</code></dt>
+					<dd>
+						Gives the extension access to Chrome's local storage API.
+						This is where your settings and encrypted API keys are
+						saved. Data in storage stays on your device and is
+						never synced to Google's servers (we use
+						<code>chrome.storage.local</code>, not
+						<code>chrome.storage.sync</code>).
+					</dd>
+				</div>
+				<div class="permission">
+					<dt><code>tabs</code></dt>
+					<dd>
+						Lets the extension open new tabs — specifically, the
+						settings page on first install and the Coursera tab when
+						you complete setup. The extension does not read your
+						tab list, browsing history, or URLs of other tabs.
+					</dd>
+				</div>
+				<div class="permission">
+					<dt>Host: <code>*.coursera.org</code></dt>
+					<dd>
+						Allows the extension to inject its content script on
+						Coursera pages. The content script detects quiz
+						questions, creates the floating widget, and highlights
+						answers. It runs only on Coursera — never on any other
+						website.
+					</dd>
+				</div>
+				<div class="permission">
+					<dt>Host: <code>autocr.nicx.me</code></dt>
+					<dd>
+						Our distribution server. Used for two things: checking
+						for extension updates and downloading new versions. No
+						user data, analytics, or identifiers are sent.
+					</dd>
+				</div>
+				<div class="permission">
+					<dt>Host: AI provider APIs</dt>
+					<dd>
+						Connects to the AI provider you configured (e.g.,
+						<code>openrouter.ai</code>,
+						<code>generativelanguage.googleapis.com</code>,
+						<code>api.groq.com</code>,
+						<code>api.cerebras.ai</code>, or
+						<code>integrate.api.nvidia.com</code>). Quiz questions
+						are sent to these endpoints when you trigger a solve.
+						Your API key authenticates each request.
+					</dd>
+				</div>
+				<div class="permission">
+					<dt>Host: image CDNs</dt>
+					<dd>
+						Some Coursera quiz questions include images hosted on
+						CDN domains. The extension needs access to these hosts
+						to download question images and include them in the AI
+						prompt for image-based questions.
+					</dd>
+				</div>
+			</dl>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     API KEY STORAGE
+	     ================================================================ -->
+	<section class="section section--critical" data-bg="deep" aria-labelledby="keys-heading">
+		<div class="container-narrow">
+			<p class="section__label">Important</p>
+			<h2 id="keys-heading">API key storage</h2>
+			<p>
+				Your API keys are the most sensitive data the extension handles.
+				Here's what the extension does — and what it doesn't protect
+				against:
+			</p>
+			<ul>
+				<li>
+					<strong>Encrypted at rest with AES-256-GCM</strong> — keys
+					are encrypted before being written to
+					<code>chrome.storage.local</code>. They are never stored in
+					plain text. This adds a layer of protection against casual
+					inspection of stored browser data.
+				</li>
+				<li>
+					<strong>PBKDF2 key derivation</strong> with 100,000
+					iterations — the encryption key is derived from a
+					device-bound value before encrypting your API keys.
+				</li>
+				<li>
+					<strong>Keys are never logged</strong> — not to the console,
+					not to error reports, not to any external service. If an
+					error occurs during an API call, the key is redacted from
+					all log output.
+				</li>
+			</ul>
+			<p>
+				<strong>What this doesn't cover:</strong> encryption at rest
+				protects against someone reading raw storage data directly. It
+				does not protect against malicious extensions with storage
+				access, browser-level compromises, or a determined attacker
+				with full access to your browser profile. Data in transit to AI
+				providers is protected separately by HTTPS.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     WHAT WE DON'T DO
+	     ================================================================ -->
+	<section class="section section--critical" data-bg="void" aria-labelledby="dont-heading">
+		<div class="container-narrow">
+			<p class="section__label">Important</p>
+			<h2 id="dont-heading">What we don't do</h2>
+			<ul class="dont-list">
+				<li><strong>No analytics or telemetry.</strong> We don't use Google Analytics, Plausible, PostHog, or any other tracking service.</li>
+				<li><strong>No tracking pixels or fingerprinting.</strong> No invisible images, no canvas fingerprinting, no device identification.</li>
+				<li><strong>No user accounts or registration.</strong> There is nothing to sign up for. The extension works without any identity.</li>
+				<li><strong>No data collection or selling.</strong> We don't collect data, so there's nothing to sell. Our business model is: there isn't one.</li>
+				<li><strong>No third-party scripts on this website.</strong> This website is static HTML, CSS, and minimal JavaScript. No trackers, no ads, no embedded content from third parties.</li>
+			</ul>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     THIRD-PARTY AI PROVIDERS
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="providers-heading">
+		<div class="container-narrow">
+			<h2 id="providers-heading">Third-party AI providers</h2>
+			<p>
+				When you use Auto-Coursera to solve a quiz, the question text
+				is sent to whichever AI provider you configured. This is the
+				only way the extension functions — the AI provider processes
+				the question and returns an answer.
+			</p>
+			<p>
+				<strong>We don't control what AI providers do with your
+				data.</strong> Each provider has its own privacy policy and data
+				retention practices. We encourage you to review them:
+			</p>
+			<ul>
+				<li><a href="https://openrouter.ai/privacy" target="_blank" rel="noopener noreferrer">OpenRouter Privacy Policy</a></li>
+				<li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a></li>
+				<li><a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer">Groq Privacy Policy</a></li>
+				<li><a href="https://cerebras.ai/privacy-policy" target="_blank" rel="noopener noreferrer">Cerebras Privacy Policy</a></li>
+				<li><a href="https://www.nvidia.com/en-us/about-nvidia/privacy-policy/" target="_blank" rel="noopener noreferrer">NVIDIA Privacy Policy</a></li>
+			</ul>
+			<p>
+				You choose the provider. You provide the API key. The data goes
+				directly from your browser to the provider's API — our server is
+				never in the middle.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     DATA RETENTION
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="retention-heading">
+		<div class="container-narrow">
+			<h2 id="retention-heading">Data retention</h2>
+			<p>
+				<strong>Zero retention on our end.</strong> We don't operate a
+				backend service. There is no database. There is no server
+				processing your quiz data.
+			</p>
+			<p>
+				The extension processes everything locally in your browser.
+				Quiz results are displayed in the page and stored temporarily
+				in browser memory. When you close the tab or navigate away,
+				that data is gone.
+			</p>
+			<p>
+				The only persistent storage is your settings and encrypted API
+				keys in Chrome's local storage, which you control entirely.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     YOUR RIGHTS
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="rights-heading">
+		<div class="container-narrow">
+			<h2 id="rights-heading">Your rights</h2>
+			<p>
+				Since we don't collect any data, there's nothing to request,
+				export, or delete on our side. But you're always in control:
+			</p>
+			<ul>
+				<li>
+					<strong>Disable the extension</strong> to stop all
+					processing and network requests instantly.
+				</li>
+				<li>
+					<strong>Uninstall the extension</strong> to remove all
+					stored data, settings, and encrypted keys from your browser.
+				</li>
+				<li>
+					<strong>There is no account to delete</strong> — because
+					there is no account. Nothing persists beyond your browser.
+				</li>
+			</ul>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     CONTACT
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="contact-heading">
+		<div class="container-narrow">
+			<h2 id="contact-heading">Contact</h2>
+			<p>
+				If you have questions about this privacy policy or how the
+				extension handles your data:
+			</p>
+			<ul>
+				<li>
+					<a href="https://github.com/NICxKMS/auto-coursera" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
+					— open an issue or start a discussion
+				</li>
+				<li>
+					<a href="https://github.com/NICxKMS/auto-coursera/security/advisories/new" target="_blank" rel="noopener noreferrer">Security Advisories</a>
+					— for reporting security vulnerabilities privately
+				</li>
+			</ul>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     NAVIGATION FOOTER
+	     ================================================================ -->
+	<section class="nav-footer" data-bg="deep" aria-label="Related pages">
+		<div class="container-narrow">
+			<div class="nav-footer__links">
+				<a href="/support/">Support</a>
+				<a href="/install/">Install</a>
+				<a href="/docs/">Documentation</a>
+			</div>
+		</div>
+	</section>
 </Base>
+
+<style>
+	/* ==========================================================================
+	   Privacy Page — Scoped Styles
+	   ========================================================================== */
+
+	/* ===== Hero ===== */
+
+	.hero {
+		padding-block-start: calc(var(--nav-height) + var(--space-7));
+		padding-block-end: var(--space-6);
+		background-color: var(--bg-deep);
+	}
+
+	.hero h1 {
+		margin-block-end: var(--space-3);
+	}
+
+	.hero__product {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-block-end: var(--space-2);
+	}
+
+	.hero__effective {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin-block-end: var(--space-4);
+	}
+
+	.hero__lead {
+		font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+		color: var(--text-secondary);
+		max-width: 36rem;
+	}
+
+	/* ===== Sections ===== */
+
+	.section {
+		padding-block: var(--space-6);
+	}
+
+	.section h2 {
+		margin-block-end: var(--space-4);
+	}
+
+	.section h3 {
+		margin-block-start: var(--space-5);
+		margin-block-end: var(--space-2);
+	}
+
+	.section ul {
+		margin-block-start: var(--space-4);
+	}
+
+	.section li {
+		margin-block: var(--space-2);
+		line-height: var(--leading-normal);
+	}
+
+	.section strong {
+		color: var(--text-primary);
+	}
+
+	/* ===== Critical Sections ===== */
+
+	.section--critical > .container-narrow {
+		border-inline-start: 3px solid var(--accent);
+		padding-inline-start: var(--space-6);
+	}
+
+	.section__label {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--accent);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-block-end: var(--space-2);
+	}
+
+	/* ===== Data Paths ===== */
+
+	.data-paths {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-5);
+		margin-block-start: var(--space-5);
+	}
+
+	.data-path {
+		padding: var(--space-5);
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+	}
+
+	.data-path h3 {
+		font-family: var(--font-body);
+		font-size: var(--text-h3);
+		font-weight: var(--weight-bold);
+		color: var(--text-primary);
+		margin: 0 0 var(--space-3) 0;
+	}
+
+	.data-path p {
+		margin: 0;
+		line-height: var(--leading-normal);
+	}
+
+	/* ===== Data Breakdown (itemized data lists) ===== */
+
+	.data-breakdown {
+		margin-block-start: var(--space-5);
+		padding-block-start: var(--space-5);
+		border-top: 1px solid var(--border);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-5);
+	}
+
+	.data-breakdown__group h4 {
+		font-size: var(--text-body);
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		margin-block-end: var(--space-3);
+	}
+
+	.data-breakdown__group ul {
+		margin: 0;
+		padding-inline-start: 1.25rem;
+	}
+
+	.data-breakdown__group li {
+		margin-block: var(--space-1);
+		line-height: var(--leading-normal);
+		color: var(--text-secondary);
+	}
+
+	.data-breakdown__note {
+		margin-block-start: var(--space-3) !important;
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		font-style: italic;
+	}
+
+	/* ===== Permissions ===== */
+
+	.permissions-list {
+		margin-block-start: var(--space-5);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.permission {
+		padding: var(--space-4) var(--space-5);
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+	}
+
+	.permission dt {
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		margin-block-end: var(--space-2);
+	}
+
+	.permission dd {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		line-height: var(--leading-normal);
+	}
+
+	/* ===== Don't List ===== */
+
+	.dont-list {
+		list-style: none;
+		padding: 0;
+		margin-block-start: var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.dont-list li {
+		padding: var(--space-4) var(--space-5);
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		color: var(--text-secondary);
+		line-height: var(--leading-normal);
+	}
+
+	/* ===== Navigation Footer ===== */
+
+	.nav-footer {
+		padding-block: var(--space-6);
+		border-top: 1px solid var(--border);
+	}
+
+	.nav-footer__links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-5);
+		justify-content: center;
+	}
+
+	.nav-footer__links a {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	/* ===== Responsive ===== */
+
+	@media (max-width: 480px) {
+		.hero {
+			padding-block-start: calc(var(--nav-height) + var(--space-6));
+			padding-block-end: var(--space-5);
+		}
+	}
+</style>

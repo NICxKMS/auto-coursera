@@ -1,10 +1,20 @@
 /**
  * ImagePipeline — CORS-aware image fetch from service worker context.
- * REQ: REQ-005
  */
 
-import { ALLOWED_IMAGE_HOSTS, MAX_IMAGE_SIZE } from '../utils/constants';
 import { Logger } from '../utils/logger';
+
+/** Allowed image hosts for CORS-aware fetching */
+const ALLOWED_IMAGE_HOSTS = [
+	'coursera.org',
+	'd3njjcbhbojbot.cloudfront.net',
+	'd2j5ihb19pt1hq.cloudfront.net',
+	'coursera-assessments.s3.amazonaws.com',
+	'coursera-university-assets.s3.amazonaws.com',
+];
+
+/** Maximum image size in bytes (10 MB) */
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
 const logger = new Logger('ImagePipeline');
 

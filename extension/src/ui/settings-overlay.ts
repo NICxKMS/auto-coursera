@@ -1,8 +1,10 @@
 /**
  * Settings overlay — full-viewport modal for configuring the extension.
- * Uses the shared settings-domain module so the overlay and fallback options
- * page stay aligned on provider catalogs, key masking, save payload assembly,
- * test-connection staging, and onboarding semantics.
+ * Uses the shared settings-domain module so the overlay stays aligned on
+ * provider catalogs, key masking, save payload assembly, test-connection
+ * staging, and onboarding semantics.
+ *
+ * This is the sole settings surface — there is no separate options page.
  *
  * Features:
  *   - API key inputs with masked values (last 4 chars visible for existing keys)
@@ -17,19 +19,20 @@
  * Dependencies:
  *   - settings/domain.ts  (shared settings-domain metadata + workflows)
  *   - widget-state.ts     (WidgetStore)
- *   - widget-styles.ts    (OVERLAY_STYLES CSS classes)
+ *   - styles/             (OVERLAY_STYLES CSS classes)
  */
 
 import {
-	SETTINGS_PROVIDERS,
-	loadSettingsView,
-	saveSettingsFromSnapshot,
-	testSettingsConnection,
+	createSettingsWorkflowController,
 	type LoadedSettingsView,
 	type ModelGroup,
+	SETTINGS_PROVIDERS,
 	type SettingsFormSnapshot,
+	type SettingsWorkflowAction,
+	type SettingsWorkflowController,
 } from '../settings/domain';
 import type { ProviderName } from '../types/settings';
+import { createField, createSection } from './overlay-helpers';
 import type { WidgetStore } from './widget-state';
 
 // ── Constants ───────────────────────────────────────────────────
@@ -80,8 +83,26 @@ export class SettingsOverlay {
 	// Internal state
 	private dirty = false;
 	private statusTimer: ReturnType<typeof setTimeout> | null = null;
+	private readonly workflow: SettingsWorkflowController;
 
 	constructor(private readonly store: WidgetStore) {
+		this.workflow = createSettingsWorkflowController(
+			{
+				getSnapshot: () => this.getSnapshot(),
+				applyLoadedView: (view) => this.applyLoadedView(view),
+				setActionPending: (action, pending) => this.setActionPending(action, pending),
+				showStatus: (result) => this.showStatus(result.message, result.type),
+				markPristine: () => {
+					this.dirty = false;
+				},
+			},
+			{
+				saveSuccess: '✅ Settings saved successfully!',
+				saveError: 'Failed to save settings. Please try again.',
+				testError: '❌ Connection failed',
+			},
+		);
+
 		// ── Backdrop ───────────────────────────────────────────
 		this.el = document.createElement('div');
 		this.el.className = 'ac-overlay';
@@ -183,22 +204,9 @@ export class SettingsOverlay {
 	// ── API Keys Section ──────────────────────────────────────
 
 	private buildApiKeysSection(): HTMLDivElement {
-		const section = document.createElement('div');
-		section.className = 'ac-section';
-
-		const title = document.createElement('span');
-		title.className = 'ac-section__title';
-		title.textContent = 'API Keys';
-		section.appendChild(title);
+		const section = createSection('API Keys');
 
 		for (const provider of SETTINGS_PROVIDERS) {
-			const field = document.createElement('div');
-			field.className = 'ac-field';
-
-			const label = document.createElement('label');
-			label.className = 'ac-field__label';
-			label.textContent = provider.keyLabel;
-
 			const input = document.createElement('input');
 			input.type = 'password';
 			input.className = 'ac-input';
@@ -211,12 +219,7 @@ export class SettingsOverlay {
 				delete input.dataset.hasKey;
 			});
 
-			label.htmlFor = `ac-key-${provider.name}`;
-			input.id = `ac-key-${provider.name}`;
-
-			field.append(label, input);
-			section.appendChild(field);
-
+			section.appendChild(createField(provider.keyLabel, `ac-key-${provider.name}`, input));
 			this.keyInputs[provider.name] = input;
 		}
 
@@ -226,40 +229,20 @@ export class SettingsOverlay {
 	// ── Model Selection Section ───────────────────────────────
 
 	private buildModelSection(): HTMLDivElement {
-		const section = document.createElement('div');
-		section.className = 'ac-section';
-
-		const title = document.createElement('span');
-		title.className = 'ac-section__title';
-		title.textContent = 'Model Selection';
-		section.appendChild(title);
+		const section = createSection('Model Selection');
 
 		for (const provider of SETTINGS_PROVIDERS) {
-			const field = document.createElement('div');
-			field.className = 'ac-field';
-
-			const label = document.createElement('label');
-			label.className = 'ac-field__label';
-			label.textContent = provider.modelLabel;
-
-			let select: HTMLSelectElement;
-			if (provider.catalog.kind === 'grouped') {
-				select = this.buildOptGroupSelect(provider.catalog.groups);
-			} else {
-				select = this.buildFlatSelect(provider.catalog.models);
-			}
+			const select =
+				provider.catalog.kind === 'grouped'
+					? this.buildOptGroupSelect(provider.catalog.groups)
+					: this.buildFlatSelect(provider.catalog.models);
 
 			select.setAttribute('aria-label', provider.modelLabel);
 			select.addEventListener('change', () => {
 				this.dirty = true;
 			});
 
-			label.htmlFor = `ac-model-${provider.name}`;
-			select.id = `ac-model-${provider.name}`;
-
-			field.append(label, select);
-			section.appendChild(field);
-
+			section.appendChild(createField(provider.modelLabel, `ac-model-${provider.name}`, select));
 			this.modelSelects[provider.name] = select;
 		}
 
@@ -306,13 +289,7 @@ export class SettingsOverlay {
 	// ── Provider Priority Section ─────────────────────────────
 
 	private buildProviderPrioritySection(): HTMLDivElement {
-		const section = document.createElement('div');
-		section.className = 'ac-section';
-
-		const title = document.createElement('span');
-		title.className = 'ac-section__title';
-		title.textContent = 'Primary Provider';
-		section.appendChild(title);
+		const section = createSection('Primary Provider');
 
 		const radioGroup = document.createElement('div');
 		radioGroup.className = 'ac-radio-group';
@@ -361,13 +338,7 @@ export class SettingsOverlay {
 	// ── Behavior Section ──────────────────────────────────────
 
 	private buildBehaviorSection(): HTMLDivElement {
-		const section = document.createElement('div');
-		section.className = 'ac-section';
-
-		const title = document.createElement('span');
-		title.className = 'ac-section__title';
-		title.textContent = 'Behavior';
-		section.appendChild(title);
+		const section = createSection('Behavior');
 
 		// Confidence slider
 		const slider = document.createElement('div');
@@ -506,17 +477,18 @@ export class SettingsOverlay {
 
 	private applyLoadedView(view: LoadedSettingsView): void {
 		for (const provider of SETTINGS_PROVIDERS) {
+			const providerView = view.providers[provider.name];
 			const input = this.keyInputs[provider.name];
 			input.value = '';
-			input.placeholder = view.keyPlaceholders[provider.name];
-			if (view.keyHasStoredValue[provider.name]) {
+			input.placeholder = providerView.keyPlaceholder;
+			if (providerView.hasStoredKey) {
 				input.dataset.hasKey = 'true';
 			} else {
 				delete input.dataset.hasKey;
 			}
 
-			this.modelSelects[provider.name].value = view.models[provider.name];
-			this.radioInputs[provider.name].checked = provider.name === view.primaryProvider;
+			this.modelSelects[provider.name].value = providerView.model;
+			this.radioInputs[provider.name].checked = providerView.availability.isPrimary;
 		}
 		this.updateRadioVisuals();
 
@@ -532,55 +504,44 @@ export class SettingsOverlay {
 		this.onboardingBanner.classList.toggle('ac-hidden', view.onboardingComplete);
 	}
 
+	private setActionPending(
+		action: Exclude<SettingsWorkflowAction, 'load'>,
+		pending: boolean,
+	): void {
+		if (action === 'save') {
+			this.saveBtn.disabled = pending;
+			this.saveBtn.textContent = pending ? 'Saving...' : '💾 Save Settings';
+			return;
+		}
+
+		this.testBtn.disabled = pending;
+		this.testBtn.textContent = pending ? 'Testing...' : '🔌 Test Connection';
+	}
+
 	/**
 	 * Load current settings from chrome.storage and populate form.
 	 * Key masking: existing keys show `••••••••••xxxx` as placeholder.
 	 */
 	private async loadSettings(): Promise<void> {
-		this.applyLoadedView(await loadSettingsView());
+		await this.workflow.load();
 	}
 
 	/**
-	 * Handle Save — persist settings via storage.ts.
-	 * Exactly matches the save logic from options.ts:
+	 * Handle Save — persist settings via the shared workflow controller.
 	 *   - If user typed → save new key
 	 *   - If untouched (hasKey) → keep existing key
 	 *   - If cleared → save empty string
 	 */
 	private async handleSave(): Promise<void> {
-		try {
-			this.saveBtn.disabled = true;
-			this.saveBtn.textContent = 'Saving...';
-
-			this.applyLoadedView(await saveSettingsFromSnapshot(this.getSnapshot()));
-
-			this.dirty = false;
-			this.showStatus('✅ Settings saved successfully!', 'success');
-		} catch {
-			this.showStatus('Failed to save settings. Please try again.', 'error');
-		} finally {
-			this.saveBtn.disabled = false;
-			this.saveBtn.textContent = '💾 Save Settings';
-		}
+		await this.workflow.save();
 	}
 
 	/**
-	 * Handle Test Connection — send staged settings through TEST_CONNECTION,
-	 * exactly matching the isolated connection test logic from options.ts.
+	 * Handle Test Connection — send staged settings through TEST_CONNECTION
+	 * via the shared workflow controller.
 	 */
 	private async handleTest(): Promise<void> {
-		try {
-			this.testBtn.disabled = true;
-			this.testBtn.textContent = 'Testing...';
-
-			const result = await testSettingsConnection(this.getSnapshot());
-			this.showStatus(result.message, result.type);
-		} catch {
-			this.showStatus('❌ Connection failed', 'error');
-		} finally {
-			this.testBtn.disabled = false;
-			this.testBtn.textContent = '🔌 Test Connection';
-		}
+		await this.workflow.test();
 	}
 
 	// ── Status Message ────────────────────────────────────────

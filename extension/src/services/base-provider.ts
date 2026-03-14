@@ -6,44 +6,31 @@
 import type {
 	AIBatchRequest,
 	AIBatchResponse,
-	AIRequest,
-	AIResponse,
 	APICompletionResponse,
 	ChatMessage,
 	ContentPart,
 	IAIProvider,
 } from '../types/api';
+import { throwIfAborted, waitWithAbort } from '../utils/abort';
+import { ERROR_CODES } from '../utils/constants';
+import { Logger } from '../utils/logger';
+import type { RateLimiter } from '../utils/rate-limiter';
 import {
 	AI_MAX_TOKENS,
 	AI_TEMPERATURE,
 	AI_TOP_P,
 	DEFAULT_REQUEST_TIMEOUT_MS,
-	ERROR_CODES,
 	MAX_RETRIES,
 	RETRY_BACKOFF_BASE_MS,
 	RETRY_JITTER_MS,
-} from '../utils/constants';
-import { Logger } from '../utils/logger';
-import type { RateLimiter } from '../utils/rate-limiter';
-import {
-	BATCH_SYSTEM_PROMPT,
-	buildBatchPrompt,
-	buildPrompt,
-	formatBatchQuestion,
-	SYSTEM_PROMPT,
-} from './prompt-engine';
-import { parseAIResponse, parseBatchAIResponse } from './response-parser';
+} from './constants';
+import { BATCH_SYSTEM_PROMPT, buildBatchPrompt, formatBatchQuestion } from './prompt-engine';
+import { parseBatchAIResponse } from './response-parser';
 
 function isAbortError(error: unknown): boolean {
 	return error instanceof DOMException
 		? error.name === 'AbortError'
 		: error instanceof Error && error.name === 'AbortError';
-}
-
-function throwIfAborted(signal?: AbortSignal): void {
-	if (signal?.aborted) {
-		throw new Error(ERROR_CODES.REQUEST_CANCELLED);
-	}
 }
 
 function attachAbortSignal(
@@ -62,55 +49,7 @@ function attachAbortSignal(
 	return () => externalSignal.removeEventListener('abort', onAbort);
 }
 
-async function delayWithAbort(delayMs: number, signal?: AbortSignal): Promise<void> {
-	if (!signal) {
-		await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
-		return;
-	}
-
-	throwIfAborted(signal);
-
-	await new Promise<void>((resolve, reject) => {
-		const timeoutId = setTimeout(() => {
-			signal.removeEventListener('abort', onAbort);
-			resolve();
-		}, delayMs);
-
-		const onAbort = () => {
-			clearTimeout(timeoutId);
-			signal.removeEventListener('abort', onAbort);
-			reject(new Error(ERROR_CODES.REQUEST_CANCELLED));
-		};
-
-		signal.addEventListener('abort', onAbort, { once: true });
-	});
-}
-
-/** JSON Schema for single question solve — enforces structured AI output */
-export const SINGLE_ANSWER_SCHEMA = {
-	name: 'quiz_answer',
-	strict: true,
-	schema: {
-		type: 'object',
-		properties: {
-			answer: {
-				type: 'array',
-				items: { type: 'integer' },
-				description: 'Zero-based indices of correct options',
-			},
-			confidence: {
-				type: 'number',
-				description: 'Confidence score between 0 and 1',
-			},
-			reasoning: {
-				type: 'string',
-				description: 'Brief explanation for the answer',
-			},
-		},
-		required: ['answer', 'confidence', 'reasoning'],
-		additionalProperties: false,
-	},
-};
+const delayWithAbort = waitWithAbort;
 
 /** JSON Schema for batch question solve — wraps answers in an object */
 export const BATCH_ANSWER_SCHEMA = {
@@ -294,30 +233,13 @@ export abstract class BaseAIProvider implements IAIProvider {
 		throw new Error(`${providerName}: Max retries exceeded`);
 	}
 
-	async solve(request: AIRequest): Promise<AIResponse> {
-		await this.rateLimiter.acquire(request.signal);
-		const startTime = Date.now();
-
-		const messages = this.buildMessages(request);
-		const responseFormat = this.getResponseFormat(SINGLE_ANSWER_SCHEMA);
-		const data = await this.callAPI(messages, AI_MAX_TOKENS, responseFormat, request.signal);
-		const parsed = parseAIResponse(data.choices?.[0]?.message?.content ?? '');
-
-		return {
-			answerIndices: parsed.answer.filter((i) => i >= 0 && i < request.options.length),
-			confidence: Math.min(1, Math.max(0, parsed.confidence)),
-			reasoning: parsed.reasoning,
-			provider: this.name,
-			model: this.model,
-			tokensUsed: data.usage?.total_tokens ?? 0,
-			latencyMs: Date.now() - startTime,
-		};
-	}
-
 	async solveBatch(batchRequest: AIBatchRequest): Promise<AIBatchResponse> {
 		await this.rateLimiter.acquire(batchRequest.signal);
 		const messages = this.buildBatchMessages(batchRequest);
-		const scaledTokens = Math.max(4096, batchRequest.questions.length * 384);
+		const scaledTokens = Math.min(
+			AI_MAX_TOKENS,
+			Math.max(4096, batchRequest.questions.length * 1024),
+		);
 		const responseFormat = this.getResponseFormat(BATCH_ANSWER_SCHEMA);
 		const response = await this.callAPI(
 			messages,
@@ -367,34 +289,6 @@ export abstract class BaseAIProvider implements IAIProvider {
 		return [
 			{ role: 'system', content: BATCH_SYSTEM_PROMPT },
 			{ role: 'user', content: buildBatchPrompt(req) },
-		];
-	}
-
-	/**
-	 * Build chat messages. Uses image_url content parts for vision.
-	 */
-	protected buildMessages(request: AIRequest): ChatMessage[] {
-		const prompt = buildPrompt(request);
-
-		if (request.images?.length) {
-			const contentParts: ContentPart[] = [
-				{ type: 'text', text: prompt },
-				...request.images.map((img) => ({
-					type: 'image_url' as const,
-					image_url: {
-						url: `data:${img.mime || 'image/png'};base64,${img.base64}`,
-					},
-				})),
-			];
-			return [
-				{ role: 'system' as const, content: SYSTEM_PROMPT },
-				{ role: 'user' as const, content: contentParts },
-			];
-		}
-
-		return [
-			{ role: 'system', content: SYSTEM_PROMPT },
-			{ role: 'user', content: prompt },
 		];
 	}
 }

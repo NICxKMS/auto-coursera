@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
 	buildLoadedSettingsView,
+	buildProviderAvailability,
 	buildSettingsSavePayload,
 	buildTestConnectionSettings,
+	createSettingsWorkflowController,
 	loadSettingsView,
 	normalizeTestConnectionResponse,
+	resolveSettingsSnapshot,
 	type SettingsFormSnapshot,
 	testSettingsConnection,
 } from '../../src/settings/domain';
@@ -48,8 +51,28 @@ describe('settings domain', () => {
 
 		expect(view.keyPlaceholders.openrouter).toBe('••••••••••1234');
 		expect(view.keyHasStoredValue.openrouter).toBe(true);
+		expect(view.providers.openrouter.availability.isConfigured).toBe(true);
+		expect(view.hasAvailableProvider).toBe(true);
+		expect(view.availableProviders).toEqual(['openrouter']);
 		expect(view.keyPlaceholders.gemini).toBe('AIza...');
 		expect(view.onboardingComplete).toBe(true);
+	});
+
+	it('buildProviderAvailability marks configured and primary providers without taking runtime authority', () => {
+		const availability = buildProviderAvailability(
+			{
+				openrouterApiKey: '',
+				nvidiaApiKey: 'nvapi-123',
+				geminiApiKey: '',
+				groqApiKey: 'gsk_123',
+				cerebrasApiKey: '',
+			},
+			'groq',
+		);
+
+		expect(availability.openrouter).toEqual({ isConfigured: false, isPrimary: false });
+		expect(availability['nvidia-nim']).toEqual({ isConfigured: true, isPrimary: false });
+		expect(availability.groq).toEqual({ isConfigured: true, isPrimary: true });
 	});
 
 	it('loadSettingsView treats corrupt encrypted stored keys as unconfigured for onboarding', async () => {
@@ -122,6 +145,31 @@ describe('settings domain', () => {
 		expect(payload.nvidiaApiKey).toBe('staged-nvidia-key');
 		expect(payload.primaryProvider).toBe('nvidia-nim');
 		expect(payload.nvidiaModel).toBe('z-ai/glm5');
+	});
+
+	it('resolveSettingsSnapshot derives available providers from staged and persisted keys', () => {
+		const resolved = resolveSettingsSnapshot(
+			createSnapshot({
+				keyInputs: {
+					openrouter: { value: '', hasStoredValue: true },
+					'nvidia-nim': { value: 'staged-nvidia-key', hasStoredValue: false },
+					gemini: { value: '', hasStoredValue: false },
+					groq: { value: '', hasStoredValue: false },
+					cerebras: { value: '', hasStoredValue: false },
+				},
+				primaryProvider: 'nvidia-nim',
+			}),
+			{
+				...DEFAULT_SETTINGS,
+				openrouterApiKey: 'stored-openrouter-key',
+			},
+		);
+
+		expect(resolved.resolvedApiKeys.openrouterApiKey).toBe('stored-openrouter-key');
+		expect(resolved.resolvedApiKeys.nvidiaApiKey).toBe('staged-nvidia-key');
+		expect(resolved.availableProviders).toEqual(['openrouter', 'nvidia-nim']);
+		expect(resolved.hasAvailableProvider).toBe(true);
+		expect(resolved.primaryProviderConfigured).toBe(true);
 	});
 
 	it('normalizeTestConnectionResponse formats successful and fallback responses', () => {
@@ -200,5 +248,84 @@ describe('settings domain', () => {
 			},
 		});
 		expect(result.type).toBe('success');
+	});
+
+	it('createSettingsWorkflowController shares load, save, and test orchestration for settings surfaces', async () => {
+		const snapshot = createSnapshot({
+			keyInputs: {
+				openrouter: { value: 'typed-openrouter-key', hasStoredValue: false },
+				'nvidia-nim': { value: '', hasStoredValue: false },
+				gemini: { value: '', hasStoredValue: false },
+				groq: { value: '', hasStoredValue: false },
+				cerebras: { value: '', hasStoredValue: false },
+			},
+		});
+		const appliedViews: ReturnType<typeof buildLoadedSettingsView>[] = [];
+		const statuses: Array<{ message: string; type: 'success' | 'error' }> = [];
+		const pendingTransitions: Array<[action: 'save' | 'test', pending: boolean]> = [];
+		const pristineCalls: string[] = [];
+		const errors: string[] = [];
+
+		chromeMock.runtime.sendMessage.mockResolvedValue({
+			type: 'TEST_CONNECTION',
+			payload: {
+				success: true,
+				provider: 'openrouter',
+				model: DEFAULT_SETTINGS.openrouterModel,
+				confidence: 0.9,
+				message: 'Connection successful.',
+			},
+		});
+
+		const controller = createSettingsWorkflowController(
+			{
+				getSnapshot: () => snapshot,
+				applyLoadedView: (view) => {
+					appliedViews.push(view);
+				},
+				setActionPending: (action, pending) => {
+					pendingTransitions.push([action, pending]);
+				},
+				showStatus: (result) => {
+					statuses.push(result);
+				},
+				markPristine: () => {
+					pristineCalls.push('called');
+				},
+			},
+			{
+				saveSuccess: 'Saved!',
+				saveError: 'Save failed.',
+				testError: 'Test failed.',
+			},
+			{
+				onError: (action) => {
+					errors.push(action);
+				},
+			},
+		);
+
+		await controller.load();
+		const saveResult = await controller.save();
+		const testResult = await controller.test();
+
+		expect(appliedViews).toHaveLength(2);
+		expect(saveResult.ok).toBe(true);
+		expect(testResult).toEqual({
+			type: 'success',
+			message: '✅ openrouter (openrouter/free): Connected',
+		});
+		expect(statuses).toEqual([
+			{ type: 'success', message: 'Saved!' },
+			{ type: 'success', message: '✅ openrouter (openrouter/free): Connected' },
+		]);
+		expect(pristineCalls).toEqual(['called']);
+		expect(pendingTransitions).toEqual([
+			['save', true],
+			['save', false],
+			['test', true],
+			['test', false],
+		]);
+		expect(errors).toEqual([]);
 	});
 });

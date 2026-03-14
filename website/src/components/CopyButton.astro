@@ -1,0 +1,197 @@
+---
+// CopyButton — Copy-to-clipboard button with brief "Copied!" feedback.
+
+interface Props {
+	text: string;
+	label?: string;
+}
+
+const { text, label = 'Copy to clipboard' } = Astro.props;
+---
+
+<button class="copy-btn" type="button" aria-label={label} data-copy-text={text}>
+	<svg
+		class="copy-btn__icon copy-btn__icon--copy"
+		width="16"
+		height="16"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		stroke-width="2"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+		aria-hidden="true"
+	>
+		<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+		<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+	</svg>
+	<svg
+		class="copy-btn__icon copy-btn__icon--check"
+		width="16"
+		height="16"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		stroke-width="2"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+		aria-hidden="true"
+	>
+		<polyline points="20 6 9 17 4 12"></polyline>
+	</svg>
+	<svg
+		class="copy-btn__icon copy-btn__icon--fail"
+		width="16"
+		height="16"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		stroke-width="2"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+		aria-hidden="true"
+	>
+		<line x1="18" y1="6" x2="6" y2="18"></line>
+		<line x1="6" y1="6" x2="18" y2="18"></line>
+	</svg>
+	<span class="copy-btn__label">Copy</span>
+	<span class="copy-btn__label copy-btn__label--done">Copied!</span>
+	<span class="copy-btn__label copy-btn__label--fail">Failed!</span>
+</button>
+
+<script>
+	const copyControllers = new WeakMap<HTMLButtonElement, AbortController>();
+
+	function initCopyButtons() {
+		document.querySelectorAll<HTMLButtonElement>('.copy-btn').forEach((btn) => {
+			// Abort any previous controller for this element
+			const prev = copyControllers.get(btn);
+			if (prev) prev.abort();
+
+			const controller = new AbortController();
+			copyControllers.set(btn, controller);
+
+			btn.addEventListener('click', async () => {
+				const text = btn.dataset.copyText;
+				if (!text) return;
+
+				let copied = false;
+
+				try {
+					await navigator.clipboard.writeText(text);
+					copied = true;
+				} catch {
+					// Fallback for older browsers
+					try {
+						const textarea = document.createElement('textarea');
+						textarea.value = text;
+						textarea.style.position = 'fixed';
+						textarea.style.opacity = '0';
+						document.body.appendChild(textarea);
+						textarea.select();
+						copied = document.execCommand('copy');
+						document.body.removeChild(textarea);
+					} catch {
+						copied = false;
+					}
+				}
+
+				if (copied) {
+					btn.classList.add('copy-btn--copied');
+					setTimeout(() => {
+						btn.classList.remove('copy-btn--copied');
+					}, 2000);
+				} else {
+					btn.classList.add('copy-btn--failed');
+					setTimeout(() => {
+						btn.classList.remove('copy-btn--failed');
+					}, 3000);
+				}
+			}, { signal: controller.signal });
+		});
+	}
+
+	initCopyButtons();
+	document.addEventListener('astro:after-swap', initCopyButtons);
+</script>
+
+<style>
+	.copy-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		min-height: 44px;
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		color: var(--text-muted);
+		background: none;
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius-sm);
+		cursor: pointer;
+		transition:
+			color var(--transition-fast),
+			border-color var(--transition-fast),
+			background-color var(--transition-fast);
+		line-height: 1;
+		white-space: nowrap;
+	}
+
+	.copy-btn:hover {
+		color: var(--accent);
+		border-color: var(--accent);
+		background-color: var(--accent-subtle);
+	}
+
+	/* Icons */
+	.copy-btn__icon--check,
+	.copy-btn__icon--fail,
+	.copy-btn__label--done,
+	.copy-btn__label--fail {
+		display: none;
+	}
+
+	.copy-btn--copied .copy-btn__icon--copy,
+	.copy-btn--copied .copy-btn__label:not(.copy-btn__label--done) {
+		display: none;
+	}
+
+	.copy-btn--copied .copy-btn__icon--check,
+	.copy-btn--copied .copy-btn__label--done {
+		display: inline;
+	}
+
+	.copy-btn--copied {
+		color: var(--success);
+		border-color: var(--success);
+	}
+
+	.copy-btn--copied:hover {
+		color: var(--success);
+		border-color: var(--success);
+		background-color: transparent;
+	}
+
+	/* Failed state */
+	.copy-btn--failed .copy-btn__icon--copy,
+	.copy-btn--failed .copy-btn__label:not(.copy-btn__label--fail) {
+		display: none;
+	}
+
+	.copy-btn--failed .copy-btn__icon--fail,
+	.copy-btn--failed .copy-btn__label--fail {
+		display: inline;
+	}
+
+	.copy-btn--failed {
+		color: var(--error);
+		border-color: var(--error);
+	}
+
+	.copy-btn--failed:hover {
+		color: var(--error);
+		border-color: var(--error);
+		background-color: transparent;
+	}
+</style>

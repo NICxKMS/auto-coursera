@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
+import { getPopupRuntimeSnapshot } from '../../src/popup/popup';
 import {
 	createDefaultRuntimeState,
 	getRuntimeScopeId,
 	SESSION_RUNTIME_SCOPES_KEY,
 	SESSION_RUNTIME_TAB_SCOPES_KEY,
 } from '../../src/types/runtime';
-import { getPopupRuntimeSnapshot } from '../../src/popup/popup';
 
 function buildRuntimeState(
 	tabId: number,

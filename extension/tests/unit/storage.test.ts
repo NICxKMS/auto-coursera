@@ -34,7 +34,6 @@ describe('Storage', () => {
 			expect(settings.primaryProvider).toBe('openrouter');
 			expect(settings.confidenceThreshold).toBe(0.7);
 			expect(settings.autoSelect).toBe(true);
-			expect(settings.maxRetries).toBe(2);
 			expect(settings.rateLimitRpm).toBe(20);
 		});
 

@@ -1,150 +1,380 @@
 ---
-import Footer from '../../components/Footer.astro';
-import Header from '../../components/Header.astro';
-import Base from '../../layouts/Base.astro';
+import DocsLayout from '../../layouts/DocsLayout.astro';
 ---
 
-<Base title="Documentation" description="Documentation hub for Auto-Coursera Assistant. Public setup, architecture, install, and troubleshooting references.">
-  <Header />
+<DocsLayout
+	title="Getting Started Guide"
+	description="Learn how to use Auto-Coursera. Quick start guide for the AI-powered Coursera quiz assistant."
+	breadcrumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Docs' },
+	]}
+	next={{ label: 'Setup Guide', href: '/docs/setup/' }}
+>
+	<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
+	<h1>Getting Started</h1>
+	<p class="hero__lead">
+		Quick start guide for Auto-Coursera — from install to answers in five steps.
+	</p>
+	<p>
+		Auto-Coursera is a free, open-source browser extension that uses AI to answer
+		Coursera quiz questions automatically. It detects questions on the page, sends
+		them to an AI provider, and highlights the best answers with confidence colors —
+		so you always know how sure the model is.
+	</p>
 
-  <main id="main-content" class="py-16 sm:py-24 px-4">
-    <div class="max-w-4xl mx-auto">
-      <!-- Title -->
-      <div class="text-center mb-16 animate-fade-in">
-        <p class="section-label">Docs</p>
-        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Documentation</h1>
-        <p class="text-lg text-surface-400 max-w-xl mx-auto">
-          Recommended installers first, plus public setup, architecture, manual, and troubleshooting references when you need them.
-        </p>
-      </div>
+	<!-- ===== The Workflow ===== -->
+	<h2>The Workflow</h2>
+	<p>Five steps from install to answers:</p>
+	<ol class="docs-steps">
+		<li>
+			<strong>Install the extension</strong> — use the
+			<a href="/install/">one-command installer</a> or download from
+			<a href="/downloads/">releases</a>
+		</li>
+		<li>
+			<strong>Configure an API key</strong> — all providers are free. See the
+			<a href="/docs/setup/">Setup Guide</a>
+		</li>
+		<li>
+			<strong>Navigate to a Coursera quiz</strong> — any graded or practice quiz
+		</li>
+		<li>
+			<strong>Click the floating 🎓 button</strong> (or press
+			<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> to scan)
+		</li>
+		<li>
+			<strong>Answers appear highlighted</strong> with confidence colors
+		</li>
+	</ol>
 
-      <!-- ═══════════════════ DOC CARDS ═══════════════════ -->
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-16 animate-slide-up delay-100">
-        <!-- Installation Guide -->
-        <a href="/install" class="card-interactive group block">
-          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 mb-4 group-hover:bg-primary-500/20 transition-colors">
-            <svg class="w-6 h-6 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-white mb-1.5">Installation Guide</h3>
-          <p class="text-sm text-surface-400 leading-relaxed">Recommended installer path for Windows, macOS, and Linux. Configures supported Chromium browsers for you.</p>
-        </a>
+	<!-- ===== What to Expect ===== -->
+	<h2>What to Expect</h2>
+	<p>
+		Every answer is highlighted with a color that reflects the model's confidence:
+	</p>
+	<div class="docs-confidence">
+		<div class="docs-confidence__item docs-confidence__item--green">
+			<span class="docs-confidence__badge" aria-hidden="true">✓</span>
+			<div>
+				<strong>High confidence</strong>
+				<span class="docs-confidence__color-label">Green highlight · score ≥ 0.8</span>
+				<p>Auto-selected if you've enabled it in settings.</p>
+			</div>
+		</div>
+		<div class="docs-confidence__item docs-confidence__item--yellow">
+			<span class="docs-confidence__badge" aria-hidden="true">~</span>
+			<div>
+				<strong>Review suggested</strong>
+				<span class="docs-confidence__color-label">Yellow highlight · score 0.5–0.8</span>
+				<p>Shown but not clicked. Worth reviewing before submitting.</p>
+			</div>
+		</div>
+		<div class="docs-confidence__item docs-confidence__item--red">
+			<span class="docs-confidence__badge" aria-hidden="true">!</span>
+			<div>
+				<strong>Low confidence</strong>
+				<span class="docs-confidence__color-label">Red highlight · score &lt; 0.5</span>
+				<p>Flagged for your review. The model isn't sure about this one.</p>
+			</div>
+		</div>
+	</div>
+	<p class="docs-confidence__note">
+		<strong>Note:</strong> A red highlight can also indicate an API error or
+		timeout rather than a confidence judgment. If you see red on every answer,
+		check your API key and network connection.
+	</p>
 
-        <!-- Manual Installation -->
-        <a href="/docs/manual" class="card-interactive group block">
-          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 mb-4 group-hover:bg-primary-500/20 transition-colors">
-            <svg class="w-6 h-6 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="4 17 10 11 4 5"></polyline>
-              <line x1="12" y1="19" x2="20" y2="19"></line>
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-white mb-1.5">Manual Installation</h3>
-          <p class="text-sm text-surface-400 leading-relaxed">Advanced browser-policy steps for Chrome, Edge, Brave, and Chromium on each OS.</p>
-        </a>
+	<!-- ===== Supported Question Types ===== -->
+	<h2>Supported Question Types</h2>
+	<p>
+		The extension detects and answers the following Coursera question formats:
+	</p>
+	<h3>Supported</h3>
+	<ul>
+		<li><strong>Multiple choice</strong> — single-answer radio questions</li>
+		<li><strong>Multiple select</strong> — checkbox questions with multiple correct answers</li>
+		<li><strong>True / False</strong> — detected as single-answer radio questions</li>
+		<li><strong>Free-form numeric input</strong> — number input fields (e.g., calculated answers)</li>
+	</ul>
+	<p>
+		Questions with images are also supported when using a vision-capable model
+		(e.g., NVIDIA NIM).
+	</p>
 
-        <!-- Troubleshooting -->
-        <a href="/docs/troubleshoot" class="card-interactive group block">
-          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 mb-4 group-hover:bg-primary-500/20 transition-colors">
-            <svg class="w-6 h-6 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-white mb-1.5">Troubleshooting</h3>
-          <p class="text-sm text-surface-400 leading-relaxed">Common issues and their solutions. Fix problems quickly.</p>
-        </a>
+	<h3>Not currently supported</h3>
+	<ul class="docs-unsupported">
+		<li>Drag-and-drop</li>
+		<li>Ordering / ranking</li>
+		<li>Matching / pairing</li>
+		<li>Essay / long-form writing</li>
+		<li>Code expression (free-form code editor)</li>
+		<li>Image-based / drawing questions</li>
+		<li>Peer-reviewed assignments</li>
+	</ul>
+	<p>
+		Unsupported question types are silently skipped — they won't cause errors,
+		but the extension won't attempt to answer them.
+	</p>
 
-        <!-- Setup -->
-        <a href="/docs/setup" class="card-interactive group block">
-          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 mb-4 group-hover:bg-primary-500/20 transition-colors">
-            <svg class="w-6 h-6 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 6v12"></path>
-              <path d="M6 12h12"></path>
-              <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path>
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-white mb-1.5">Setup Guide</h3>
-          <p class="text-sm text-surface-400 leading-relaxed">Public deployment summary for operators who need the self-hosted stack, secrets, and release flow at a glance.</p>
-        </a>
+	<!-- ===== Explore the Docs ===== -->
+	<h2>Explore the Docs</h2>
+	<div class="docs-cards">
+		<a href="/docs/setup/" class="docs-card">
+			<h3>Setup Guide</h3>
+			<p>Configure AI providers and get your free API keys.</p>
+		</a>
+		<a href="/docs/manual/" class="docs-card">
+			<h3>Manual Installation</h3>
+			<p>Build from source or install manually on any Chromium browser.</p>
+		</a>
+		<a href="/docs/troubleshoot/" class="docs-card">
+			<h3>Troubleshooting</h3>
+			<p>Fix common issues with detection, API keys, and browser compatibility.</p>
+		</a>
+		<a href="/docs/architecture/" class="docs-card">
+			<h3>Architecture</h3>
+			<p>Technical deep-dive into how the extension works under the hood.</p>
+		</a>
+	</div>
 
-        <!-- Architecture -->
-        <a href="/docs/architecture" class="card-interactive group block">
-          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 mb-4 group-hover:bg-primary-500/20 transition-colors">
-            <svg class="w-6 h-6 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="7" height="7" rx="1"></rect>
-              <rect x="14" y="4" width="7" height="7" rx="1"></rect>
-              <rect x="8.5" y="13" width="7" height="7" rx="1"></rect>
-              <path d="M10 7.5h4"></path>
-              <path d="M12 11v2"></path>
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-white mb-1.5">Architecture</h3>
-          <p class="text-sm text-surface-400 leading-relaxed">High-level map of the website, installers, scripts, GitHub Releases, and browser policy update flow.</p>
-        </a>
+	<!-- ===== Keyboard Shortcuts ===== -->
+	<h2>Keyboard Shortcuts</h2>
+	<div class="docs-table-wrap">
+		<table>
+			<thead>
+				<tr>
+					<th>Shortcut</th>
+					<th>Action</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd></td>
+					<td>Open the popup</td>
+				</tr>
+				<tr>
+					<td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td>
+					<td>Scan page for questions</td>
+				</tr>
+				<tr>
+					<td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></td>
+					<td>Toggle extension on/off</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
 
-        <!-- Downloads -->
-        <a href="/downloads" class="card-interactive group block">
-          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 mb-4 group-hover:bg-primary-500/20 transition-colors">
-            <svg class="w-6 h-6 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-white mb-1.5">Downloads</h3>
-          <p class="text-sm text-surface-400 leading-relaxed">Installer binaries first, plus advanced scripts and direct download shortcuts in one place.</p>
-        </a>
+	<!-- ===== Install CTA ===== -->
+	<aside class="install-cta" aria-label="Install Auto-Coursera">
+		<p class="install-cta__text">Ready to install? It takes one command.</p>
+		<a href="/install/" class="btn btn--primary">Install Auto-Coursera</a>
+	</aside>
+</DocsLayout>
 
-        <!-- Release History -->
-        <a href="/releases" class="card-interactive group block">
-          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 mb-4 group-hover:bg-primary-500/20 transition-colors">
-            <svg class="w-6 h-6 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="16 18 22 12 16 6"></polyline>
-              <polyline points="8 6 2 12 8 18"></polyline>
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-white mb-1.5">Release History</h3>
-          <p class="text-sm text-surface-400 leading-relaxed">Browse past releases and download older versions.</p>
-        </a>
+<style>
+	/* ===== Product tagline ===== */
+	.hero__product {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-block-end: var(--space-2);
+	}
 
-        <!-- Support -->
-        <a href="/support" class="card-interactive group block">
-          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/10 mb-4 group-hover:bg-primary-500/20 transition-colors">
-            <svg class="w-6 h-6 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-white mb-1.5">Support</h3>
-          <p class="text-sm text-surface-400 leading-relaxed">FAQ, bug reports, and community help for common questions.</p>
-        </a>
-      </div>
+	/* ===== Hero lead ===== */
+	.hero__lead {
+		color: var(--text-secondary);
+		font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+		margin-block-end: var(--space-5);
+	}
 
-      <!-- ═══════════════════ QUICK LINKS ═══════════════════ -->
-      <section class="animate-slide-up delay-200">
-        <div class="glass p-8">
-          <h2 class="text-lg font-semibold text-white mb-4">Quick Links</h2>
-          <div class="flex flex-wrap gap-3">
-            <a href="https://github.com/nicxkms/auto-coursera" target="_blank" rel="noopener noreferrer" class="btn-secondary text-sm gap-2 px-5 py-2.5">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-              GitHub Repository
-            </a>
-            <a href="https://github.com/nicxkms/auto-coursera/issues/new" target="_blank" rel="noopener noreferrer" class="btn-secondary text-sm gap-2 px-5 py-2.5">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              Report an Issue
-            </a>
-            <a href="/privacy" class="btn-ghost text-sm px-4 py-2.5">
-              Privacy Policy
-            </a>
-          </div>
-        </div>
-      </section>
-    </div>
-  </main>
+	/* ===== Steps list ===== */
+	.docs-steps li {
+		margin-block: var(--space-3);
+	}
 
-  <Footer />
-</Base>
+	.docs-steps strong {
+		color: var(--text-primary);
+	}
+
+	/* ===== Confidence indicators ===== */
+	.docs-confidence {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+		margin-block: var(--space-5);
+	}
+
+	.docs-confidence__item {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-4);
+	}
+
+	.docs-confidence__badge {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 26px;
+		height: 26px;
+		border-radius: 50%;
+		margin-top: 2px;
+		font-size: var(--text-small);
+		font-weight: var(--weight-bold);
+		line-height: 1;
+	}
+
+	.docs-confidence__item--green .docs-confidence__badge {
+		background-color: var(--success);
+		color: #fff;
+	}
+
+	.docs-confidence__item--yellow .docs-confidence__badge {
+		background-color: var(--warning);
+		color: #000;
+	}
+
+	.docs-confidence__item--red .docs-confidence__badge {
+		background-color: var(--error);
+		color: #fff;
+	}
+
+	.docs-confidence__color-label {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin-block-end: var(--space-1);
+	}
+
+	.docs-confidence__item strong {
+		display: block;
+		color: var(--text-primary);
+		margin-block-end: 2px;
+	}
+
+	.docs-confidence__item p {
+		margin: 0;
+		font-size: var(--text-body);
+	}
+
+	.docs-confidence__note {
+		margin-block-start: var(--space-4);
+		padding: var(--space-3) var(--space-4);
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-inline-start: 3px solid var(--error);
+		border-radius: var(--border-radius);
+		font-size: var(--text-body);
+		color: var(--text-secondary);
+		line-height: var(--leading-normal);
+	}
+
+	.docs-confidence__note strong {
+		color: var(--text-primary);
+	}
+
+	/* ===== Unsupported list ===== */
+	.docs-unsupported {
+		color: var(--text-muted);
+	}
+
+	/* ===== Doc cards ===== */
+	.docs-cards {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-4);
+		margin-block: var(--space-5);
+	}
+
+	.docs-card {
+		display: block;
+		padding: var(--space-5);
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		text-decoration: none;
+		transition:
+			border-color var(--transition-fast),
+			background-color var(--transition-fast);
+	}
+
+	.docs-card:hover {
+		border-color: var(--accent);
+		background-color: var(--surface-hover);
+		text-decoration: none;
+	}
+
+	.docs-card h3 {
+		color: var(--accent);
+		font-size: var(--text-body);
+		margin-block-end: var(--space-2);
+	}
+
+	.docs-card p {
+		color: var(--text-secondary);
+		font-size: var(--text-small);
+		margin: 0;
+		line-height: var(--leading-normal);
+	}
+
+	@media (min-width: 480px) {
+		.docs-cards {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	/* ===== Table ===== */
+	.docs-table-wrap {
+		overflow-x: auto;
+		margin-block: var(--space-5);
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: var(--text-body);
+	}
+
+	th,
+	td {
+		text-align: left;
+		padding: var(--space-3) var(--space-4);
+		border-bottom: 1px solid var(--border);
+	}
+
+	th {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-muted);
+	}
+
+	td {
+		color: var(--text-secondary);
+	}
+
+	/* ===== Install CTA ===== */
+
+	.install-cta {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-4);
+		padding: var(--space-8) var(--space-5);
+		text-align: center;
+		border-block-start: 1px solid var(--border);
+		background-color: var(--bg-void);
+	}
+
+	.install-cta__text {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		max-width: 40ch;
+	}
+</style>

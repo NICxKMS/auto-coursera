@@ -1,9 +1,12 @@
 export type RuntimeStatus = 'idle' | 'processing' | 'active' | 'error' | 'disabled';
 
-export interface RuntimeScopeDescriptor {
-	tabId: number;
+export interface PageRuntimeScope {
 	pageInstanceId: string;
 	pageUrl: string;
+}
+
+export interface RuntimeScopeDescriptor extends PageRuntimeScope {
+	tabId: number;
 	scopeId: string;
 }
 
@@ -34,6 +37,47 @@ export const SESSION_RUNTIME_TAB_SCOPES_KEY = '_runtimeTabScopes';
 
 export function getRuntimeScopeId(tabId: number, pageInstanceId: string): string {
 	return `${tabId}:${pageInstanceId}`;
+}
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+	return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+export function isPageRuntimeScope(value: unknown): value is PageRuntimeScope {
+	return (
+		isRecord(value) && typeof value.pageInstanceId === 'string' && typeof value.pageUrl === 'string'
+	);
+}
+
+export function isRuntimeScopeDescriptor(value: unknown): value is RuntimeScopeDescriptor {
+	return (
+		isPageRuntimeScope(value) &&
+		isRecord(value) &&
+		typeof value.tabId === 'number' &&
+		typeof value.scopeId === 'string'
+	);
+}
+
+export function isRuntimeStateView(value: unknown): value is RuntimeStateView {
+	return (
+		isRuntimeScopeDescriptor(value) &&
+		isRecord(value) &&
+		(value.status === 'idle' ||
+			value.status === 'processing' ||
+			value.status === 'active' ||
+			value.status === 'error' ||
+			value.status === 'disabled') &&
+		typeof value.provider === 'string' &&
+		typeof value.model === 'string' &&
+		(value.confidence === null || typeof value.confidence === 'number') &&
+		typeof value.lastError === 'string' &&
+		typeof value.solvedCount === 'number' &&
+		typeof value.failedCount === 'number' &&
+		typeof value.tokenCount === 'number' &&
+		typeof value.processingCount === 'number' &&
+		(value.currentRequestId === null || typeof value.currentRequestId === 'string') &&
+		typeof value.updatedAt === 'number'
+	);
 }
 
 export function createDefaultRuntimeState(

@@ -1,4 +1,4 @@
-module github.com/nicx/auto-coursera/installer
+module github.com/nicxkms/auto-courseraera/installer
 
 go 1.22
 

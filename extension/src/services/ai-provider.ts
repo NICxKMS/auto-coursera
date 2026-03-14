@@ -1,15 +1,8 @@
 /**
  * AI Provider Manager — Strategy pattern with ordered fallback.
- * REQ: REQ-008 — provider fallback on failure
  */
 
-import type {
-	AIBatchRequest,
-	AIBatchResponse,
-	AIRequest,
-	AIResponse,
-	IAIProvider,
-} from '../types/api';
+import type { AIBatchRequest, AIBatchResponse, IAIProvider } from '../types/api';
 import { CircuitBreaker, CircuitState } from '../utils/circuit-breaker';
 import { Logger } from '../utils/logger';
 
@@ -48,23 +41,12 @@ export class AIProviderManager {
 		}
 	}
 
-	async solve(request: AIRequest): Promise<AIResponse> {
-		if (request.signal?.aborted) {
-			throw new Error('REQUEST_CANCELLED');
-		}
-		const needsVision = (request.images?.length ?? 0) > 0;
-		return this.withFallback(needsVision, 'solve', (p) => p.solve(request));
-	}
-
 	async solveBatch(batchRequest: AIBatchRequest): Promise<AIBatchResponse> {
 		if (batchRequest.signal?.aborted) {
 			throw new Error('REQUEST_CANCELLED');
 		}
 		const needsVision = batchRequest.questions.some((q) => q.images && q.images.length > 0);
-		return this.withFallback(needsVision, 'batch', (provider) => {
-			if (!provider.solveBatch) throw new Error('solveBatch not implemented');
-			return provider.solveBatch(batchRequest);
-		});
+		return this.withFallback(needsVision, 'batch', (provider) => provider.solveBatch(batchRequest));
 	}
 
 	private async withFallback<T>(
@@ -125,7 +107,6 @@ export class AIProviderManager {
 
 	/**
 	 * Get providers ordered by preference, filtering by vision capability if needed.
-	 * AC-008.4: Vision-required questions route to vision-capable providers.
 	 */
 	private getOrderedProviders(needsVision: boolean): IAIProvider[] {
 		let suitable = needsVision ? this.providers.filter((p) => p.supportsVision) : this.providers;

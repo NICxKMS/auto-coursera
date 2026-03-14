@@ -1,0 +1,344 @@
+---
+const pathname = Astro.url.pathname;
+
+function isActive(href: string): boolean {
+	if (href === '/') return pathname === '/';
+	return pathname.startsWith(href);
+}
+
+const navLinks = [
+	{ href: '/', label: 'Home' },
+	{ href: '/downloads/', label: 'Downloads' },
+	{ href: '/docs/', label: 'Docs' },
+	{ href: '/releases/', label: "What's New" },
+	{ href: '/support/', label: 'Support' },
+] as const;
+---
+
+<header class="nav">
+	<nav class="nav__inner container" aria-label="Main navigation">
+		<a href="/" class="nav__logo" aria-label="Auto-Coursera home">
+			<span class="nav__logo-mark">AC</span>
+			<span class="nav__logo-text">Auto-Coursera</span>
+		</a>
+
+		<button
+			class="nav__toggle"
+			aria-expanded="false"
+			aria-controls="nav-menu"
+			aria-label="Toggle navigation menu"
+		>
+			<span class="nav__toggle-bar"></span>
+			<span class="nav__toggle-bar"></span>
+			<span class="nav__toggle-bar"></span>
+		</button>
+
+		<ul id="nav-menu" class="nav__links" role="list">
+			{navLinks.map(({ href, label }) => (
+				<li>
+					<a
+						href={href}
+						class="nav__link"
+						data-nav-item
+						{...(isActive(href) ? { 'aria-current': 'page' } : {})}
+					>
+						{label}
+					</a>
+				</li>
+			))}
+			<li>
+				<a
+					href="/install/"
+					class="nav__link nav__link--cta"
+					data-nav-item
+					{...(isActive('/install/') ? { 'aria-current': 'page' } : {})}
+				>
+					Install
+				</a>
+			</li>
+		</ul>
+	</nav>
+</header>
+
+<script>
+	let navAbortController: AbortController | null = null;
+
+	function initNav() {
+		// Clean up previous listeners
+		if (navAbortController) navAbortController.abort();
+		navAbortController = new AbortController();
+		const { signal } = navAbortController;
+
+		// Re-register before-swap cleanup on every init so it's never lost
+		document.addEventListener('astro:before-swap', () => {
+			if (navAbortController) {
+				navAbortController.abort();
+				navAbortController = null;
+			}
+		}, { once: true, signal });
+
+		const toggle = document.querySelector<HTMLButtonElement>('.nav__toggle');
+		const menu = document.getElementById('nav-menu');
+		if (!toggle || !menu) return;
+
+		toggle.addEventListener('click', () => {
+			const expanded = toggle.getAttribute('aria-expanded') === 'true';
+			toggle.setAttribute('aria-expanded', String(!expanded));
+			menu.setAttribute('data-open', String(!expanded));
+		}, { signal });
+
+		// Close menu on Escape
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+				toggle.setAttribute('aria-expanded', 'false');
+				menu.setAttribute('data-open', 'false');
+				toggle.focus();
+			}
+		}, { signal });
+
+		// Focus trap when mobile menu is open
+		document.addEventListener('keydown', (e) => {
+			if (e.key !== 'Tab') return;
+			if (toggle.getAttribute('aria-expanded') !== 'true') return;
+
+			const nav = document.querySelector('.nav');
+			if (!nav) return;
+
+			const focusable = nav.querySelectorAll<HTMLElement>(
+				'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+			);
+			if (!focusable.length) return;
+
+			const first = focusable[0];
+			const last = focusable[focusable.length - 1];
+
+			if (e.shiftKey && document.activeElement === first) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && document.activeElement === last) {
+				e.preventDefault();
+				first.focus();
+			}
+		}, { signal });
+
+		// Close menu when clicking outside
+		document.addEventListener('click', (e) => {
+			const target = e.target as Node;
+			const nav = document.querySelector('.nav');
+			if (nav && !nav.contains(target) && toggle.getAttribute('aria-expanded') === 'true') {
+				toggle.setAttribute('aria-expanded', 'false');
+				menu.setAttribute('data-open', 'false');
+			}
+		}, { signal });
+	}
+
+	// Run on initial load and on view transitions
+	initNav();
+	document.addEventListener('astro:after-swap', initNav);
+</script>
+
+<style>
+	.nav {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 100;
+		height: var(--nav-height);
+		background-color: var(--bg-void);
+		border-bottom: 1px solid var(--border);
+	}
+
+	.nav__inner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 100%;
+	}
+
+	/* --- Logo --- */
+
+	.nav__logo {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		text-decoration: none;
+		color: var(--text-primary);
+		flex-shrink: 0;
+	}
+
+	.nav__logo:hover {
+		color: var(--text-primary);
+	}
+
+	.nav__logo-mark {
+		font-family: var(--font-mono);
+		font-weight: var(--weight-bold);
+		font-size: var(--text-body);
+		color: var(--accent);
+		line-height: 1;
+	}
+
+	.nav__logo-text {
+		font-family: var(--font-body);
+		font-weight: var(--weight-semibold);
+		font-size: var(--text-small);
+		color: var(--text-primary);
+		line-height: 1;
+	}
+
+	/* --- Toggle (mobile) --- */
+
+	.nav__toggle {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 5px;
+		width: 2.5rem;
+		height: 2.5rem;
+		padding: var(--space-2);
+		border-radius: var(--border-radius-sm);
+	}
+
+	.nav__toggle:hover {
+		background-color: var(--surface-hover);
+	}
+
+	.nav__toggle-bar {
+		display: block;
+		width: 100%;
+		height: 2px;
+		background-color: var(--text-primary);
+		border-radius: 1px;
+		transition:
+			transform var(--transition-fast),
+			opacity var(--transition-fast);
+	}
+
+	.nav__toggle[aria-expanded="true"] .nav__toggle-bar:nth-child(1) {
+		transform: translateY(7px) rotate(45deg);
+	}
+
+	.nav__toggle[aria-expanded="true"] .nav__toggle-bar:nth-child(2) {
+		opacity: 0;
+	}
+
+	.nav__toggle[aria-expanded="true"] .nav__toggle-bar:nth-child(3) {
+		transform: translateY(-7px) rotate(-45deg);
+	}
+
+	/* --- Links --- */
+
+	.nav__links {
+		display: none;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.nav__link {
+		font-family: var(--font-mono);
+		font-weight: var(--weight-medium);
+		font-size: var(--text-nav);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		text-decoration: none;
+		color: var(--text-secondary);
+		transition: color var(--transition-fast);
+		line-height: 1;
+	}
+
+	.nav__link:hover,
+	.nav__link:focus-visible {
+		color: var(--text-primary);
+		text-decoration: underline;
+		text-underline-offset: 0.25em;
+		text-decoration-thickness: 1px;
+	}
+
+	.nav__link[aria-current="page"] {
+		color: var(--accent);
+	}
+
+	.nav__link--cta {
+		border: 1px solid var(--border-accent);
+		border-radius: var(--border-radius-sm);
+		padding: var(--space-2) var(--space-4);
+		color: var(--accent);
+		transition:
+			color var(--transition-fast),
+			border-color var(--transition-fast),
+			background-color var(--transition-fast);
+	}
+
+	.nav__link--cta:hover {
+		border-color: var(--accent);
+		background-color: var(--accent-subtle);
+		color: var(--accent);
+	}
+
+	/* --- Mobile menu (open state) --- */
+
+	.nav__links[data-open="true"] {
+		display: flex;
+		flex-direction: column;
+		position: absolute;
+		top: var(--nav-height);
+		left: 0;
+		right: 0;
+		background-color: var(--bg-void);
+		border-bottom: 1px solid var(--border);
+		padding: var(--space-4) var(--space-5);
+		gap: var(--space-1);
+	}
+
+	.nav__links[data-open="true"] .nav__link {
+		display: flex;
+		align-items: center;
+		min-height: 44px;
+		padding: var(--space-3) 0;
+		font-size: var(--text-body);
+	}
+
+	.nav__links[data-open="true"] .nav__link--cta {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 44px;
+		text-align: center;
+		margin-top: var(--space-3);
+		padding: var(--space-3) var(--space-5);
+	}
+
+	/* --- Desktop (≥768px) --- */
+
+	@media (min-width: 768px) {
+		.nav__toggle {
+			display: none;
+		}
+
+		.nav__links {
+			display: flex;
+			align-items: center;
+			gap: var(--space-5);
+		}
+
+		.nav__links[data-open="true"] {
+			position: static;
+			flex-direction: row;
+			background: none;
+			border-bottom: none;
+			padding: 0;
+		}
+
+		.nav__links[data-open="true"] .nav__link {
+			padding: 0;
+			font-size: var(--text-nav);
+		}
+
+		.nav__links[data-open="true"] .nav__link--cta {
+			margin-top: 0;
+			padding: var(--space-2) var(--space-4);
+		}
+	}
+</style>

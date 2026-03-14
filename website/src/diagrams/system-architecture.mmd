@@ -1,0 +1,42 @@
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#f59e0b', 'primaryTextColor': '#fafaf9', 'primaryBorderColor': '#2e2e36', 'lineColor': '#f59e0b', 'secondaryColor': '#1c1c22', 'tertiaryColor': '#27272e', 'background': '#18181b', 'mainBkg': '#1c1c22', 'nodeBorder': '#2e2e36'}}}%%
+graph TB
+    subgraph CP["Coursera Page"]
+        subgraph CS["Content Script"]
+            QD["Question Detector<br/>(MutationObserver)"]
+            CE["Content Extractor"]
+            AA["Answer Applicator"]
+        end
+        subgraph WG["Widget (Shadow DOM)"]
+            FAB["FAB Pill"]
+            CPanel["Control Panel"]
+            Settings["Settings Overlay"]
+        end
+    end
+
+    subgraph SW["Service Worker"]
+        MR["Message Router"]
+        APM["AI Provider Manager<br/>(Circuit Breaker)"]
+        RL["Rate Limiter<br/>(20 RPM)"]
+        BP["Batch Processor"]
+        PE["Prompt Engine"]
+        IP["CORS Image Pipeline"]
+    end
+
+    subgraph AI["AI Providers"]
+        OR["OpenRouter"]
+        GE["Gemini"]
+        GR["Groq"]
+        CB["Cerebras"]
+        NV["NVIDIA NIM"]
+    end
+
+    QD --> CE --> MR
+    MR --> APM --> BP --> PE
+    PE --> RL --> AI
+    MR --> AA
+    IP --> AI
+    WG --> MR
+
+    style CP fill:#1c1c22,stroke:#2e2e36,color:#fafaf9
+    style SW fill:#1c1c22,stroke:#f59e0b,color:#fafaf9
+    style AI fill:#1c1c22,stroke:#2e2e36,color:#fafaf9

@@ -13,9 +13,13 @@ on:
   pull_request:
     paths:
       - 'installer/**'
+      - 'version.json'
 
 permissions:
   contents: read
+
+env:
+  GO_VERSION: '1.22'
 
 concurrency:
   group: build-inst-${{ github.head_ref || github.ref }}
@@ -29,10 +33,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Run version sync (idempotent)
+        run: bash scripts/sync-constants.sh
+
+      - name: Verify version consistency
+        run: bash scripts/check-version.sh
+
+      - name: Verify sync was committed
+        run: |
+          if ! git diff --quiet; then
+            echo "::error::version.json was updated but sync-constants.sh was not run before committing."
+            echo "::error::Please run: bash scripts/sync-constants.sh && git add -A && git commit --amend"
+            echo ""
+            echo "Files that need syncing:"
+            git diff --stat
+            exit 1
+          fi
+
       - name: Setup Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version: '1.22'
+          go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: 'installer/go.sum'
 
       - name: Vet

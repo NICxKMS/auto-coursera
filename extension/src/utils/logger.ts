@@ -32,10 +32,6 @@ export class Logger {
 		this.component = component;
 	}
 
-	static setLevel(level: LogLevel): void {
-		Logger.minLevel = level;
-	}
-
 	debug(message: string, data?: unknown): void {
 		this.log('debug', message, data);
 	}

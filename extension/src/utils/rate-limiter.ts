@@ -1,39 +1,8 @@
 /**
  * Token-bucket rate limiter for AI API requests.
- * REQ: NFR-002 — per-provider rate limiting
  */
 
-import { ERROR_CODES } from './constants';
-
-function throwIfAborted(signal?: AbortSignal): void {
-	if (signal?.aborted) {
-		throw new Error(ERROR_CODES.REQUEST_CANCELLED);
-	}
-}
-
-async function waitWithAbort(waitMs: number, signal?: AbortSignal): Promise<void> {
-	if (!signal) {
-		await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
-		return;
-	}
-
-	throwIfAborted(signal);
-
-	await new Promise<void>((resolve, reject) => {
-		const timeoutId = setTimeout(() => {
-			signal.removeEventListener('abort', onAbort);
-			resolve();
-		}, waitMs);
-
-		const onAbort = () => {
-			clearTimeout(timeoutId);
-			signal.removeEventListener('abort', onAbort);
-			reject(new Error(ERROR_CODES.REQUEST_CANCELLED));
-		};
-
-		signal.addEventListener('abort', onAbort, { once: true });
-	});
-}
+import { throwIfAborted, waitWithAbort } from './abort';
 
 export class RateLimiter {
 	private tokens: number;
@@ -61,7 +30,6 @@ export class RateLimiter {
 
 	/**
 	 * Acquire a token. Waits asynchronously if no tokens are available.
-	 * AC-NFR-002.2: Callers wait when bucket is empty, not rejected.
 	 */
 	async acquire(signal?: AbortSignal): Promise<void> {
 		throwIfAborted(signal);
@@ -80,20 +48,11 @@ export class RateLimiter {
 
 	/**
 	 * Refill tokens based on elapsed time.
-	 * AC-NFR-002.3: Tokens refill continuously (not reset per minute).
 	 */
 	private refill(): void {
 		const now = Date.now();
 		const elapsed = now - this.lastRefill;
 		this.tokens = Math.min(this.maxTokens, this.tokens + elapsed * this.refillRate);
 		this.lastRefill = now;
-	}
-
-	/**
-	 * Get current token count (for debugging/status).
-	 */
-	getAvailableTokens(): number {
-		this.refill();
-		return Math.floor(this.tokens);
 	}
 }

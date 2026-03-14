@@ -7,6 +7,7 @@ import type {
 } from '../../src/types/messages';
 import { ERROR_CODES } from '../../src/utils/constants';
 import { chromeMock, resetChromeMock } from '../mocks/chrome';
+import { makeResponse } from './provider-test-helpers';
 
 function makeSender(tabId = 7): chrome.runtime.MessageSender {
 	return {
@@ -16,20 +17,6 @@ function makeSender(tabId = 7): chrome.runtime.MessageSender {
 			url: 'https://www.coursera.org/learn/test',
 		},
 	} as chrome.runtime.MessageSender;
-}
-
-function makeResponse(content: string, tokens = 64) {
-	return {
-		ok: true,
-		status: 200,
-		statusText: 'OK',
-		json: async () => ({
-			id: 'chatcmpl-test',
-			choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: 'stop' }],
-			usage: { prompt_tokens: 32, completion_tokens: 32, total_tokens: tokens },
-		}),
-		text: async () => '',
-	};
 }
 
 describe('background runtime handlers', () => {
@@ -61,7 +48,7 @@ describe('background runtime handlers', () => {
 
 		const payload = registerResponse.payload as RegisterPageContextResponsePayload;
 		const signal = await background.__testing.runtimeStateManager.beginRequest(
-			payload.scope,
+			payload.state,
 			'req-1',
 		);
 		expect(signal?.aborted).toBe(false);
@@ -90,8 +77,8 @@ describe('background runtime handlers', () => {
 			sender,
 		);
 		const payload = registerResponse.payload as RegisterPageContextResponsePayload;
-		await background.__testing.runtimeStateManager.beginRequest(payload.scope, 'req-1');
-		await background.__testing.runtimeStateManager.completeRequestSolve(payload.scope, 'req-1', {
+		await background.__testing.runtimeStateManager.beginRequest(payload.state, 'req-1');
+		await background.__testing.runtimeStateManager.completeRequestSolve(payload.state, 'req-1', {
 			provider: 'openrouter',
 			model: 'openrouter/free',
 			confidence: 0.88,
@@ -121,7 +108,9 @@ describe('background runtime handlers', () => {
 		const fetchMock = vi
 			.fn()
 			.mockResolvedValue(
-				makeResponse('{"answer": [1], "confidence": 0.93, "reasoning": "basic math"}'),
+				makeResponse(
+					'{"answers":[{"uid":"test-connection","answer":[1],"confidence":0.93,"reasoning":"basic math"}]}',
+				),
 			);
 		vi.stubGlobal('fetch', fetchMock);
 		chromeMock.storage.session._setStore({ sentinel: 'persist me' });
@@ -184,7 +173,7 @@ describe('background runtime handlers', () => {
 						uid: 'q-1',
 						questionText: 'What is 2 + 2?',
 						options: ['3', '4', '5'],
-						questionType: 'single-choice',
+						selectionMode: 'single',
 					},
 				],
 			},
@@ -252,12 +241,42 @@ describe('background runtime handlers', () => {
 		expect(await background.__testing.runtimeStateManager.getStateForTab(7)).toBeNull();
 	});
 
+	it('rejects SOLVE_BATCH with legacy questionType-only payloads before mutating scoped state', async () => {
+		const sender = makeSender();
+
+		const response = await background.__testing.handleSolveBatch(
+			{
+				runtimeContext: {
+					requestId: 'req-legacy-payload',
+					pageInstanceId: 'page-1',
+					pageUrl: 'https://www.coursera.org/learn/test',
+				},
+				questions: [
+					{
+						uid: 'q-1',
+						questionText: 'What is 2 + 2?',
+						options: ['3', '4', '5'],
+						questionType: 'single-choice',
+					},
+				],
+			},
+			sender,
+		);
+
+		expect(response.type).toBe('ERROR');
+		expect(response.payload).toMatchObject({
+			code: 'INVALID_PAYLOAD',
+			message: 'Invalid batch payload',
+		});
+		expect(await background.__testing.runtimeStateManager.getStateForTab(7)).toBeNull();
+	});
+
 	it('cancels an in-flight SOLVE_BATCH runtime request', async () => {
 		let resolveFetchStarted: (() => void) | null = null;
 		const fetchStarted = new Promise<void>((resolve) => {
 			resolveFetchStarted = resolve;
 		});
-		let fetchSignal: AbortSignal | undefined;
+		let fetchSignal: AbortSignal | null | undefined;
 		let rejectFetch: ((reason?: unknown) => void) | null = null;
 		const fetchMock = vi.fn((_url: string, init?: RequestInit) => {
 			fetchSignal = init?.signal;
@@ -305,7 +324,7 @@ describe('background runtime handlers', () => {
 						uid: 'q-1',
 						questionText: 'What is 2 + 2?',
 						options: ['3', '4', '5'],
-						questionType: 'single-choice',
+						selectionMode: 'single',
 					},
 				],
 			},
@@ -324,7 +343,7 @@ describe('background runtime handlers', () => {
 		);
 		expect((cancelResponse.payload as TabActionResponsePayload).success).toBe(true);
 		expect(fetchSignal?.aborted).toBe(true);
-		rejectFetch?.(new DOMException('Aborted', 'AbortError'));
+		rejectFetch!(new DOMException('Aborted', 'AbortError'));
 
 		const response = await solvePromise;
 		expect(response.type).toBe('ERROR');

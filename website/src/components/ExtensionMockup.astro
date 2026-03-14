@@ -1,0 +1,246 @@
+---
+// ExtensionMockup — CSS-only visual of the FAB pill and control panel.
+// Decorative only; aria-hidden to exclude from accessibility tree.
+---
+
+<div class="mockup" aria-hidden="true">
+	<div class="mockup__container">
+		<!-- The FAB pill -->
+		<div class="mockup__fab">
+			<span class="mockup__fab-icon"><svg class="mockup-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5" /></svg></span>
+			<span class="mockup__fab-text">3 solved</span>
+		</div>
+
+		<!-- The expanded panel -->
+		<div class="mockup__panel">
+			<div class="mockup__panel-header">
+				<span class="mockup__panel-icon"><svg class="mockup-icon" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5" /></svg></span>
+				<span class="mockup__panel-title">Auto-Coursera</span>
+				<span class="mockup__panel-badge">ACTIVE</span>
+			</div>
+			<div class="mockup__panel-body">
+				<div class="mockup__stats">
+					<div class="mockup__stat mockup__stat--success">
+						<span class="mockup__stat-value">12</span>
+						<span class="mockup__stat-label">Solved</span>
+					</div>
+					<div class="mockup__stat mockup__stat--error">
+						<span class="mockup__stat-value">0</span>
+						<span class="mockup__stat-label">Failed</span>
+					</div>
+					<div class="mockup__stat mockup__stat--accent">
+						<span class="mockup__stat-value">847</span>
+						<span class="mockup__stat-label">Tokens</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	function initMockupObserver() {
+		const mockup = document.querySelector<HTMLElement>('.mockup');
+		const chapter2 = document.querySelector<HTMLElement>('.chapter[data-chapter="2"]');
+		if (!mockup || !chapter2) return;
+
+		// Skip observer on mobile where the component is hidden
+		if (getComputedStyle(mockup).display === 'none') return;
+
+		const prefersReducedMotion = window.matchMedia(
+			'(prefers-reduced-motion: reduce)'
+		).matches;
+
+		// If user prefers reduced motion, reveal immediately
+		if (prefersReducedMotion) {
+			mockup.classList.add('mockup--revealed');
+		}
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) {
+						mockup.classList.add('mockup--revealed');
+					} else {
+						if (!prefersReducedMotion) {
+							mockup.classList.remove('mockup--revealed');
+						}
+					}
+				});
+			},
+			{ threshold: 0.3 }
+		);
+
+		observer.observe(chapter2);
+
+		document.addEventListener('astro:before-swap', () => {
+			observer.disconnect();
+		}, { once: true });
+	}
+
+	initMockupObserver();
+	document.addEventListener('astro:after-swap', initMockupObserver);
+</script>
+
+<style>
+	.mockup {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-5);
+		margin-block-start: var(--space-7);
+		opacity: 0.3;
+		filter: grayscale(0.8);
+		transition: opacity 800ms ease-out, filter 800ms ease-out;
+	}
+
+	.mockup--revealed {
+		opacity: 1;
+		filter: grayscale(0);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.mockup {
+			opacity: 1;
+			filter: none;
+			transition: none;
+		}
+	}
+
+	.mockup__container {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: var(--space-4);
+		width: 100%;
+		max-width: 320px;
+	}
+
+	/* ===== FAB Pill ===== */
+
+	.mockup__fab {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		background-color: var(--success);
+		color: var(--text-primary);
+		padding: var(--space-2) var(--space-4);
+		border-radius: var(--border-radius);
+		font-family: var(--font-body);
+		font-size: var(--text-small);
+		font-weight: var(--weight-semibold);
+		line-height: 1;
+		white-space: nowrap;
+	}
+
+	.mockup__fab-icon {
+		font-size: 1rem;
+		line-height: 1;
+	}
+
+	.mockup__fab-text {
+		line-height: 1;
+	}
+
+	.mockup-icon {
+		vertical-align: -0.125em;
+		flex-shrink: 0;
+	}
+
+	/* ===== Panel ===== */
+
+	.mockup__panel {
+		width: 100%;
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		overflow: hidden;
+	}
+
+	.mockup__panel-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-3) var(--space-4);
+		border-bottom: 1px solid var(--border);
+	}
+
+	.mockup__panel-icon {
+		font-size: 1rem;
+		line-height: 1;
+	}
+
+	.mockup__panel-title {
+		font-family: var(--font-body);
+		font-size: var(--text-small);
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		flex: 1;
+	}
+
+	.mockup__panel-badge {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		font-weight: var(--weight-bold);
+		color: var(--success);
+		letter-spacing: 0.05em;
+		padding: 2px var(--space-2);
+		border: 1px solid var(--success);
+		border-radius: var(--border-radius-sm);
+		line-height: 1.2;
+	}
+
+	/* ===== Stats ===== */
+
+	.mockup__panel-body {
+		padding: var(--space-4);
+	}
+
+	.mockup__stats {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-3);
+		text-align: center;
+	}
+
+	.mockup__stat {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.mockup__stat-value {
+		font-family: var(--font-mono);
+		font-size: var(--text-h3);
+		font-weight: var(--weight-bold);
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
+	}
+
+	.mockup__stat--success .mockup__stat-value {
+		color: var(--success);
+	}
+
+	.mockup__stat--error .mockup__stat-value {
+		color: var(--error);
+	}
+
+	.mockup__stat--accent .mockup__stat-value {
+		color: var(--accent);
+	}
+
+	.mockup__stat-label {
+		font-family: var(--font-body);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		line-height: 1;
+	}
+
+	/* ===== Responsive ===== */
+
+	@media (max-width: 639px) {
+		.mockup__container {
+			max-width: 280px;
+		}
+	}
+</style>
