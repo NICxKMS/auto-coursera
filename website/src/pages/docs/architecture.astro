@@ -1,141 +1,369 @@
 ---
-import Footer from '../../components/Footer.astro';
-import Header from '../../components/Header.astro';
-import Base from '../../layouts/Base.astro';
-
-const repoArchitectureDoc = 'https://github.com/NICxKMS/auto-coursera/blob/master/docs/ARCHITECTURE.md';
-const repoSetupDoc = 'https://github.com/NICxKMS/auto-coursera/blob/master/docs/SETUP.md';
+import DocsLayout from '../../layouts/DocsLayout.astro';
 ---
 
-<Base title="Architecture" description="Public architecture overview for the Auto-Coursera Assistant distribution platform.">
-  <Header />
+<DocsLayout
+	title="Architecture Overview"
+	description="Technical deep-dive into Auto-Coursera's architecture. Content scripts, service worker, widget system, AI providers, and security."
+	breadcrumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Docs', href: '/docs/' },
+		{ label: 'Architecture' },
+	]}
+	prev={{ label: 'Troubleshooting', href: '/docs/troubleshoot/' }}
+>
+	<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
+	<h1>Architecture Overview</h1>
+	<p>
+		A technical guide to how Auto-Coursera works under the hood. For contributors
+		and the curious.
+	</p>
 
-  <main id="main-content" class="py-16 sm:py-24 px-4">
-    <div class="max-w-4xl mx-auto">
-      <div class="text-center mb-16 animate-fade-in">
-        <p class="section-label">Docs</p>
-        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Architecture Overview</h1>
-        <p class="text-lg text-surface-400 max-w-2xl mx-auto">
-          High-level map of how the website, install flows, GitHub Releases, and browser policies fit together for Auto-Coursera Assistant.
-        </p>
-      </div>
+	<!-- ===== System Diagram ===== -->
+	<h2>System Diagram</h2>
+	<div class="diagram-container">
+		<img
+			src="/diagrams/system-architecture.svg"
+			alt="Auto-Coursera system architecture showing three layers: Coursera Page (Content Script + Widget), Service Worker (Message Router, AI Provider Manager, Rate Limiter), and AI Providers (OpenRouter, Gemini, Groq, Cerebras, NVIDIA NIM)"
+			width="800"
+			loading="lazy"
+		/>
+	</div>
 
-      <div class="glass p-6 mb-10 animate-slide-up">
-        <p class="text-sm text-surface-400 leading-relaxed">
-          This public page stays intentionally brief. For the full component diagrams, CI details, and deeper operator reference, use <a href={repoArchitectureDoc} target="_blank" rel="noopener noreferrer" class="text-primary-400 hover:text-primary-300">docs/ARCHITECTURE.md</a> in the repository.
-        </p>
-      </div>
+	<!-- ===== Content Script Layer ===== -->
+	<h2>Content Script Layer</h2>
+	<p>
+		The content script runs on every Coursera page and is responsible for
+		detecting, extracting, and applying answers.
+	</p>
 
-      <section class="mb-12 animate-slide-up delay-100">
-        <h2 class="text-xl font-semibold text-white mb-6">System at a glance</h2>
-        <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-          <div class="glass p-6">
-            <p class="text-xs uppercase tracking-[0.2em] text-surface-500 mb-2">Extension</p>
-            <h3 class="text-base font-semibold text-white mb-2">Browser extension</h3>
-            <p class="text-sm text-surface-400 leading-relaxed">The Manifest V3 extension lives in <code>extension/</code> and is what users ultimately receive in the browser.</p>
-          </div>
-          <div class="glass p-6">
-            <p class="text-xs uppercase tracking-[0.2em] text-surface-500 mb-2">Website</p>
-            <h3 class="text-base font-semibold text-white mb-2">Static Astro site</h3>
-            <p class="text-sm text-surface-400 leading-relaxed">The public website lives in <code>website/</code> and serves landing pages, docs, script downloads, and the canonical <code>updates.xml</code> manifest.</p>
-          </div>
-          <div class="glass p-6">
-            <p class="text-xs uppercase tracking-[0.2em] text-surface-500 mb-2">Installers</p>
-            <h3 class="text-base font-semibold text-white mb-2">Native Go binaries</h3>
-            <p class="text-sm text-surface-400 leading-relaxed">Cross-platform binaries in <code>installer/</code> detect supported browsers and write managed install policy for Chrome, Edge, Brave, and Chromium.</p>
-          </div>
-          <div class="glass p-6">
-            <p class="text-xs uppercase tracking-[0.2em] text-surface-500 mb-2">Scripts</p>
-            <h3 class="text-base font-semibold text-white mb-2">Advanced terminal path</h3>
-            <p class="text-sm text-surface-400 leading-relaxed">Hosted scripts under <code>/scripts/</code> provide shell-first automation. Windows relaunches through UAC when needed; Linux needs root and can only auto-handoff to <code>sudo</code> when run from a saved local file; macOS stays non-root.</p>
-          </div>
-          <div class="glass p-6">
-            <p class="text-xs uppercase tracking-[0.2em] text-surface-500 mb-2">Releases</p>
-            <h3 class="text-base font-semibold text-white mb-2">GitHub-hosted assets</h3>
-            <p class="text-sm text-surface-400 leading-relaxed">Signed CRX builds, checksums, and installer binaries are published as GitHub Release assets and referenced by the live site.</p>
-          </div>
-          <div class="glass p-6">
-            <p class="text-xs uppercase tracking-[0.2em] text-surface-500 mb-2">CI/CD</p>
-            <h3 class="text-base font-semibold text-white mb-2">Release pipeline</h3>
-            <p class="text-sm text-surface-400 leading-relaxed">GitHub Actions builds the extension and installers, creates the release, and deploys the website only when the release assets already exist.</p>
-          </div>
-        </div>
-      </section>
+	<h3>Question Detection</h3>
+	<p>
+		A <code>MutationObserver</code> watches for quiz elements matching specific
+		selectors:
+	</p>
+	<ul>
+		<li><code>div[data-testid^="part-Submission_"]</code> — submission containers</li>
+		<li><code>div[role="group"][aria-labelledby*="-legend"]</code> — question groups</li>
+	</ul>
+	<p>
+		Detection is debounced at <strong>300ms</strong> to avoid reacting to
+		intermediate DOM states during Coursera's React rendering.
+	</p>
 
-      <section class="mb-12 animate-slide-up delay-200">
-        <div class="glass-strong p-8 md:p-10 relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-primary-600/5 to-transparent" aria-hidden="true"></div>
-          <div class="relative">
-            <h2 class="text-xl font-semibold text-white mb-6">Install flow</h2>
-            <ol class="space-y-5 text-sm text-surface-400 leading-relaxed">
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">1</span>
-                <div><strong class="text-surface-200">User starts on the website.</strong> The recommended path is the native installer, with scripts and manual policy setup kept as advanced options.</div>
-              </li>
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">2</span>
-                <div><strong class="text-surface-200">A policy entry is written.</strong> Every install method writes the same <code>&lt;extension-id&gt;;&lt;update-url&gt;</code> value into the browser's <code>ExtensionInstallForcelist</code>.</div>
-              </li>
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">3</span>
-                <div><strong class="text-surface-200">The browser restarts and reloads policy.</strong> On startup, Chrome-family browsers read the managed policy location for that operating system.</div>
-              </li>
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">4</span>
-                <div><strong class="text-surface-200">The browser fetches <code>updates.xml</code>.</strong> The website serves the canonical update manifest from the same public domain.</div>
-              </li>
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">5</span>
-                <div><strong class="text-surface-200">The CRX is downloaded from GitHub Releases.</strong> That release asset becomes the installed extension and future updates use the same path.</div>
-              </li>
-            </ol>
-          </div>
-        </div>
-      </section>
+	<h3>Content Extraction</h3>
+	<p>Once a question is detected, the extraction pipeline pulls:</p>
+	<ul>
+		<li><strong>Question text</strong> — the main question body</li>
+		<li><strong>Images</strong> — via the CORS image pipeline (see below)</li>
+		<li><strong>LaTeX</strong> — mathematical notation in questions</li>
+		<li><strong>Code blocks</strong> — programming questions</li>
+		<li><strong>Answer options</strong> — radio buttons, checkboxes, or text inputs</li>
+	</ul>
 
-      <section class="mb-12 animate-slide-up delay-300">
-        <div class="grid md:grid-cols-2 gap-4">
-          <div class="glass p-6">
-            <h2 class="text-lg font-semibold text-white mb-3">Release flow</h2>
-            <ul class="space-y-2 text-sm text-surface-400 leading-relaxed list-disc pl-5">
-              <li>Build the extension bundle and sign/package the CRX</li>
-              <li>Build native installers for Windows, macOS, and Linux</li>
-              <li>Publish all release artifacts to GitHub Releases</li>
-              <li>Deploy the static website after the release assets are available</li>
-              <li>Serve matching install, download, and update surfaces from one version truth</li>
-            </ul>
-          </div>
-          <div class="glass p-6">
-            <h2 class="text-lg font-semibold text-white mb-3">Why this shape?</h2>
-            <ul class="space-y-2 text-sm text-surface-400 leading-relaxed list-disc pl-5">
-              <li>Static hosting keeps the public site simple and cache-friendly</li>
-              <li>GitHub Releases avoids maintaining a separate binary CDN</li>
-              <li>Managed browser policy enables self-hosted installs without the Chrome Web Store</li>
-              <li>One update URL keeps installer, script, and manual paths aligned</li>
-            </ul>
-          </div>
-        </div>
-      </section>
+	<h3>Answer Application</h3>
+	<p>
+		Applying answers to Coursera's React-controlled inputs requires a 3-strategy
+		click cascade:
+	</p>
+	<ol>
+		<li><strong>React synthetic events</strong> — dispatch React-compatible change events</li>
+		<li><strong>Native DOM clicks</strong> — fallback to standard <code>click()</code></li>
+		<li><strong>Direct input manipulation</strong> — set <code>.value</code> and dispatch <code>input</code>/<code>change</code> events for text fields</li>
+	</ol>
+	<p>
+		The cascade tries each strategy in order until the answer is confirmed as
+		applied.
+	</p>
 
-      <section class="animate-slide-up delay-400">
-        <div class="glass p-8">
-          <h2 class="text-lg font-semibold text-white mb-4">Go deeper</h2>
-          <p class="text-sm text-surface-400 leading-relaxed mb-6">Use the repository docs if you need the full component diagrams, exact file locations, or the operator setup checklist.</p>
-          <div class="flex flex-wrap gap-3">
-            <a href={repoArchitectureDoc} target="_blank" rel="noopener noreferrer" class="btn-primary text-sm px-6 py-2.5 gap-2">
-              Full Architecture Doc
-            </a>
-            <a href={repoSetupDoc} target="_blank" rel="noopener noreferrer" class="btn-secondary text-sm px-6 py-2.5 gap-2">
-              Setup Walkthrough
-            </a>
-            <a href="/docs/manual" class="btn-ghost text-sm px-5 py-2.5">
-              Manual Install Details
-            </a>
-          </div>
-        </div>
-      </section>
-    </div>
-  </main>
+	<!-- ===== Service Worker Layer ===== -->
+	<h2>Service Worker Layer</h2>
+	<p>
+		The Manifest V3 service worker is the central coordinator. It never touches
+		the DOM directly — all communication happens via
+		<code>chrome.runtime.sendMessage</code>.
+	</p>
 
-  <Footer />
-</Base>
+	<h3>Message Routing</h3>
+	<p>
+		Every message between content scripts (and between tabs) passes through the
+		service worker's message router. Messages are typed and validated.
+	</p>
+
+	<h3>AI Provider Manager</h3>
+	<p>
+		Manages all 5 providers with a <strong>circuit breaker</strong> pattern:
+	</p>
+	<ul>
+		<li><strong>Closed</strong> — provider is healthy, requests go through</li>
+		<li><strong>Open</strong> — provider has failed too many times, requests are routed to the next provider</li>
+		<li><strong>Half-open</strong> — after a cooldown, one test request is sent to check if the provider has recovered</li>
+	</ul>
+	<p>
+		Providers are tried in the order set by the user's priority configuration.
+	</p>
+
+	<h3>Rate Limiter</h3>
+	<p>
+		A <strong>token bucket</strong> rate limiter prevents exceeding provider
+		rate limits. Each provider has its own bucket with configurable capacity
+		and refill rate.
+	</p>
+
+	<h3>Batch Processor</h3>
+	<p>
+		Questions are collected and sent in batches with an <strong>800ms debounce</strong>.
+		This avoids sending one API call per question — instead, the entire quiz
+		(or newly detected questions) are batched into a single request.
+	</p>
+
+	<h3>Prompt Engine</h3>
+	<p>
+		Constructs structured prompts from extracted question data. The prompt
+		format varies by provider and question type (multiple choice vs. code
+		expression vs. image-based).
+	</p>
+
+	<h3>CORS Image Pipeline</h3>
+	<p>
+		Coursera images are subject to CORS restrictions. The service worker
+		fetches images via its own context (which is not subject to page-level
+		CORS), converts them to base64, and returns them to the content script
+		for inclusion in AI prompts.
+	</p>
+
+	<!-- ===== Widget Layer ===== -->
+	<h2>Widget Layer</h2>
+	<p>
+		The entire UI is rendered inside a <strong>Shadow DOM</strong>, completely
+		isolating it from Coursera's page styles and DOM.
+	</p>
+
+	<h3>Floating Action Button (FAB)</h3>
+	<p>The FAB is a draggable button with 5 visual states:</p>
+	<div class="docs-table-wrap">
+		<table>
+			<thead>
+				<tr>
+					<th>State</th>
+					<th>Appearance</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Disabled</td>
+					<td>Greyed out — extension is off or no quiz detected</td>
+				</tr>
+				<tr>
+					<td>Idle</td>
+					<td>Default — ready to scan</td>
+				</tr>
+				<tr>
+					<td>Processing</td>
+					<td>Animated — waiting for AI response</td>
+				</tr>
+				<tr>
+					<td>Active</td>
+					<td>Answers have been applied</td>
+				</tr>
+				<tr>
+					<td>Error</td>
+					<td>Something went wrong — click for details</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h3>Control Panel</h3>
+	<p>
+		A 320×480px panel that slides out from the FAB. Contains the results view,
+		per-question confidence display, and action buttons.
+	</p>
+
+	<h3>Settings Overlay</h3>
+	<p>
+		Full-screen overlay with a <strong>focus trap</strong> for accessibility.
+		Contains provider configuration, key management, and behavior settings.
+	</p>
+
+	<h3>WidgetStore</h3>
+	<p>
+		A reactive state store built on <code>EventTarget</code>-based pub/sub.
+		Components subscribe to state changes and re-render automatically — no
+		framework needed.
+	</p>
+
+	<h3>ContentBridge</h3>
+	<p>
+		Handles bidirectional communication between the widget (inside Shadow DOM)
+		and the content script (in the page context). Uses custom events for
+		decoupled messaging.
+	</p>
+
+	<!-- ===== Cross-Cutting Concerns ===== -->
+	<h2>Cross-Cutting Concerns</h2>
+
+	<h3>Question Deduplication</h3>
+	<p>
+		Each question is fingerprinted using <strong>FNV-1a hashing</strong> to
+		prevent re-processing the same question if the page re-renders or the
+		user navigates back.
+	</p>
+
+	<h3>API Key Encryption</h3>
+	<p>
+		All API keys are encrypted at rest using <strong>AES-256-GCM</strong> with
+		a key derived via <strong>PBKDF2</strong> (100,000 iterations). Keys are
+		decrypted only when needed for an API call and never stored in plaintext.
+		This protects against casual inspection of raw browser storage data, but
+		is not a defense against malicious extensions with storage access or
+		full browser-profile compromise.
+	</p>
+
+	<h3>Structured Logging</h3>
+	<p>
+		Internal logs use a structured format with automatic <strong>key sanitization</strong> —
+		API keys and tokens are redacted before any log output.
+	</p>
+
+	<h3>Tab-Scoped State</h3>
+	<p>
+		All runtime state is scoped per-tab with automatic recovery. If a tab
+		crashes or the service worker restarts, state is reconstructed from
+		persisted checkpoints.
+	</p>
+
+	<h3>Auto-Update</h3>
+	<p>
+		The extension checks <code>version.json</code> every <strong>6 hours</strong>
+		for new releases. Users are notified of available updates through the
+		extension panel.
+	</p>
+
+	<!-- ===== AI Providers ===== -->
+	<h2>AI Providers</h2>
+	<p>
+		See the <a href="/docs/setup/">Setup Guide</a> for configuration instructions.
+	</p>
+	<div class="docs-table-wrap">
+		<table>
+			<thead>
+				<tr>
+					<th>Provider</th>
+					<th>Key Format</th>
+					<th>Best For</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>OpenRouter</td>
+					<td><code>sk-or-...</code></td>
+					<td>General use — many free models, automatic routing</td>
+				</tr>
+				<tr>
+					<td>Gemini</td>
+					<td><code>AIza...</code></td>
+					<td>Generous free tier, strong reasoning</td>
+				</tr>
+				<tr>
+					<td>Groq</td>
+					<td><code>gsk_...</code></td>
+					<td>Ultra-fast inference, low latency</td>
+				</tr>
+				<tr>
+					<td>Cerebras</td>
+					<td><code>cbs-...</code></td>
+					<td>Fast inference, good free tier</td>
+				</tr>
+				<tr>
+					<td>NVIDIA NIM</td>
+					<td><code>nvapi-...</code></td>
+					<td>Vision models for image-based questions</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h3>Circuit Breaker Failover</h3>
+	<p>
+		When a provider fails (timeout, rate limit, server error), the circuit
+		breaker opens and traffic is routed to the next provider in priority order.
+		After a cooldown period, the breaker enters a half-open state and sends a
+		single test request. If it succeeds, the provider is restored; if it fails,
+		the cooldown resets.
+	</p>
+	<p>
+		This means you should always configure <strong>at least two providers</strong>
+		for uninterrupted service.
+	</p>
+
+	<!-- ===== Contributing ===== -->
+	<section class="section">
+		<h2 id="contributing-heading">Contributing</h2>
+		<p>
+			Auto-Coursera is open source and contributions are welcome. Whether it's fixing bugs,
+			improving documentation, or suggesting features — every contribution helps.
+		</p>
+		<ul>
+			<li><a href="https://github.com/NICxKMS/auto-coursera">Source code on GitHub</a></li>
+			<li><a href="https://github.com/NICxKMS/auto-coursera/issues">Report a bug or request a feature</a></li>
+			<li><a href="https://github.com/NICxKMS/auto-coursera/pulls">Open pull requests</a></li>
+		</ul>
+	</section>
+</DocsLayout>
+
+<style>
+	/* ===== Hero Product Tagline ===== */
+	.hero__product {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-block-end: var(--space-2);
+	}
+
+	/* ===== Diagram ===== */
+	.diagram-container {
+		margin-block: var(--space-6);
+		overflow-x: auto;
+	}
+
+	.diagram-container img {
+		width: 100%;
+		max-width: 800px;
+		height: auto;
+	}
+
+	/* ===== Tables ===== */
+	.docs-table-wrap {
+		overflow-x: auto;
+		margin-block: var(--space-5);
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: var(--text-body);
+	}
+
+	th,
+	td {
+		text-align: left;
+		padding: var(--space-3) var(--space-4);
+		border-bottom: 1px solid var(--border);
+	}
+
+	th {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-muted);
+	}
+
+	td {
+		color: var(--text-secondary);
+	}
+</style>

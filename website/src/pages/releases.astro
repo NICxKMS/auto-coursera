@@ -1,110 +1,593 @@
 ---
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
+import changelogContent from '@root/CHANGELOG.md?raw';
+import Breadcrumb from '../components/Breadcrumb.astro';
 import Base from '../layouts/Base.astro';
+import { parseChangelog } from '../lib/changelog-parser';
 
-// Fetch releases at build time from GitHub API
-let releases: Array<{ version: string; date: string; url: string; file: string; size: number }> =
-	[];
-try {
-	const res = await fetch(
-		'https://api.github.com/repos/NICxKMS/auto-coursera/releases?per_page=50',
-	);
-	if (res.ok) {
-		const data = await res.json();
-		releases = data.map((release: any) => {
-			const crxAsset = release.assets?.find((a: any) => a.name.endsWith('.crx'));
-			return {
-				version: release.tag_name?.replace(/^v/, '') || 'unknown',
-				date: release.published_at || release.created_at || '',
-				url: crxAsset?.browser_download_url || release.html_url || '',
-				file: crxAsset?.name || '',
-				size: crxAsset?.size || 0,
-			};
-		});
-	}
-} catch {
-	// Build continues with empty array — shows "no releases" state
+/* Parse CHANGELOG.md at build time via Vite's raw import */
+const entries = parseChangelog(changelogContent);
+
+/** Format an ISO-ish date into a readable string: "March 14, 2026" */
+function formatDate(raw: string): string {
+	if (!raw) return '';
+	const d = new Date(raw + 'T00:00:00');
+	if (Number.isNaN(d.getTime())) return raw;
+	return d.toLocaleDateString('en-US', {
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric',
+	});
 }
 
-function formatDate(dateStr: string): string {
-	try {
-		const d = new Date(dateStr);
-		return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-	} catch {
-		return dateStr;
-	}
+/** Count total change items across all categories in an entry. */
+function changeCount(entry: { categories: { items: string[] }[] }): number {
+	return entry.categories.reduce((sum, cat) => sum + cat.items.length, 0);
 }
 
-function formatSize(bytes: number): string {
-	if (bytes < 1024) return `${bytes} B`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+/** Produce a short summary like "5 changes" or "12 changes". */
+function changeSummary(entry: { categories: { items: string[] }[] }): string {
+	const count = changeCount(entry);
+	return `${count} change${count === 1 ? '' : 's'}`;
 }
 ---
 
-<Base title="Releases" description="Release history for Auto-Coursera Assistant. Download previous versions and see what's changed.">
-  <Header />
+<Base
+	title="Release Notes — Auto-Coursera Version History & Changelog"
+	description="Auto-Coursera version history and changelog. Track new features, bug fixes, and improvements across every release."
+	canonicalPath="/releases/"
+>
+	<section class="releases container-narrow" aria-labelledby="releases-heading">
+		<!-- Header -->
+		<div class="releases__header">
+			<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
+			<Breadcrumb items={[{ label: 'Home', href: '/' }, { label: "What's New" }]} />
+			<h1 id="releases-heading">Release Notes</h1>
+			<p class="hero__lead">Track every feature, fix, and improvement across each Auto-Coursera release.</p>
+		</div>
 
-  <main id="main-content" class="py-16 sm:py-24 px-4">
-    <div class="max-w-3xl mx-auto">
-      <!-- Title -->
-      <div class="text-center mb-16 animate-fade-in">
-        <p class="section-label">Releases</p>
-        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Release History</h1>
-        <p class="text-lg text-surface-400 max-w-xl mx-auto">
-          All published versions of Auto-Coursera Assistant.
-        </p>
-      </div>
+		<!-- Updating guidance -->
+		<section class="releases__update-info" aria-labelledby="updating-heading">
+			<h2 id="updating-heading">Updating</h2>
+			<p>If you installed via the script installer, run the same install command again — it automatically updates to the latest version. Native app installers (Windows <code>.exe</code>, macOS, and Linux binaries) also self-update on restart.</p>
+			<p>For manual/unpacked installs, download the latest release zip and reload the extension in your browser's extension management page.</p>
+		</section>
 
-      {releases.length > 0 ? (
-        <div class="space-y-4">
-          {releases.map((release, i) => (
-            <article class="card-interactive relative overflow-hidden animate-slide-up" style={`animation-delay: ${i * 80}ms`}>
-              <div class="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary-500 via-primary-400/50 to-transparent" aria-hidden="true"></div>
-              <div class="flex items-start justify-between gap-4">
-                <div class="flex flex-col gap-2 pl-2">
-                  <div class="flex items-center gap-3">
-                    <h3 class="text-xl font-bold text-white font-mono tracking-tight">v{release.version}</h3>
-                    {i === 0 && <span class="badge text-[11px]">Latest</span>}
-                  </div>
-                  <time datetime={release.date} class="text-sm text-surface-400">{formatDate(release.date)}</time>
-                </div>
-                <a href={release.url} class="btn-secondary shrink-0 gap-2 px-5 py-2.5 text-sm">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                  Download
-                </a>
-              </div>
-              {release.size > 0 && (
-                <div class="mt-4 pt-4 border-t border-white/[0.04] pl-2">
-                  <span class="text-xs text-surface-500 flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                    </svg>
-                    {formatSize(release.size)}
-                  </span>
-                </div>
-              )}
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div class="card text-center py-12">
-          <svg class="w-12 h-12 text-surface-600 mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-          </svg>
-          <h2 class="text-lg font-semibold text-white mb-2">No releases found</h2>
-          <p class="text-surface-400 text-sm">Check back later for new releases.</p>
-        </div>
-      )}
-    </div>
-  </main>
+		<!-- Timeline -->
+		<div class="releases__timeline">
+			{entries.map((entry) => {
+				const isExpanded = entry.isLatest || entry.version === 'Unreleased';
+				return isExpanded ? (
+					<article class:list={['release', { 'release--unreleased': entry.version === 'Unreleased' }]} id={entry.anchor}>
+						<div class="release__marker">
+							<span class:list={['release__dot', { 'release__dot--latest': entry.isLatest, 'release__dot--unreleased': entry.version === 'Unreleased' }]} aria-hidden="true" />
+						</div>
 
-  <Footer />
+						<div class="release__content">
+							<header class="release__header">
+								<div class="release__title-row">
+									<h2 class="release__version">
+										{entry.version === 'Unreleased' ? (
+											<a href={`#${entry.anchor}`}>Unreleased</a>
+										) : (
+											<a href={`#${entry.anchor}`}>v{entry.version}</a>
+										)}
+									</h2>
+									{entry.isLatest && entry.version !== 'Unreleased' && <span class="release__badge">Current</span>}
+									{entry.version === 'Unreleased' && <span class="release__badge release__badge--unreleased">In Development</span>}
+								</div>
+								{entry.version === 'Unreleased' ? (
+									<p class="release__unreleased-note">These changes are in development and not yet released.</p>
+								) : entry.date ? (
+									<time class="release__date" datetime={entry.date}>
+										{formatDate(entry.date)}
+									</time>
+								) : null}
+							</header>
+
+							{entry.categories.map((cat) => (
+								<div class="release__category">
+									<h3 class="release__category-name">{cat.name}</h3>
+									<ul>
+										{cat.items.map((item) => (
+											<li set:html={item} />
+										))}
+									</ul>
+								</div>
+							))}
+
+							{entry.version !== 'Unreleased' && (
+								<a
+									href={`https://github.com/NICxKMS/auto-coursera/releases/tag/v${entry.version}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="release__github-link"
+								>
+									View on GitHub &rarr;
+								</a>
+							)}
+						</div>
+					</article>
+				) : (
+					<div class="release release--collapsed-wrapper" id={entry.anchor}>
+						<div class="release__marker">
+							<span class="release__dot" aria-hidden="true" />
+						</div>
+
+						<details class="release__collapsible">
+							<summary class="release__summary">
+								<span class="release__summary-chevron" aria-hidden="true">&#x25B8;</span>
+								<h2 class="release__version release__version--collapsed">
+									<a href={`#${entry.anchor}`}>v{entry.version}</a>
+								</h2>
+								{entry.date && (
+									<time class="release__date release__date--inline" datetime={entry.date}>
+										{formatDate(entry.date)}
+									</time>
+								)}
+								<span class="release__change-count">{changeSummary(entry)}</span>
+							</summary>
+
+							<div class="release__collapsed-body">
+								{entry.categories.map((cat) => (
+									<div class="release__category">
+										<h3 class="release__category-name">{cat.name}</h3>
+										<ul>
+											{cat.items.map((item) => (
+												<li set:html={item} />
+											))}
+										</ul>
+									</div>
+								))}
+
+								<a
+									href={`https://github.com/NICxKMS/auto-coursera/releases/tag/v${entry.version}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="release__github-link"
+								>
+									View on GitHub &rarr;
+								</a>
+							</div>
+						</details>
+					</div>
+				);
+			})}
+		</div>
+
+		<!-- CTA -->
+		<div class="releases__cta">
+			<p>Get the latest version</p>
+			<a href="/install/" class="btn btn--primary">Install or Update</a>
+			<p class="releases__cta-hint">Already installed? <a href="#updating-heading">See update instructions above</a></p>
+		</div>
+	</section>
 </Base>
+
+<style>
+	/* ==========================================================================
+	   Releases Page — Scoped Styles
+	   ========================================================================== */
+
+	/* --- Product Tagline --- */
+
+	.hero__product {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-block-end: var(--space-2);
+	}
+
+	/* --- Page Header --- */
+
+	.releases {
+		padding-block: var(--space-7) var(--space-8);
+	}
+
+	.releases__header {
+		margin-block-end: var(--space-6);
+	}
+
+	.releases__header h1 {
+		margin-block-end: var(--space-3);
+	}
+
+	.hero__lead {
+		color: var(--text-secondary);
+		font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+		margin: 0;
+	}
+
+	/* --- Update Info Section --- */
+
+	.releases__update-info {
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		padding: var(--space-5) var(--space-6);
+		margin-block-end: var(--space-6);
+	}
+
+	.releases__update-info h2 {
+		font-family: var(--font-mono);
+		font-size: var(--text-h3);
+		font-weight: var(--weight-bold);
+		margin-block-end: var(--space-3);
+	}
+
+	.releases__update-info p {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		line-height: var(--leading-normal);
+		margin-block: 0 var(--space-3);
+	}
+
+	.releases__update-info p:last-child {
+		margin-block-end: 0;
+	}
+
+	.releases__update-info code {
+		font-family: var(--font-mono);
+		font-size: var(--text-code);
+		background-color: var(--bg-void);
+		padding: var(--space-1) var(--space-2);
+		border-radius: var(--border-radius-sm);
+	}
+
+	/* ==========================================================================
+	   Timeline
+	   ========================================================================== */
+
+	.releases__timeline {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-6);
+	}
+
+	/* Vertical connecting line */
+	.releases__timeline::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 5px; /* center of 12px dot = 6px, line at ~5px */
+		bottom: 0;
+		width: 1px;
+		background-color: var(--border);
+	}
+
+	/* ==========================================================================
+	   Release Article
+	   ========================================================================== */
+
+	.release {
+		display: grid;
+		grid-template-columns: 24px 1fr;
+		gap: var(--space-4);
+		position: relative;
+	}
+
+	/* --- Marker (dot on the timeline) --- */
+
+	.release__marker {
+		display: flex;
+		justify-content: center;
+		padding-top: var(--space-2);
+	}
+
+	.release__dot {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background-color: var(--bg-void);
+		border: 2px solid var(--border);
+		position: relative;
+		z-index: 1;
+		flex-shrink: 0;
+	}
+
+	.release__dot--latest {
+		background-color: var(--accent);
+		border-color: var(--accent);
+		box-shadow: 0 0 0 4px var(--accent-subtle);
+	}
+
+	.release__dot--unreleased {
+		background-color: transparent;
+		border-color: var(--text-muted);
+		border-style: dashed;
+	}
+
+	/* --- Content --- */
+
+	.release__content {
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		padding: var(--space-5) var(--space-6);
+	}
+
+	.release--unreleased .release__content {
+		border-style: dashed;
+		border-color: var(--text-muted);
+	}
+
+	/* --- Header --- */
+
+	.release__header {
+		margin-block-end: var(--space-5);
+	}
+
+	.release__title-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+	}
+
+	.release__version {
+		font-family: var(--font-mono);
+		font-size: var(--text-h3);
+		font-style: normal;
+		font-weight: var(--weight-bold);
+		line-height: 1;
+		margin: 0;
+	}
+
+	.release__version a {
+		color: var(--accent);
+		text-decoration: none;
+	}
+
+	.release__version a:hover {
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.15em;
+	}
+
+	.release__badge {
+		display: inline-block;
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-semibold);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		background-color: var(--accent);
+		color: var(--bg-void);
+		padding: var(--space-1) var(--space-3);
+		border-radius: var(--border-radius-sm);
+		line-height: 1;
+	}
+
+	.release__badge--unreleased {
+		background-color: transparent;
+		color: var(--text-muted);
+		border: 1px dashed var(--text-muted);
+	}
+
+	.release__unreleased-note {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		font-style: italic;
+		margin-block-start: var(--space-2);
+		margin-block-end: 0;
+	}
+
+	.release__date {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin-block-start: var(--space-2);
+	}
+
+	/* --- Categories --- */
+
+	.release__category {
+		margin-block-end: var(--space-5);
+	}
+
+	.release__category:last-of-type {
+		margin-block-end: var(--space-4);
+	}
+
+	.release__category-name {
+		font-family: var(--font-body);
+		font-size: var(--text-small);
+		font-weight: var(--weight-semibold);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-secondary);
+		margin-block-end: var(--space-2);
+	}
+
+	.release__category ul {
+		margin: 0;
+		padding-inline-start: var(--space-5);
+	}
+
+	.release__category li {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		line-height: var(--leading-normal);
+		margin-block: var(--space-1);
+	}
+
+	/* --- GitHub link --- */
+
+	.release__github-link {
+		display: inline-block;
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--accent);
+		text-decoration: none;
+		margin-block-start: var(--space-2);
+		transition: color var(--transition-fast);
+	}
+
+	.release__github-link:hover {
+		color: var(--accent-hover);
+		text-decoration: underline;
+	}
+
+	/* ==========================================================================
+	   Collapsed Releases (older versions)
+	   ========================================================================== */
+
+	.release--collapsed-wrapper {
+		display: grid;
+		grid-template-columns: 24px 1fr;
+		gap: var(--space-4);
+		position: relative;
+	}
+
+	.release__collapsible {
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		overflow: hidden;
+		transition: border-color var(--transition-fast);
+	}
+
+	.release__collapsible[open] {
+		border-color: var(--accent);
+	}
+
+	.release__summary {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		padding: var(--space-4) var(--space-5);
+		cursor: pointer;
+		list-style: none;
+		user-select: none;
+	}
+
+	.release__summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.release__summary:hover {
+		background-color: var(--surface-hover);
+	}
+
+	.release__summary-chevron {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		transition: transform var(--transition-fast);
+		flex-shrink: 0;
+		line-height: 1;
+	}
+
+	details[open] .release__summary-chevron {
+		transform: rotate(90deg);
+	}
+
+	.release__version--collapsed {
+		font-size: var(--text-body);
+		margin: 0;
+	}
+
+	.release__date--inline {
+		display: inline;
+		margin: 0;
+	}
+
+	.release__change-count {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin-inline-start: auto;
+		flex-shrink: 0;
+	}
+
+	.release__collapsed-body {
+		padding: 0 var(--space-6) var(--space-5) var(--space-6);
+		border-top: 1px solid var(--border);
+	}
+
+	/* ==========================================================================
+	   CTA
+	   ========================================================================== */
+
+	.releases__cta {
+		margin-block-start: var(--space-7);
+		text-align: center;
+		padding: var(--space-7) var(--space-5);
+		border-top: 1px solid var(--border);
+	}
+
+	.releases__cta p {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		margin-block-end: var(--space-5);
+	}
+
+	.releases__cta-hint {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin-block-start: var(--space-4);
+		margin-block-end: 0;
+	}
+
+	.releases__cta-hint a {
+		color: var(--accent);
+		text-decoration: none;
+	}
+
+	.releases__cta-hint a:hover {
+		text-decoration: underline;
+	}
+
+	/* ==========================================================================
+	   Responsive
+	   ========================================================================== */
+
+	@media (max-width: 640px) {
+		.releases {
+			padding-block: var(--space-6) var(--space-7);
+		}
+
+		.release__content {
+			padding: var(--space-4) var(--space-4);
+		}
+
+		.release,
+		.release--collapsed-wrapper {
+			grid-template-columns: 18px 1fr;
+			gap: var(--space-3);
+		}
+
+		.releases__timeline::before {
+			left: 3px;
+		}
+
+		.release__dot {
+			width: 10px;
+			height: 10px;
+		}
+
+		.release__marker {
+			padding-top: 6px;
+		}
+
+		.releases__update-info {
+			padding: var(--space-4) var(--space-4);
+		}
+
+		.release__summary {
+			padding: var(--space-3) var(--space-4);
+			gap: var(--space-2);
+		}
+
+		.release__collapsed-body {
+			padding: 0 var(--space-4) var(--space-4) var(--space-4);
+		}
+
+		.release__change-count {
+			display: none;
+		}
+	}
+</style>

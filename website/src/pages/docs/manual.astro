@@ -1,217 +1,258 @@
 ---
-import Footer from '../../components/Footer.astro';
-import Header from '../../components/Header.astro';
-import Base from '../../layouts/Base.astro';
+import versionInfo from '@root/version.json';
+import CopyButton from '../../components/CopyButton.astro';
+import DocsLayout from '../../layouts/DocsLayout.astro';
 ---
 
-<Base title="Manual Installation" description="Advanced browser-policy installation guide for Auto-Coursera Assistant on Windows, Linux, and macOS.">
-  <Header />
+<DocsLayout
+	title="Manual Installation Guide"
+	description="Build Auto-Coursera from source or install manually. Guide for Chrome, Edge, Brave, and other Chromium browsers."
+	breadcrumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Docs', href: '/docs/' },
+		{ label: 'Manual Install' },
+	]}
+>
+	<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
+	<h1>Manual Installation</h1>
+	<p class="hero__lead">
+		Build from source or install a pre-built release on any Chromium browser.
+	</p>
 
-  <main id="main-content" class="py-16 sm:py-24 px-4">
-    <div class="max-w-3xl mx-auto">
-      <!-- Title -->
-      <div class="text-center mb-16 animate-fade-in">
-        <p class="section-label">Docs</p>
-        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Manual Installation</h1>
-        <p class="text-lg text-surface-400 max-w-xl mx-auto">
-          Advanced guide for writing browser policies by hand when you need full control over the install path.
-        </p>
-      </div>
+	<!-- ===== Download Pre-built ===== -->
+	<h2>Download Pre-built</h2>
+	<p>
+		The fastest way to get started without building anything. Download the latest
+		release and load it into your browser:
+	</p>
+	<ul>
+		<li>
+			<a href={`https://github.com/${versionInfo.githubRepo}/releases/latest/download/auto-coursera.zip`} target="_blank" rel="noopener noreferrer">
+				Download extension package (.zip)
+			</a> — contains built extension and <code>.crx</code> file
+		</li>
+		<li>
+			<a href={`https://github.com/${versionInfo.githubRepo}/releases/latest`} target="_blank" rel="noopener noreferrer">
+				Latest release on GitHub
+			</a> — download <code>.crx</code> or <code>.zip</code>
+		</li>
+		<li>
+			<a href={`${versionInfo.domains.website}/downloads/`}>Downloads page</a> — direct links for all platforms
+		</li>
+	</ul>
 
-      <!-- Info banner -->
-      <div class="glass p-5 mb-10 flex gap-4 items-start animate-slide-up">
-        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-500/15 text-primary-400 shrink-0 mt-0.5">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-        </div>
-        <div class="text-sm text-surface-400 leading-relaxed">
-          <strong class="text-surface-200">Prefer automatic installation?</strong> Use the <a href="/install" class="text-primary-400 hover:text-primary-300">native installer</a> first. Terminal scripts and this page are advanced/manual alternatives when you need scripting or browser-by-browser control.
-        </div>
-      </div>
+	<!-- ===== Prerequisites ===== -->
+	<h2>Prerequisites</h2>
+	<p>To build from source, you'll need:</p>
+	<ul>
+		<li><strong>Node.js</strong> v18 or later</li>
+		<li><strong>Git</strong></li>
+		<li><strong>pnpm</strong> — the project's package manager</li>
+		<li>A <strong>Chromium-based browser</strong> (Chrome, Edge, Brave, Vivaldi, Arc, etc.)</li>
+	</ul>
 
-      <section class="mb-10 animate-slide-up delay-50">
-        <div class="glass p-6">
-          <h2 class="text-base font-semibold text-white mb-2">Supported browsers</h2>
-          <p class="text-sm text-surface-400 leading-relaxed">
-            The same manual policy mechanism works with <strong class="text-surface-200">Google Chrome</strong>, <strong class="text-surface-200">Microsoft Edge</strong>, <strong class="text-surface-200">Brave</strong>, and <strong class="text-surface-200">Chromium</strong> on every supported OS. Pick the matching registry key, policy directory, or plist domain below.
-          </p>
-        </div>
-      </section>
+	<!-- ===== Building from Source ===== -->
+	<h2>Building from Source</h2>
+	<p>Clone the repo and build the extension:</p>
+	<div class="code-block">
+		<pre><code>git clone https://github.com/NICxKMS/auto-coursera.git
+cd auto-coursera/extension
+pnpm install
+pnpm build</code></pre>
+		<CopyButton text="git clone https://github.com/NICxKMS/auto-coursera.git && cd auto-coursera/extension && pnpm install && pnpm build" label="Copy build from source commands" />
+	</div>
+	<p>
+		The built extension will be in the <code>extension/dist</code> directory.
+	</p>
 
-      <!-- ═══════════════════ WINDOWS ═══════════════════ -->
-      <section class="mb-12 animate-slide-up delay-100">
-        <details class="group glass overflow-hidden" open>
-          <summary class="flex items-center gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-semibold text-lg hover:bg-white/[0.02] transition-colors">
-            <svg class="w-6 h-6 text-surface-400" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12V6.5l8-1.1V12H3zm0 .5h8v6.6l-8-1.1V12.5zM11.5 12V5.3l9.5-1.3V12h-9.5zm0 .5H21v7.5l-9.5-1.3v-6.2z"/></svg>
-            <span>Windows</span>
-            <svg class="w-5 h-5 text-surface-500 ml-auto transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
+	<!-- ===== Loading Unpacked ===== -->
+	<h2>Loading the Unpacked Extension</h2>
+	<p>
+		After building (or extracting a <code>.zip</code> release), load the extension
+		into your browser:
+	</p>
 
-          <div class="px-6 pb-6 space-y-6 border-t border-white/[0.04]">
-            <div class="pt-6">
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 1 — Open Registry Editor</h3>
-              <p class="text-sm text-surface-400 mb-3">Press <kbd class="px-1.5 py-0.5 rounded bg-surface-800 text-surface-300 font-mono text-xs">Win + R</kbd>, type <code>regedit</code>, and press Enter.</p>
-            </div>
+	<h3>Chrome</h3>
+	<ol>
+		<li>Navigate to <code>chrome://extensions</code></li>
+		<li>Enable <strong>Developer mode</strong> (toggle in the top-right corner)</li>
+		<li>Click <strong>Load unpacked</strong></li>
+		<li>Select the <code>extension/dist</code> folder</li>
+	</ol>
 
-            <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 2 — Choose the registry key for your browser</h3>
-              <p class="text-sm text-surface-400 mb-3">Navigate to or create the matching <code>ExtensionInstallForcelist</code> key:</p>
-              <div class="glass-strong p-4 space-y-3 overflow-x-auto text-sm">
-                <div><span class="text-surface-300 font-medium">Chrome</span><br /><code class="text-surface-200 font-mono whitespace-nowrap">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist</code></div>
-                <div><span class="text-surface-300 font-medium">Edge</span><br /><code class="text-surface-200 font-mono whitespace-nowrap">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist</code></div>
-                <div><span class="text-surface-300 font-medium">Brave</span><br /><code class="text-surface-200 font-mono whitespace-nowrap">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\BraveSoftware\Brave\ExtensionInstallForcelist</code></div>
-                <div><span class="text-surface-300 font-medium">Chromium</span><br /><code class="text-surface-200 font-mono whitespace-nowrap">HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Chromium\ExtensionInstallForcelist</code></div>
-              </div>
-            </div>
+	<h3>Edge</h3>
+	<ol>
+		<li>Navigate to <code>edge://extensions</code></li>
+		<li>Enable <strong>Developer mode</strong> (toggle in the left sidebar)</li>
+		<li>Click <strong>Load unpacked</strong></li>
+		<li>Select the <code>extension/dist</code> folder</li>
+	</ol>
 
-            <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 3 — Add the extension entry</h3>
-              <p class="text-sm text-surface-400 mb-3">Create a new String Value (<code>REG_SZ</code>) with name <code>1</code> and value:</p>
-              <div class="glass-strong p-4 overflow-x-auto">
-                <code class="text-sm font-mono text-surface-200 whitespace-nowrap">alojpdnpiddmekflpagdblmaehbdfcge;https://autocr.nicx.me/updates.xml</code>
-              </div>
-            </div>
+	<h3>Brave</h3>
+	<ol>
+		<li>Navigate to <code>brave://extensions</code></li>
+		<li>Enable <strong>Developer mode</strong></li>
+		<li>Click <strong>Load unpacked</strong></li>
+		<li>Select the <code>extension/dist</code> folder</li>
+	</ol>
 
-            <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 4 — Repeat for any additional browsers</h3>
-              <p class="text-sm text-surface-400 mb-3">Use the same string value in each browser-specific registry key you want to manage, then restart the browser and reload <code>chrome://policy</code>.</p>
-            </div>
-          </div>
-        </details>
-      </section>
+	<h3>Other Chromium Browsers</h3>
+	<p>
+		Most Chromium-based browsers follow the same pattern. Navigate to your
+		browser's extensions page, enable developer mode, and load the unpacked
+		directory.
+	</p>
 
-      <!-- ═══════════════════ LINUX ═══════════════════ -->
-      <section class="mb-12 animate-slide-up delay-200">
-        <details class="group glass overflow-hidden">
-          <summary class="flex items-center gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-semibold text-lg hover:bg-white/[0.02] transition-colors">
-            <svg class="w-6 h-6 text-surface-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.311.004-.466.013a7.18 7.18 0 0 0-.375.031c-.625.063-1.15.218-1.578.465-.844.49-1.316 1.297-1.512 2.18a6.73 6.73 0 0 0-.117.875 8.59 8.59 0 0 0 .004.965c.03.434.09.852.18 1.242.094.39.21.75.344 1.074.094.227.199.437.312.625.094.155.203.3.32.441.086.102.152.168.152.168l.008.008c.082.07.168.137.258.2.219.153.468.27.742.352.262.078.547.117.848.117s.586-.04.848-.117c.274-.082.523-.2.742-.352.09-.063.176-.13.258-.2l.008-.008s.066-.066.152-.168c.117-.14.227-.286.32-.441.114-.188.219-.398.313-.625.133-.324.25-.684.344-1.074.09-.39.148-.808.18-1.242a8.59 8.59 0 0 0 .003-.965 6.73 6.73 0 0 0-.117-.875c-.196-.883-.668-1.69-1.512-2.18a3.76 3.76 0 0 0-1.578-.465 7.95 7.95 0 0 0-.375-.031A5.7 5.7 0 0 0 12.504 0z"/></svg>
-            <span>Linux</span>
-            <svg class="w-5 h-5 text-surface-500 ml-auto transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
+	<!-- ===== CRX File ===== -->
+	<h2>CRX File Installation</h2>
+	<p>
+		If you have a <code>.crx</code> file (from the
+		<a href={`https://github.com/${versionInfo.githubRepo}/releases/latest`} target="_blank" rel="noopener noreferrer">releases page</a>):
+	</p>
+	<ol>
+		<li>Open your browser's extensions page</li>
+		<li>Drag and drop the <code>.crx</code> file onto the page</li>
+		<li>Confirm the installation prompt</li>
+	</ol>
+	<blockquote>
+		<strong>Note:</strong> Some browsers block <code>.crx</code> installations for security reasons.
+		If this happens, extract the <code>.crx</code> (it's a ZIP file) and use the
+		<strong>Load unpacked</strong> method instead.
+	</blockquote>
 
-          <div class="px-6 pb-6 space-y-6 border-t border-white/[0.04]">
-            <div class="pt-6">
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 1 — Choose the policy directory for your browser</h3>
-              <div class="glass-strong p-4 space-y-3 overflow-x-auto text-sm">
-                <div><span class="text-surface-300 font-medium">Chrome</span><br /><code class="text-surface-200 font-mono">/etc/opt/chrome/policies/managed</code></div>
-                <div><span class="text-surface-300 font-medium">Edge</span><br /><code class="text-surface-200 font-mono">/etc/opt/edge/policies/managed</code></div>
-                <div><span class="text-surface-300 font-medium">Brave</span><br /><code class="text-surface-200 font-mono">/etc/brave/policies/managed</code></div>
-                <div><span class="text-surface-300 font-medium">Chromium</span><br /><code class="text-surface-200 font-mono">/etc/chromium/policies/managed</code></div>
-              </div>
-              <p class="text-sm text-surface-400 mt-3">Create the directory you need with <code>sudo mkdir -p &lt;policy-dir&gt;</code>.</p>
-            </div>
+	<!-- ===== Shell Installers ===== -->
+	<h2 id="shell-installers">Shell Installers</h2>
+	<p>
+		One-command installers that download the latest release and configure your
+		browser automatically. These use Chrome browser policies to register the
+		extension.
+	</p>
 
-            <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 2 — Create the policy file</h3>
-              <p class="text-sm text-surface-400 mb-3">Create <code>/etc/opt/chrome/policies/managed/auto_coursera.json</code> with:</p>
-              <div class="glass-strong p-4 overflow-x-auto">
-                <pre class="text-sm font-mono text-surface-200 leading-relaxed">{`{
-  "ExtensionInstallForcelist": [
-    "alojpdnpiddmekflpagdblmaehbdfcge;https://autocr.nicx.me/updates.xml"
-  ]
-}`}</pre>
-              </div>
-            </div>
+	<h3 id="linux-installer">Linux</h3>
+	<div class="code-block">
+		<pre><code>curl -fsSL autocr.nicx.me/sh | sh</code></pre>
+		<CopyButton text="curl -fsSL autocr.nicx.me/sh | sh" label="Copy Linux install command" />
+	</div>
 
-            <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 3 — Set file permissions</h3>
-              <div class="glass-strong p-4 overflow-x-auto">
-                <code class="text-sm font-mono text-surface-200">sudo chmod 644 /etc/opt/chrome/policies/managed/auto_coursera.json</code>
-              </div>
-            </div>
+	<h3 id="macos-installer">macOS</h3>
+	<div class="code-block">
+		<pre><code>curl -fsSL autocr.nicx.me/mac | sh</code></pre>
+		<CopyButton text="curl -fsSL autocr.nicx.me/mac | sh" label="Copy macOS install command" />
+	</div>
 
-            <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 4 — Repeat for additional browsers if needed</h3>
-              <p class="text-sm text-surface-400 mb-3">Use the same filename (<code>auto_coursera.json</code>) in the browser-specific Edge, Brave, or Chromium directory when you want more than one browser managed.</p>
-            </div>
-          </div>
-        </details>
-      </section>
+	<h3 id="windows-installer">Windows (PowerShell)</h3>
+	<div class="code-block">
+		<pre><code>irm autocr.nicx.me/ps | iex</code></pre>
+		<CopyButton text="irm autocr.nicx.me/ps | iex" label="Copy Windows install command" />
+	</div>
 
-      <!-- ═══════════════════ MACOS ═══════════════════ -->
-      <section class="mb-12 animate-slide-up delay-300">
-        <details class="group glass overflow-hidden">
-          <summary class="flex items-center gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-semibold text-lg hover:bg-white/[0.02] transition-colors">
-            <svg class="w-6 h-6 text-surface-400" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-            <span>macOS</span>
-            <svg class="w-5 h-5 text-surface-500 ml-auto transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
+	<p>
+		The shell installers register the extension via browser policies, which means
+		you'll see an <em>"Installed by your organization"</em> message. This is normal
+		and doesn't affect functionality. See
+		<a href="/docs/troubleshoot/">Troubleshooting</a> for details.
+	</p>
 
-          <div class="px-6 pb-6 space-y-6 border-t border-white/[0.04]">
-            <div class="pt-6">
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 1 — Choose the browser domain</h3>
-              <div class="glass-strong p-4 space-y-3 overflow-x-auto text-sm">
-                <div><span class="text-surface-300 font-medium">Chrome</span><br /><code class="text-surface-200 font-mono">com.google.Chrome</code></div>
-                <div><span class="text-surface-300 font-medium">Edge</span><br /><code class="text-surface-200 font-mono">com.microsoft.Edge</code></div>
-                <div><span class="text-surface-300 font-medium">Brave</span><br /><code class="text-surface-200 font-mono">com.brave.Browser</code></div>
-                <div><span class="text-surface-300 font-medium">Chromium</span><br /><code class="text-surface-200 font-mono">org.chromium.Chromium</code></div>
-              </div>
-            </div>
+	<!-- ===== Updating ===== -->
+	<h2>Updating</h2>
 
-            <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 2 — Write the policy using defaults</h3>
-              <p class="text-sm text-surface-400 mb-3">Open Terminal and run the command for your browser. Example for Chrome:</p>
-              <div class="glass-strong p-4 overflow-x-auto">
-                <pre class="text-sm font-mono text-surface-200 leading-relaxed">{`defaults write com.google.Chrome ExtensionInstallForcelist -array-add \\
-  "alojpdnpiddmekflpagdblmaehbdfcge;https://autocr.nicx.me/updates.xml"`}</pre>
-              </div>
-            </div>
+	<h3>Installed via Shell Script</h3>
+	<p>Re-run the same install command — it will download and apply the latest release:</p>
 
-            <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 3 — Swap in the matching domain for Edge, Brave, or Chromium</h3>
-              <p class="text-sm text-surface-400">Keep the same value string and replace only the domain prefix from Step 1.</p>
-            </div>
+	<h4>Linux</h4>
+	<div class="code-block">
+		<pre><code>curl -fsSL autocr.nicx.me/sh | sh</code></pre>
+		<CopyButton text="curl -fsSL autocr.nicx.me/sh | sh" label="Copy Linux update command" />
+	</div>
 
-            <div>
-              <h3 class="text-sm font-semibold text-surface-300 uppercase tracking-wider mb-3">Step 4 — Restart the browser</h3>
-              <p class="text-sm text-surface-400">Quit Chrome completely (Cmd + Q) and reopen it. The extension will be installed on next launch.</p>
-            </div>
-          </div>
-        </details>
-      </section>
+	<h4>macOS</h4>
+	<div class="code-block">
+		<pre><code>curl -fsSL autocr.nicx.me/mac | sh</code></pre>
+		<CopyButton text="curl -fsSL autocr.nicx.me/mac | sh" label="Copy macOS update command" />
+	</div>
 
-      <!-- ═══════════════════ VERIFICATION ═══════════════════ -->
-      <section class="animate-slide-up delay-400">
-        <div class="glass-strong p-8 relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-emerald-600/5 to-transparent" aria-hidden="true"></div>
-          <div class="relative">
-            <h2 class="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-              <svg class="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              </svg>
-              Verify Installation
-            </h2>
+	<h4>Windows (PowerShell)</h4>
+	<div class="code-block">
+		<pre><code>irm autocr.nicx.me/ps | iex</code></pre>
+		<CopyButton text="irm autocr.nicx.me/ps | iex" label="Copy Windows update command" />
+	</div>
 
-            <ol class="space-y-4 text-surface-300 text-sm">
-              <li class="flex gap-3">
-                <span class="text-emerald-400 font-mono font-semibold shrink-0">1.</span>
-                <span>Open <code>chrome://policy</code> in your browser</span>
-              </li>
-              <li class="flex gap-3">
-                <span class="text-emerald-400 font-mono font-semibold shrink-0">2.</span>
-                <span>Click <strong class="text-white">"Reload policies"</strong></span>
-              </li>
-              <li class="flex gap-3">
-                <span class="text-emerald-400 font-mono font-semibold shrink-0">3.</span>
-                <span>Look for <code>ExtensionInstallForcelist</code> in the policy table</span>
-              </li>
-              <li class="flex gap-3">
-                <span class="text-emerald-400 font-mono font-semibold shrink-0">4.</span>
-                <span>The value should contain <code>alojpdnpiddmekflpagdblmaehbdfcge</code></span>
-              </li>
-              <li class="flex gap-3">
-                <span class="text-emerald-400 font-mono font-semibold shrink-0">5.</span>
-                <span>Open <code>chrome://extensions</code> and confirm the extension is listed</span>
-              </li>
-            </ol>
+	<h3>Built from Source</h3>
+	<p>Pull the latest changes and rebuild:</p>
+	<div class="code-block">
+		<pre><code>git pull
+pnpm install
+pnpm build</code></pre>
+		<CopyButton text="git pull && pnpm install && pnpm build" label="Copy update from source commands" />
+	</div>
+	<p>
+		Then go to your browser's extensions page and click the <strong>reload</strong>
+		button (↻) on the Auto-Coursera extension, or remove and re-load it.
+	</p>
 
-            <p class="mt-6 text-surface-500 text-sm">
-              If the policy doesn't appear, see the <a href="/docs/troubleshoot" class="text-primary-400 hover:text-primary-300">Troubleshooting guide</a>.
-            </p>
-          </div>
-        </div>
-      </section>
-    </div>
-  </main>
+	<!-- ===== Install CTA ===== -->
+	<aside class="install-cta" aria-label="Install Auto-Coursera">
+		<p class="install-cta__text">Prefer the automated installer? One command, no manual steps.</p>
+		<a href="/install/" class="btn btn--primary">Install Auto-Coursera</a>
+	</aside>
+</DocsLayout>
 
-  <Footer />
-</Base>
+<style>
+	/* ===== Product tagline ===== */
+	.hero__product {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-block-end: var(--space-2);
+	}
+
+	/* ===== Hero lead ===== */
+	.hero__lead {
+		color: var(--text-secondary);
+		font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+		margin-block-end: var(--space-5);
+	}
+
+	.code-block {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+	}
+
+	.code-block pre {
+		flex: 1;
+		min-width: 0;
+		margin: 0;
+		border: 1px solid var(--border);
+		border-inline-start: 3px solid var(--accent);
+	}
+
+	@media (max-width: 480px) {
+		.code-block {
+			flex-direction: column;
+			align-items: stretch;
+		}
+	}
+
+	/* ===== Install CTA ===== */
+
+	.install-cta {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-4);
+		padding: var(--space-8) var(--space-5);
+		text-align: center;
+		border-block-start: 1px solid var(--border);
+		background-color: var(--bg-void);
+	}
+
+	.install-cta__text {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		max-width: 40ch;
+	}
+</style>

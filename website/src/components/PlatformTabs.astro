@@ -1,0 +1,226 @@
+---
+// PlatformTabs — OS-aware install command tabs with keyboard support.
+import CopyButton from './CopyButton.astro';
+---
+
+<div class="install-commands">
+	<div class="install-tabs" role="tablist" aria-label="Installation commands by platform">
+		<button
+			id="tab-linux"
+			class="install-tabs__tab"
+			role="tab"
+			data-platform="linux"
+			aria-controls="panel-linux"
+			aria-selected="false"
+		>
+			Linux
+		</button>
+		<button
+			id="tab-macos"
+			class="install-tabs__tab"
+			role="tab"
+			data-platform="macos"
+			aria-controls="panel-macos"
+			aria-selected="false"
+		>
+			macOS
+		</button>
+		<button
+			id="tab-windows"
+			class="install-tabs__tab"
+			role="tab"
+			data-platform="windows"
+			aria-controls="panel-windows"
+			aria-selected="false"
+		>
+			Windows
+		</button>
+	</div>
+
+	<div class="install-panel" id="panel-linux" role="tabpanel" aria-labelledby="tab-linux" data-platform="linux">
+		<div class="code-block">
+			<pre><code>curl -fsSL autocr.nicx.me/sh | sh</code></pre>
+			<CopyButton text="curl -fsSL autocr.nicx.me/sh | sh" label="Copy Linux install command" />
+		</div>
+	</div>
+	<div class="install-panel" id="panel-macos" role="tabpanel" aria-labelledby="tab-macos" data-platform="macos" hidden>
+		<div class="code-block">
+			<pre><code>curl -fsSL autocr.nicx.me/mac | sh</code></pre>
+			<CopyButton text="curl -fsSL autocr.nicx.me/mac | sh" label="Copy macOS install command" />
+		</div>
+	</div>
+	<div class="install-panel" id="panel-windows" role="tabpanel" aria-labelledby="tab-windows" data-platform="windows" hidden>
+		<div class="code-block">
+			<pre><code>irm autocr.nicx.me/ps | iex</code></pre>
+			<CopyButton text="irm autocr.nicx.me/ps | iex" label="Copy Windows install command" />
+		</div>
+	</div>
+</div>
+
+<script>
+	function initPlatformTabs() {
+		const roots = document.querySelectorAll<HTMLElement>('.install-commands');
+		if (!roots.length) return;
+
+		// Detect OS once for all instances
+		function detectOS(): string {
+			const ua = navigator.userAgent.toLowerCase();
+			if (ua.includes('win')) return 'windows';
+			if (ua.includes('mac')) return 'macos';
+			return 'linux';
+		}
+
+		roots.forEach((root) => {
+			const tablist = root.querySelector<HTMLElement>('.install-tabs');
+			const tabs = root.querySelectorAll<HTMLButtonElement>('.install-tabs__tab');
+			const panels = root.querySelectorAll<HTMLElement>('.install-panel');
+			if (!tablist || !tabs.length || !panels.length) return;
+
+			function activateTab(platform: string) {
+				tabs.forEach((tab) => {
+					const isActive = tab.dataset.platform === platform;
+					tab.setAttribute('aria-selected', String(isActive));
+					tab.tabIndex = isActive ? 0 : -1;
+				});
+				panels.forEach((panel) => {
+					const isActive = panel.dataset.platform === platform;
+					panel.hidden = !isActive;
+				});
+			}
+
+			// Initialize with detected OS
+			activateTab(detectOS());
+
+			// Click handler
+			tabs.forEach((tab) => {
+				tab.addEventListener('click', () => {
+					const platform = tab.dataset.platform;
+					if (platform) activateTab(platform);
+				});
+			});
+
+			// Keyboard navigation (arrow keys within tablist)
+			tablist.addEventListener('keydown', (e) => {
+				const platformOrder = ['linux', 'macos', 'windows'];
+				const current = root.querySelector<HTMLButtonElement>(
+					'.install-tabs__tab[aria-selected="true"]'
+				);
+				if (!current) return;
+
+				const currentIndex = platformOrder.indexOf(
+					current.dataset.platform ?? ''
+				);
+				let nextIndex = -1;
+
+				if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+					e.preventDefault();
+					nextIndex = (currentIndex + 1) % platformOrder.length;
+				} else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+					e.preventDefault();
+					nextIndex =
+						(currentIndex - 1 + platformOrder.length) %
+						platformOrder.length;
+				} else if (e.key === 'Home') {
+					e.preventDefault();
+					nextIndex = 0;
+				} else if (e.key === 'End') {
+					e.preventDefault();
+					nextIndex = platformOrder.length - 1;
+				}
+
+				if (nextIndex >= 0) {
+					activateTab(platformOrder[nextIndex]);
+					const nextTab = root.querySelector<HTMLButtonElement>(
+						`.install-tabs__tab[data-platform="${platformOrder[nextIndex]}"]`
+					);
+					nextTab?.focus();
+				}
+			});
+		});
+	}
+
+	initPlatformTabs();
+	document.addEventListener('astro:after-swap', initPlatformTabs);
+</script>
+
+<style>
+	.install-commands {
+		margin-block-start: var(--space-6);
+		max-width: 32rem;
+	}
+
+	/* ===== Tab buttons ===== */
+
+	.install-tabs {
+		display: flex;
+		gap: 0;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.install-tabs__tab {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		color: var(--text-muted);
+		background: none;
+		border: none;
+		padding: var(--space-2) var(--space-4);
+		cursor: pointer;
+		border-bottom: 2px solid transparent;
+		margin-bottom: -1px;
+		transition:
+			color var(--transition-fast),
+			border-color var(--transition-fast);
+	}
+
+	.install-tabs__tab:hover {
+		color: var(--text-secondary);
+	}
+
+	.install-tabs__tab[aria-selected='true'] {
+		color: var(--accent);
+		border-bottom-color: var(--accent);
+	}
+
+	/* ===== Panels ===== */
+
+	.install-panel {
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-top: none;
+		border-radius: 0 0 var(--border-radius) var(--border-radius);
+	}
+
+	.install-panel[hidden] {
+		display: none;
+	}
+
+	.code-block {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+		padding: var(--space-2);
+	}
+
+	.code-block pre {
+		flex: 1;
+		min-width: 0;
+		margin: 0;
+		border: 1px solid var(--border);
+		border-inline-start: 3px solid var(--accent);
+		background-color: var(--bg-deep);
+		border-radius: var(--border-radius-sm);
+	}
+
+	.install-panel pre {
+		margin: 0;
+	}
+
+	.install-panel code {
+		background: none;
+		color: var(--text-primary);
+		padding: 0;
+		font-size: var(--text-code);
+	}
+</style>

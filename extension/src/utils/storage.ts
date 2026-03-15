@@ -1,5 +1,8 @@
 import type { AppSettings } from '../types/settings';
 import { API_KEY_FIELDS, DEFAULT_SETTINGS } from '../types/settings';
+import { Logger } from './logger';
+
+const logger = new Logger('Storage');
 
 const ENC_PREFIX = 'ENC:';
 let derivedKeyPromise: Promise<CryptoKey> | null = null;
@@ -57,7 +60,7 @@ async function decrypt(stored: string): Promise<string> {
 		return new TextDecoder().decode(decrypted);
 	} catch {
 		// Ciphertext corrupted or key changed (e.g., extension reload changed runtime.id)
-		console.warn('[Storage] Decryption failed — key may need to be re-entered in settings');
+		logger.warn('Decryption failed — key may need to be re-entered in settings');
 		return '';
 	}
 }

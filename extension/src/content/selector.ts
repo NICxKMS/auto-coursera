@@ -1,19 +1,22 @@
 /**
  * AnswerSelector — click simulation and highlighting for answer options.
- * REQ: REQ-010
  */
 
-import type { AnswerOption, SelectionResult } from '../types/questions';
+import type { AnswerOption, FillResult, SelectionResult } from '../types/questions';
 import { DEFAULT_SETTINGS } from '../types/settings';
-import {
-	CLICK_SETTLE_DELAY_MS,
-	CLICK_VERIFY_MAX_RETRIES,
-	COLORS,
-	CONFIDENCE_HIGH,
-	CONFIDENCE_MEDIUM,
-	DATA_ATTRIBUTES,
-} from '../utils/constants';
+import { COLORS } from '../utils/constants';
 import { Logger } from '../utils/logger';
+import { DATA_ATTRIBUTES } from './constants';
+
+/** Confidence thresholds for answer highlighting */
+const CONFIDENCE_HIGH = 0.8;
+const CONFIDENCE_MEDIUM = 0.5;
+
+/** Maximum retries for click verification */
+const CLICK_VERIFY_MAX_RETRIES = 2;
+
+/** Delay before verifying click selection (ms) */
+const CLICK_SETTLE_DELAY_MS = 250;
 
 const logger = new Logger('AnswerSelector');
 
@@ -24,6 +27,99 @@ const CONFIDENCE_COLORS: Record<ConfidenceLevel, string> = {
 	medium: COLORS.WARNING,
 	low: COLORS.LOW,
 };
+
+// ── Visual Feedback ─────────────────────────────────────────────
+
+/** Mark a question element as having an error. */
+export function markError(element: HTMLElement): void {
+	element.style.outline = `2px solid ${COLORS.ERROR}`;
+	element.style.outlineOffset = '2px';
+	element.setAttribute(DATA_ATTRIBUTES.ERROR, 'true');
+}
+
+/** Mark a question element as processing with a subtle pulsing outline. */
+export function markProcessing(element: HTMLElement): void {
+	element.style.outline = `2px solid ${COLORS.PROCESSING}`;
+	element.style.outlineOffset = '2px';
+	element.style.animation = 'auto-coursera-pulse 1.5s ease-in-out infinite';
+	element.setAttribute(DATA_ATTRIBUTES.PROCESSING, 'true');
+
+	if (!document.getElementById('auto-coursera-pulse-style')) {
+		const style = document.createElement('style');
+		style.id = 'auto-coursera-pulse-style';
+		style.textContent = `@keyframes auto-coursera-pulse { 0%,100% { outline-color: ${COLORS.PROCESSING}; } 50% { outline-color: ${COLORS.PULSE_MID}; } }`;
+		document.head.appendChild(style);
+	}
+}
+
+/** Clear processing/error indicators from a question element. */
+export function clearProcessing(element: HTMLElement): void {
+	element.style.outline = '';
+	element.style.outlineOffset = '';
+	element.style.animation = '';
+	element.removeAttribute(DATA_ATTRIBUTES.PROCESSING);
+	element.removeAttribute(DATA_ATTRIBUTES.ERROR);
+}
+
+// ── Click Simulation ────────────────────────────────────────────
+
+/**
+ * Simulate a real user click with full event sequence for React compatibility.
+ * Uses native .click() which reliably triggers:
+ * 1. Browser default behavior (checkbox/radio toggle)
+ * 2. Click event that bubbles to React's event delegation root
+ * 3. React's onChange handler fires, updating controlled state
+ */
+function simulateClick(target: HTMLElement): void {
+	target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+	target.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+
+	target.click();
+
+	const input =
+		target instanceof HTMLInputElement
+			? target
+			: target.querySelector<HTMLInputElement>('input[type="radio"], input[type="checkbox"]');
+	if (input) {
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		input.dispatchEvent(new Event('change', { bubbles: true }));
+	}
+}
+
+/**
+ * Click with verification: retry if React reverts the selection.
+ * After each attempt, waits briefly for React to re-render and checks
+ * whether the input is still checked. Retries up to maxRetries times.
+ */
+async function clickWithVerification(
+	target: HTMLElement,
+	maxRetries: number = CLICK_VERIFY_MAX_RETRIES,
+): Promise<boolean> {
+	const input =
+		target.querySelector<HTMLInputElement>('input[type="radio"], input[type="checkbox"]') ??
+		(target instanceof HTMLInputElement ? target : null);
+
+	if (input?.checked) return true;
+
+	for (let attempt = 0; attempt <= maxRetries; attempt++) {
+		simulateClick(target);
+
+		if (!input) return true;
+
+		await new Promise<void>((r) => setTimeout(r, CLICK_SETTLE_DELAY_MS));
+
+		if (input.checked) return true;
+
+		if (attempt < maxRetries) {
+			logger.warn(`Selection reverted, retry ${attempt + 1}/${maxRetries}`);
+		}
+	}
+
+	logger.warn('Selection did not stick after retries');
+	return false;
+}
+
+// ── Answer Selection ────────────────────────────────────────────
 
 export class AnswerSelector {
 	private readonly confidenceThreshold: number;
@@ -39,8 +135,6 @@ export class AnswerSelector {
 
 	/**
 	 * Select answers based on AI response.
-	 * AC-010.3: Below threshold → highlight only, not click
-	 * AC-010.4: Highlighted with data-auto-coursera-suggestion attribute
 	 */
 	async select(
 		options: AnswerOption[],
@@ -120,29 +214,88 @@ export class AnswerSelector {
 	}
 
 	/**
+	 * Fill a numeric/text-input field with an AI-provided value.
+	 */
+	async fillInput(
+		inputElement: HTMLInputElement,
+		questionElement: HTMLElement,
+		value: string,
+		confidence: number,
+	): Promise<FillResult> {
+		if (!this.autoSelect || confidence < this.confidenceThreshold) {
+			logger.info(
+				`${!this.autoSelect ? 'Auto-select disabled' : `Confidence ${confidence} below threshold ${this.confidenceThreshold}`}, highlighting input only`,
+			);
+			this.highlightInput(inputElement, questionElement, value, confidence, true);
+			return { success: true, value, confidence };
+		}
+
+		// Fill the input using React-compatible value setter
+		const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+
+		if (nativeSetter) {
+			nativeSetter.call(inputElement, value);
+		} else {
+			inputElement.value = value;
+		}
+
+		// Dispatch React-compatible events
+		inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+		inputElement.dispatchEvent(new Event('change', { bubbles: true }));
+
+		// Visual feedback
+		this.highlightInput(inputElement, questionElement, value, confidence, false);
+
+		return { success: true, value, confidence };
+	}
+
+	/**
+	 * Highlight an input container with confidence-based coloring.
+	 * @param highlightOnly — true if the input was not filled (suggestion mode)
+	 */
+	private highlightInput(
+		inputElement: HTMLInputElement,
+		_questionElement: HTMLElement,
+		_value: string,
+		confidence: number,
+		highlightOnly: boolean,
+	): void {
+		const level: ConfidenceLevel =
+			confidence >= CONFIDENCE_HIGH ? 'high' : confidence >= CONFIDENCE_MEDIUM ? 'medium' : 'low';
+		const color = CONFIDENCE_COLORS[level];
+
+		// Find the input's container (cds-input-root or similar)
+		const container =
+			inputElement.closest('.cds-input-root') ?? inputElement.parentElement ?? inputElement;
+
+		(container as HTMLElement).classList.add(`auto-coursera-${level}`);
+		if (highlightOnly) {
+			(container as HTMLElement).classList.add('highlight-only');
+		}
+
+		const outlineStyle = highlightOnly ? 'dashed' : 'solid';
+		(container as HTMLElement).style.outline = `2px ${outlineStyle} ${color}`;
+		(container as HTMLElement).style.outlineOffset = '2px';
+		(container as HTMLElement).style.borderRadius = '4px';
+		(container as HTMLElement).setAttribute(DATA_ATTRIBUTES.SUGGESTION, level);
+	}
+
+	/**
 	 * Perform click simulation with three strategies.
-	 * AC-010.1: label click → input click → direct click
-	 * AC-010.2: Dispatches change event with {bubbles: true}
 	 */
 	private async performClick(
 		option: AnswerOption,
 	): Promise<{ method: 'click' | 'input-change' | 'label-click'; verified: boolean }> {
 		const el = option.element as HTMLElement;
 
-		// Warn if the element was detached by a React re-render —
-		// the click may not be visible, but clickWithVerification will
-		// detect the failure and the solvedUIDs guard prevents re-processing loops.
 		if (!el.isConnected) {
 			logger.warn('Option element may be detached from DOM');
 		}
 
 		// Strategy 1: Label click (most reliable for React controlled inputs)
-		// Coursera hides <input> at opacity:0; clicking the <label> wrapper
-		// triggers the checkbox/radio via browser activation behavior,
-		// and the click event bubbles to React's delegation root.
 		const label = el.closest('label') ?? el.querySelector('label');
 		if (label) {
-			const verified = await AnswerSelector.clickWithVerification(label);
+			const verified = await clickWithVerification(label);
 			return { method: 'label-click', verified };
 		}
 
@@ -151,83 +304,17 @@ export class AnswerSelector {
 			option.inputElement ??
 			el.querySelector<HTMLInputElement>('input[type="radio"], input[type="checkbox"]');
 		if (input) {
-			const verified = await AnswerSelector.clickWithVerification(input);
+			const verified = await clickWithVerification(input);
 			return { method: 'input-change', verified };
 		}
 
 		// Strategy 3: Direct wrapper element click
-		const verified = await AnswerSelector.clickWithVerification(el);
+		const verified = await clickWithVerification(el);
 		return { method: 'click', verified };
 	}
 
 	/**
-	 * Simulate a real user click with full event sequence for React compatibility.
-	 * Uses native .click() which reliably triggers:
-	 * 1. Browser default behavior (checkbox/radio toggle)
-	 * 2. Click event that bubbles to React's event delegation root
-	 * 3. React's onChange handler fires, updating controlled state
-	 */
-	private static simulateClick(target: HTMLElement): void {
-		// Dispatch mousedown/mouseup for React's synthetic event tracking
-		target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-		target.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-
-		// Native .click() reliably triggers browser activation behavior
-		// (checkbox/radio toggle) AND dispatches a click event that bubbles
-		// to React's event delegation root — unlike synthetic MouseEvent('click')
-		// which may not trigger activation behavior consistently.
-		target.click();
-
-		// Dispatch change/input events as additional signal for React
-		const input =
-			target instanceof HTMLInputElement
-				? target
-				: target.querySelector<HTMLInputElement>('input[type="radio"], input[type="checkbox"]');
-		if (input) {
-			input.dispatchEvent(new Event('input', { bubbles: true }));
-			input.dispatchEvent(new Event('change', { bubbles: true }));
-		}
-	}
-
-	/**
-	 * Click with verification: retry if React reverts the selection.
-	 * After each attempt, waits briefly for React to re-render and checks
-	 * whether the input is still checked. Retries up to maxRetries times.
-	 */
-	private static async clickWithVerification(
-		target: HTMLElement,
-		maxRetries: number = CLICK_VERIFY_MAX_RETRIES,
-	): Promise<boolean> {
-		const input =
-			target.querySelector<HTMLInputElement>('input[type="radio"], input[type="checkbox"]') ??
-			(target instanceof HTMLInputElement ? target : null);
-
-		// Already in desired state — skip clicking to avoid checkbox toggle-off
-		if (input?.checked) return true;
-
-		for (let attempt = 0; attempt <= maxRetries; attempt++) {
-			AnswerSelector.simulateClick(target);
-
-			// If no input found, can't verify — trust the click worked
-			if (!input) return true;
-
-			// Wait for React to process the event and re-render
-			await new Promise<void>((r) => setTimeout(r, CLICK_SETTLE_DELAY_MS));
-
-			if (input.checked) return true;
-
-			if (attempt < maxRetries) {
-				logger.warn(`Selection reverted, retry ${attempt + 1}/${maxRetries}`);
-			}
-		}
-
-		logger.warn('Selection did not stick after retries');
-		return false;
-	}
-
-	/**
 	 * Highlight an option with confidence-based coloring.
-	 * AC-010.4: data-auto-coursera-suggestion="true" attribute
 	 * @param clicked — true if the option was auto-clicked, false if highlight-only (suggestion)
 	 */
 	private highlightOption(option: AnswerOption, confidence: number, clicked: boolean = true): void {
@@ -251,43 +338,5 @@ export class AnswerSelector {
 		el.classList.add(`auto-coursera-${level}`);
 		el.style.outlineOffset = '2px';
 		el.style.borderRadius = '4px';
-	}
-
-	/**
-	 * Mark a question as having an error.
-	 */
-	static markError(element: HTMLElement): void {
-		element.style.outline = `2px solid ${COLORS.ERROR}`;
-		element.style.outlineOffset = '2px';
-		element.setAttribute(DATA_ATTRIBUTES.ERROR, 'true');
-	}
-
-	/**
-	 * Mark a question as processing with a subtle pulsing outline.
-	 */
-	static markProcessing(element: HTMLElement): void {
-		element.style.outline = `2px solid ${COLORS.PROCESSING}`;
-		element.style.outlineOffset = '2px';
-		element.style.animation = 'auto-coursera-pulse 1.5s ease-in-out infinite';
-		element.setAttribute(DATA_ATTRIBUTES.PROCESSING, 'true');
-
-		// Inject the keyframe animation once into the document
-		if (!document.getElementById('auto-coursera-pulse-style')) {
-			const style = document.createElement('style');
-			style.id = 'auto-coursera-pulse-style';
-			style.textContent = `@keyframes auto-coursera-pulse { 0%,100% { outline-color: ${COLORS.PROCESSING}; } 50% { outline-color: ${COLORS.PULSE_MID}; } }`;
-			document.head.appendChild(style);
-		}
-	}
-
-	/**
-	 * Clear processing/error indicator.
-	 */
-	static clearProcessing(element: HTMLElement): void {
-		element.style.outline = '';
-		element.style.outlineOffset = '';
-		element.style.animation = '';
-		element.removeAttribute(DATA_ATTRIBUTES.PROCESSING);
-		element.removeAttribute(DATA_ATTRIBUTES.ERROR);
 	}
 }

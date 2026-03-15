@@ -2,8 +2,6 @@
  * Shared error pattern → user-friendly message mapping.
  * Used by both the popup and the floating widget panel to display
  * consistent, readable error messages from raw error codes.
- *
- * REQ: REQ-012 (popup), REQ-UI-PANEL (widget)
  */
 
 /** Error pattern → user-friendly message mapping */

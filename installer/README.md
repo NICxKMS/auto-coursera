@@ -6,14 +6,14 @@ Cross-platform CLI tool that configures browser policies to force-install the Au
 
 ## How It Works
 
-The installer writes `ExtensionInstallForcelist` policy entries for Chromium-based browsers. This policy tells the browser to install the extension from a self-hosted update URL and keep it updated automatically.
+The installer writes `ExtensionInstallForcelist` policy entries for Chromium-based browsers. These entries bootstrap installation from the self-hosted update manifest, while the packaged extension manifest carries the same `update_url` for later update checks.
 
 ```
 Policy value: <extension-id>;<update-url>
 Example:      alojpdnpiddmekflpagdblmaehbdfcge;https://autocr.nicx.me/updates.xml
 ```
 
-After a browser restart, the browser reads the policy, fetches `updates.xml`, downloads the CRX, and installs the extension — all silently.
+After a browser restart, the browser reads the policy, fetches `updates.xml`, downloads the CRX, and installs the extension — all silently. Future update checks continue against the same `https://autocr.nicx.me/updates.xml` contract because the signed extension manifest embeds that same `update_url`.
 
 ## Supported Browsers
 

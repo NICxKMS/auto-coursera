@@ -1,0 +1,260 @@
+---
+import Breadcrumb from '../components/Breadcrumb.astro';
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+	title="Terms of Use"
+	description="Terms of use for the Auto-Coursera browser extension."
+	canonicalPath="/terms/"
+>
+	<!-- ================================================================
+	     HERO
+	     ================================================================ -->
+	<section class="hero" data-bg="deep" aria-labelledby="terms-heading">
+		<div class="container-narrow">
+			<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
+			<Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Terms' }]} />
+			<h1 id="terms-heading">Terms of Use</h1>
+			<p class="hero__effective">Effective date: March 15, 2026</p>
+			<p class="hero__lead">
+				Straightforward terms for the Auto-Coursera extension —
+				plain language, no legalese, no surprises.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     WHAT THIS IS
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="what-heading">
+		<div class="container-narrow">
+			<h2 id="what-heading">What this is</h2>
+			<p>
+				Auto-Coursera is a free, open-source Chrome extension that uses
+				AI to help answer Coursera quiz questions. There are no accounts,
+				no payments, and no subscriptions. You install it, configure an
+				API key, and use it.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     NO WARRANTY
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="warranty-heading">
+		<div class="container-narrow">
+			<h2 id="warranty-heading">No warranty</h2>
+			<p>
+				This extension is provided <strong>"as is"</strong> without
+				warranty of any kind, express or implied. AI-generated answers
+				are not guaranteed to be correct — they can be wrong, incomplete,
+				or outdated.
+			</p>
+			<p>
+				<strong>You are responsible for reviewing all answers before
+				submitting them.</strong> Do not blindly trust any AI output.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     ACADEMIC RESPONSIBILITY
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="academic-heading">
+		<div class="container-narrow">
+			<h2 id="academic-heading">Academic responsibility</h2>
+			<p>
+				You are solely responsible for how you use this tool. Auto-Coursera
+				is intended as a study aid — a way to check your understanding
+				and learn from AI explanations.
+			</p>
+			<p>
+				It is your responsibility to comply with your institution's
+				academic integrity policies and Coursera's Terms of Service.
+				The developers of this extension do not encourage or endorse
+				academic dishonesty.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     AI LIMITATIONS
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="ai-heading">
+		<div class="container-narrow">
+			<h2 id="ai-heading">AI limitations</h2>
+			<p>
+				The extension sends quiz questions to third-party AI providers
+				(such as OpenRouter, Google Gemini, Groq, Cerebras, or NVIDIA).
+				The developers of Auto-Coursera do not control the accuracy,
+				availability, or behavior of these services.
+			</p>
+			<p>
+				You provide your own API key and connect directly to the
+				provider's API. You are subject to each provider's own terms
+				of service and usage policies.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     NO LIABILITY
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="liability-heading">
+		<div class="container-narrow">
+			<h2 id="liability-heading">No liability</h2>
+			<p>
+				The developers of Auto-Coursera are not liable for any academic
+				consequences, incorrect answers, account actions by Coursera or
+				your institution, or any other damages arising from the use of
+				this extension.
+			</p>
+			<p>
+				You use this tool at your own risk.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     OPEN SOURCE
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="source-heading">
+		<div class="container-narrow">
+			<h2 id="source-heading">Open source</h2>
+			<p>
+				The full source code is available on
+				<a
+					href="https://github.com/NICxKMS/auto-coursera"
+					target="_blank"
+					rel="noopener noreferrer"
+				>GitHub</a>
+				under the
+				<a
+					href="https://github.com/NICxKMS/auto-coursera/blob/master/LICENSE"
+					target="_blank"
+					rel="noopener noreferrer"
+				>MIT License</a>.
+				You can inspect exactly what the extension does, how it handles
+				your data, and how it communicates with AI providers.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     CHANGES
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="changes-heading">
+		<div class="container-narrow">
+			<h2 id="changes-heading">Changes to these terms</h2>
+			<p>
+				These terms may be updated from time to time. Changes will be
+				reflected on this page with an updated effective date. Continued
+				use of the extension after changes are posted constitutes
+				acceptance of the revised terms.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     NAVIGATION FOOTER
+	     ================================================================ -->
+	<section class="nav-footer" data-bg="deep" aria-label="Related pages">
+		<div class="container-narrow">
+			<div class="nav-footer__links">
+				<a href="/privacy/">Privacy</a>
+				<a href="/support/">Support</a>
+				<a href="/docs/">Documentation</a>
+			</div>
+		</div>
+	</section>
+</Base>
+
+<style>
+	/* ==========================================================================
+	   Terms Page — Scoped Styles
+	   ========================================================================== */
+
+	/* ===== Hero ===== */
+
+	.hero {
+		padding-block-start: calc(var(--nav-height) + var(--space-7));
+		padding-block-end: var(--space-6);
+		background-color: var(--bg-deep);
+	}
+
+	.hero h1 {
+		margin-block-end: var(--space-3);
+	}
+
+	.hero__product {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-block-end: var(--space-2);
+	}
+
+	.hero__effective {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin-block-end: var(--space-4);
+	}
+
+	.hero__lead {
+		font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+		color: var(--text-secondary);
+		max-width: 36rem;
+	}
+
+	/* ===== Sections ===== */
+
+	.section {
+		padding-block: var(--space-6);
+	}
+
+	.section h2 {
+		margin-block-end: var(--space-4);
+	}
+
+	.section p {
+		line-height: var(--leading-normal);
+	}
+
+	.section strong {
+		color: var(--text-primary);
+	}
+
+	/* ===== Navigation Footer ===== */
+
+	.nav-footer {
+		padding-block: var(--space-6);
+		border-top: 1px solid var(--border);
+	}
+
+	.nav-footer__links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-5);
+		justify-content: center;
+	}
+
+	.nav-footer__links a {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	/* ===== Responsive ===== */
+
+	@media (max-width: 480px) {
+		.hero {
+			padding-block-start: calc(var(--nav-height) + var(--space-6));
+			padding-block-end: var(--space-5);
+		}
+	}
+</style>

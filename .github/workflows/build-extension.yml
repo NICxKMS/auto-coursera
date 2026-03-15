@@ -14,9 +14,14 @@ on:
     paths:
       - 'extension/**'
       - 'scripts/**'
+      - 'version.json'
 
 permissions:
   contents: read
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10'
 
 concurrency:
   group: build-ext-${{ github.head_ref || github.ref }}
@@ -30,15 +35,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Run version sync (idempotent)
+        run: bash scripts/sync-constants.sh
+
+      - name: Verify version consistency
+        run: bash scripts/check-version.sh
+
+      - name: Verify sync was committed
+        run: |
+          if ! git diff --quiet; then
+            echo "::error::version.json was updated but sync-constants.sh was not run before committing."
+            echo "::error::Please run: bash scripts/sync-constants.sh && git add -A && git commit --amend"
+            echo ""
+            echo "Files that need syncing:"
+            git diff --stat
+            exit 1
+          fi
+
       - name: Setup pnpm
         uses: pnpm/action-setup@c5ba7f7862a0f64c1b1a05fbac13e0b8e86ba08c # v4
         with:
-          version: '9'
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
           cache-dependency-path: 'extension/pnpm-lock.yaml'
 

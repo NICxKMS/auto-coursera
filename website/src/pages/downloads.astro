@@ -1,232 +1,643 @@
 ---
-import { readFile } from 'node:fs/promises';
-
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
+import versionInfo from '@root/version.json';
+import Breadcrumb from '../components/Breadcrumb.astro';
 import Base from '../layouts/Base.astro';
 
-const versionInfo = JSON.parse(
-  await readFile(new URL('../../../version.json', import.meta.url), 'utf-8'),
-) as {
-  version: string;
-  githubRepo: string;
-};
-
-const currentVersion = versionInfo.version;
-const githubReleaseBase = `https://github.com/${versionInfo.githubRepo}/releases/download/v${currentVersion}`;
-const installerDownloads = {
-	windows: `${githubReleaseBase}/installer-windows-amd64.exe`,
-	windowsArm64: `${githubReleaseBase}/installer-windows-arm64.exe`,
-	macosArm64: `${githubReleaseBase}/installer-macos-arm64`,
-	macosIntel: `${githubReleaseBase}/installer-macos-amd64`,
-	linux: `${githubReleaseBase}/installer-linux-amd64`,
-	linuxArm64: `${githubReleaseBase}/installer-linux-arm64`,
-} as const;
+// Build-time domain reference: versionInfo.domains.website
+const siteUrl = versionInfo.domains.website;
 ---
 
-<Base title="Downloads" description="Download Auto-Coursera Assistant native installers and install scripts for Windows, macOS, and Linux.">
-  <Header />
+<Base
+	title="Downloads — Auto-Coursera Installers for All Platforms"
+	description="Download Auto-Coursera installers for Windows, macOS, and Linux. Available for x64 and ARM64 architectures."
+	canonicalPath="/downloads/"
+>
+	<!-- ================================================================
+	     HERO
+	     ================================================================ -->
+	<section class="hero" data-bg="deep" aria-labelledby="downloads-heading">
+		<div class="container-narrow">
+			<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
+			<Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Downloads' }]} />
+			<h1 id="downloads-heading">Downloads</h1>
+			<div class="hero__meta">
+				<span class="version-badge">v{versionInfo.version}</span>
+				<span class="hero__separator" aria-hidden="true">&middot;</span>
+				<span class="hero__note">Free &amp; open source</span>
+			</div>
+			<p class="hero__lead">
+				Grab a platform installer for Windows, macOS, or Linux.
+				Available for both <strong>x64</strong> and <strong>ARM64</strong>
+				architectures.
+			</p>
+			<p class="hero__links">
+				Looking for the one-command install?
+				<a href="/install/">Install page</a>. Want to build from source?
+				<a href="/docs/manual/">Manual install guide</a>.
+			</p>
+		</div>
+	</section>
 
-  <main id="main-content" class="py-16 sm:py-24 px-4">
-    <div class="max-w-5xl mx-auto">
-      <!-- Title -->
-      <div class="text-center mb-16 animate-fade-in">
-        <p class="section-label">Downloads</p>
-        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">All Downloads</h1>
-        <p class="text-lg text-surface-400 max-w-xl mx-auto">
-          Native installers first, plus advanced scripts and manual references for every supported platform.
-        </p>
-        <div class="mt-4">
-          <span class="badge">
-            <span class="font-mono">v{currentVersion}</span>
-            <span class="text-primary-400/50">&middot;</span>
-            <span class="text-primary-400/70">Latest Release</span>
-          </span>
-        </div>
-      </div>
+	<!-- ================================================================
+	     PLATFORM DOWNLOAD GRID
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="installers-heading">
+		<div class="container">
+			<h2 id="installers-heading">Platform installers</h2>
+			<p>Download the installer for your operating system and architecture.</p>
+			<p class="detected-hint" id="detected-hint" hidden>Based on your system</p>
 
-      <!-- ═══════════════════ NATIVE INSTALLERS ═══════════════════ -->
-      <section class="mb-20 animate-slide-up delay-100">
-        <h2 class="text-2xl font-semibold text-white mb-2">Native Installers</h2>
-        <p class="text-surface-400 mb-8">Recommended downloads. They detect installed browsers and configure the matching Chrome, Edge, Brave, or Chromium policy for you.</p>
+			<!-- App / Zip toggle -->
+			<div class="download-toggle" role="tablist" aria-label="Download format">
+				<button
+					id="toggle-app"
+					class="download-toggle__btn"
+					role="tab"
+					data-view="app"
+					aria-controls="view-app"
+					aria-selected="true"
+					tabindex="0"
+				>
+					App
+				</button>
+				<button
+					id="toggle-zip"
+					class="download-toggle__btn"
+					role="tab"
+					data-view="zip"
+					aria-controls="view-zip"
+					aria-selected="false"
+					tabindex="-1"
+				>
+					Zip
+				</button>
+			</div>
 
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Windows x64 -->
-          <a href={installerDownloads.windows} class="card-interactive group flex items-center gap-4">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12V6.5l8-1.1V12H3zm0 .5h8v6.6l-8-1.1V12.5zM11.5 12V5.3l9.5-1.3V12h-9.5zm0 .5H21v7.5l-9.5-1.3v-6.2z"/></svg>
-            </div>
-            <div>
-              <p class="text-surface-200 font-medium">Windows x64</p>
-              <p class="text-xs text-surface-500">.exe installer — ~8 MB</p>
-            </div>
-            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-          </a>
+			<!-- App view: platform installer cards -->
+			<div id="view-app" role="tabpanel" aria-labelledby="toggle-app" data-view="app">
+			<div class="download-grid">
+				<div class="download-card" data-os="windows" data-arch="x64">
+					<h3 class="download-card__platform">Windows</h3>
+					<p class="download-card__arch">x64 (Intel/AMD)</p>
+					<a href="/download/windows" class="download-card__btn">Download</a>
+				</div>
 
-          <!-- Windows ARM64 -->
-          <a href={installerDownloads.windowsArm64} class="card-interactive group flex items-center gap-4">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3 12V6.5l8-1.1V12H3zm0 .5h8v6.6l-8-1.1V12.5zM11.5 12V5.3l9.5-1.3V12h-9.5zm0 .5H21v7.5l-9.5-1.3v-6.2z"/></svg>
-            </div>
-            <div>
-              <p class="text-surface-200 font-medium">Windows ARM64</p>
-              <p class="text-xs text-surface-500">.exe installer — ~8 MB</p>
-            </div>
-            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-          </a>
+				<div class="download-card" data-os="windows" data-arch="arm64">
+					<h3 class="download-card__platform">Windows</h3>
+					<p class="download-card__arch">ARM (64-bit)</p>
+					<a href="/download/windows-arm64" class="download-card__btn">Download</a>
+				</div>
 
-          <!-- macOS Apple Silicon -->
-          <a href={installerDownloads.macosArm64} class="card-interactive group flex items-center gap-4">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-            </div>
-            <div>
-              <p class="text-surface-200 font-medium">macOS (Apple Silicon)</p>
-              <p class="text-xs text-surface-500">M1/M2/M3/M4 — ~8 MB</p>
-            </div>
-            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-          </a>
+				<div class="download-card" data-os="macos" data-arch="arm64">
+					<h3 class="download-card__platform">macOS</h3>
+					<p class="download-card__arch">Apple Silicon</p>
+					<a href="/download/macos" class="download-card__btn">Download</a>
+				</div>
 
-          <!-- macOS Intel -->
-          <a href={installerDownloads.macosIntel} class="card-interactive group flex items-center gap-4">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-            </div>
-            <div>
-              <p class="text-surface-200 font-medium">macOS (Intel)</p>
-              <p class="text-xs text-surface-500">Intel x86_64 — ~8 MB</p>
-            </div>
-            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-          </a>
+				<div class="download-card" data-os="macos" data-arch="x64">
+					<h3 class="download-card__platform">macOS</h3>
+					<p class="download-card__arch">Intel / AMD (64-bit)</p>
+					<a href="/download/macos-intel" class="download-card__btn">Download</a>
+				</div>
 
-          <!-- Linux x64 -->
-          <a href={installerDownloads.linux} class="card-interactive group flex items-center gap-4">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.311.004-.466.013a7.18 7.18 0 0 0-.375.031c-.625.063-1.15.218-1.578.465-.844.49-1.316 1.297-1.512 2.18a6.73 6.73 0 0 0-.117.875 8.59 8.59 0 0 0 .004.965c.03.434.09.852.18 1.242.094.39.21.75.344 1.074.094.227.199.437.312.625.094.155.203.3.32.441.086.102.152.168.152.168l.008.008c.082.07.168.137.258.2.219.153.468.27.742.352.262.078.547.117.848.117s.586-.04.848-.117c.274-.082.523-.2.742-.352.09-.063.176-.13.258-.2l.008-.008s.066-.066.152-.168c.117-.14.227-.286.32-.441.114-.188.219-.398.313-.625.133-.324.25-.684.344-1.074.09-.39.148-.808.18-1.242a8.59 8.59 0 0 0 .003-.965 6.73 6.73 0 0 0-.117-.875c-.196-.883-.668-1.69-1.512-2.18a3.76 3.76 0 0 0-1.578-.465 7.95 7.95 0 0 0-.375-.031A5.7 5.7 0 0 0 12.504 0z"/></svg>
-            </div>
-            <div>
-              <p class="text-surface-200 font-medium">Linux x64</p>
-              <p class="text-xs text-surface-500">Debian, Ubuntu, Fedora — ~8 MB</p>
-            </div>
-            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-          </a>
+				<div class="download-card" data-os="linux" data-arch="x64">
+					<h3 class="download-card__platform">Linux</h3>
+					<p class="download-card__arch">x64 (Intel/AMD)</p>
+					<a href="/download/linux" class="download-card__btn">Download</a>
+				</div>
 
-          <!-- Linux ARM64 -->
-          <a href={installerDownloads.linuxArm64} class="card-interactive group flex items-center gap-4">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.311.004-.466.013a7.18 7.18 0 0 0-.375.031c-.625.063-1.15.218-1.578.465-.844.49-1.316 1.297-1.512 2.18a6.73 6.73 0 0 0-.117.875 8.59 8.59 0 0 0 .004.965c.03.434.09.852.18 1.242.094.39.21.75.344 1.074.094.227.199.437.312.625.094.155.203.3.32.441.086.102.152.168.152.168l.008.008c.082.07.168.137.258.2.219.153.468.27.742.352.262.078.547.117.848.117s.586-.04.848-.117c.274-.082.523-.2.742-.352.09-.063.176-.13.258-.2l.008-.008s.066-.066.152-.168c.117-.14.227-.286.32-.441.114-.188.219-.398.313-.625.133-.324.25-.684.344-1.074.09-.39.148-.808.18-1.242a8.59 8.59 0 0 0 .003-.965 6.73 6.73 0 0 0-.117-.875c-.196-.883-.668-1.69-1.512-2.18a3.76 3.76 0 0 0-1.578-.465 7.95 7.95 0 0 0-.375-.031A5.7 5.7 0 0 0 12.504 0z"/></svg>
-            </div>
-            <div>
-              <p class="text-surface-200 font-medium">Linux ARM64</p>
-              <p class="text-xs text-surface-500">Raspberry Pi, ARM — ~8 MB</p>
-            </div>
-            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-          </a>
-        </div>
-      </section>
+				<div class="download-card" data-os="linux" data-arch="arm64">
+					<h3 class="download-card__platform">Linux</h3>
+					<p class="download-card__arch">ARM (64-bit)</p>
+					<a href="/download/linux-arm64" class="download-card__btn">Download</a>
+				</div>
+			</div>
+			</div>
 
-      <!-- ═══════════════════ INSTALL SCRIPTS ═══════════════════ -->
-      <section class="mb-20 animate-slide-up delay-200">
-        <h2 class="text-2xl font-semibold text-white mb-2">Advanced Install Scripts</h2>
-        <p class="text-surface-400 mb-4">Terminal-based alternatives for automation, remote shells, and other manual workflows.</p>
-        <p class="text-sm text-surface-500 mb-3">Need to edit browser policy paths yourself instead? See the <a href="/docs/manual" class="text-primary-400 hover:text-primary-300">manual installation guide</a>.</p>
-        <p class="text-xs text-surface-500 mb-8 leading-relaxed">Windows <code>install.ps1</code> requests Administrator elevation through UAC when needed. Linux <code>install.sh</code> can re-run itself through <code>sudo</code> when launched from a saved local file, while curl-pipe one-liners should still use <code>| sudo bash</code>. macOS <code>install-mac.sh</code> remains non-root.</p>
+			<!-- Zip view: extension package download -->
+			<div id="view-zip" role="tabpanel" aria-labelledby="toggle-zip" data-view="zip" hidden>
+				<div class="download-grid">
+					<div class="download-card download-card--wide">
+						<h3 class="download-card__platform">Extension Package (.zip)</h3>
+						<p class="download-card__desc">
+							Download the extension as a zip archive containing the
+							built extension and <code>.crx</code> file. Load as an
+							unpacked extension in Chrome.
+						</p>
+						<a
+							href={`https://github.com/${versionInfo.githubRepo}/releases/latest/download/auto-coursera.zip`}
+							class="download-card__btn"
+							rel="noopener noreferrer"
+						>
+							Download .zip
+						</a>
 
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Windows PowerShell -->
-          <a href="/scripts/install.ps1" class="card-interactive group flex items-center gap-4">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-            </div>
-            <div>
-              <p class="text-surface-200 font-medium">install.ps1</p>
-              <p class="text-xs text-surface-500">Windows PowerShell</p>
-            </div>
-            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </a>
+						<div class="zip-instructions">
+							<h4 class="zip-instructions__heading">How to install</h4>
+							<ol class="zip-instructions__steps">
+								<li>Download and extract the zip</li>
+								<li>Open <code>chrome://extensions</code> in your browser</li>
+								<li>Enable <strong>Developer mode</strong> (top-right toggle)</li>
+								<li>Click <strong>Load unpacked</strong> and select the extracted folder</li>
+							</ol>
+							<p class="zip-instructions__note">
+								The archive contains the built <code>dist</code> folder
+								and a <code>.crx</code> file for manual installation.
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
 
-          <!-- Windows Uninstall -->
-          <a href="/scripts/uninstall.ps1" class="card-interactive group flex items-center gap-4">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-            </div>
-            <div>
-              <p class="text-surface-200 font-medium">uninstall.ps1</p>
-              <p class="text-xs text-surface-500">Windows uninstaller</p>
-            </div>
-            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </a>
+	<!-- ================================================================
+	     SYSTEM REQUIREMENTS
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="requirements-heading">
+		<div class="container-narrow">
+			<h2 id="requirements-heading">System requirements</h2>
+			<ul class="requirements-list">
+				<li>
+					<strong>A Chromium-based browser</strong> — Chrome, Edge,
+					Brave, or any other Chromium derivative.
+				</li>
+				<li>
+					<strong>An API key</strong> from a supported AI provider
+					(OpenRouter, Google Gemini, Groq, Cerebras, or NVIDIA NIM). Free
+					tiers are available. See the
+					<a href="/docs/setup/">setup guide</a>.
+				</li>
+			</ul>
+		</div>
+	</section>
 
-          <!-- Linux Install -->
-          <a href="/scripts/install.sh" class="card-interactive group flex items-center gap-4">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-            </div>
-            <div>
-              <p class="text-surface-200 font-medium">install.sh</p>
-              <p class="text-xs text-surface-500">Linux bash script</p>
-            </div>
-            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </a>
+	<!-- ================================================================
+	     TERMINAL CROSS-REFERENCE
+	     ================================================================ -->
+	<section class="section" data-bg="void">
+		<div class="container-narrow">
+			<h2>Prefer a terminal command?</h2>
+			<p>The <a href="/install/">install page</a> has a single-command installer for Linux, macOS, and Windows — with automatic browser setup included.</p>
+		</div>
+	</section>
 
-          <!-- macOS Install -->
-          <a href="/scripts/install-mac.sh" class="card-interactive group flex items-center gap-4">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-            </div>
-            <div>
-              <p class="text-surface-200 font-medium">install-mac.sh</p>
-              <p class="text-xs text-surface-500">macOS bash script</p>
-            </div>
-            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </a>
+	<!-- ================================================================
+	     BUILD FROM SOURCE
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="source-heading">
+		<div class="container-narrow">
+			<h2 id="source-heading">Build from source</h2>
+			<p>
+				Want full control? Clone the repository and build the extension
+				yourself. The
+				<a href="/docs/manual/">manual install guide</a> walks you
+				through the process step by step.
+			</p>
+			<p>
+				Source code:
+				<a href={`https://github.com/${versionInfo.githubRepo}`} target="_blank" rel="noopener noreferrer">github.com/{versionInfo.githubRepo}</a>
+			</p>
+		</div>
+	</section>
 
-          <!-- Linux/macOS Uninstall -->
-          <a href="/scripts/uninstall.sh" class="card-interactive group flex items-center gap-4">
-            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400 group-hover:text-white transition-colors">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-            </div>
-            <div>
-              <p class="text-surface-200 font-medium">uninstall.sh</p>
-              <p class="text-xs text-surface-500">Linux &amp; macOS uninstaller</p>
-            </div>
-            <svg class="w-4 h-4 text-surface-600 ml-auto group-hover:text-surface-300 group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </a>
-        </div>
-      </section>
+	<!-- ================================================================
+	     DOWNLOAD TOGGLE SCRIPT
+	     ================================================================ -->
+	<script>
+		function initDownloadToggle() {
+			const tabs = document.querySelectorAll<HTMLButtonElement>('.download-toggle__btn');
+			const panels = document.querySelectorAll<HTMLElement>('[role="tabpanel"][data-view]');
+			if (!tabs.length || !panels.length) return;
 
-      <!-- ═══════════════════ VERIFICATION ═══════════════════ -->
-      <section class="animate-slide-up delay-300">
-        <div class="glass p-8">
-          <h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
-            Verify Your Installation
-          </h2>
-          <p class="text-surface-400 mb-4">After installing, verify the extension is active:</p>
-          <ol class="space-y-3 text-surface-300 text-sm">
-            <li class="flex gap-3">
-              <span class="text-primary-400 font-mono font-semibold shrink-0">1.</span>
-              <span>Open your browser and go to <code>chrome://extensions</code></span>
-            </li>
-            <li class="flex gap-3">
-              <span class="text-primary-400 font-mono font-semibold shrink-0">2.</span>
-              <span>Look for <strong class="text-white">Auto-Coursera Assistant</strong> in the list</span>
-            </li>
-            <li class="flex gap-3">
-              <span class="text-primary-400 font-mono font-semibold shrink-0">3.</span>
-              <span>Confirm it shows <strong class="text-white">"Installed by enterprise policy"</strong></span>
-            </li>
-            <li class="flex gap-3">
-              <span class="text-primary-400 font-mono font-semibold shrink-0">4.</span>
-              <span>Optionally, check <code>chrome://policy</code> to see the active policy</span>
-            </li>
-          </ol>
-        </div>
-      </section>
-    </div>
-  </main>
+			function activate(view: string) {
+				tabs.forEach((tab) => {
+					const isActive = tab.dataset.view === view;
+					tab.setAttribute('aria-selected', String(isActive));
+					tab.tabIndex = isActive ? 0 : -1;
+				});
+				panels.forEach((panel) => {
+					panel.hidden = panel.dataset.view !== view;
+				});
+			}
 
-  <Footer />
+			tabs.forEach((tab) => {
+				tab.addEventListener('click', () => {
+					if (tab.dataset.view) activate(tab.dataset.view);
+				});
+			});
+
+			// Keyboard navigation (arrow keys within tablist)
+			const tablist = document.querySelector<HTMLElement>('.download-toggle');
+			tablist?.addEventListener('keydown', (e) => {
+				const views = ['app', 'zip'];
+				const current = document.querySelector<HTMLButtonElement>(
+					'.download-toggle__btn[aria-selected="true"]'
+				);
+				if (!current) return;
+
+				const idx = views.indexOf(current.dataset.view ?? '');
+				let next = -1;
+
+				if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+					e.preventDefault();
+					next = (idx + 1) % views.length;
+				} else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+					e.preventDefault();
+					next = (idx - 1 + views.length) % views.length;
+				} else if (e.key === 'Home') {
+					e.preventDefault();
+					next = 0;
+				} else if (e.key === 'End') {
+					e.preventDefault();
+					next = views.length - 1;
+				}
+
+				if (next >= 0) {
+					activate(views[next]);
+					const nextTab = document.querySelector<HTMLButtonElement>(
+						`.download-toggle__btn[data-view="${views[next]}"]`
+					);
+					nextTab?.focus();
+				}
+			});
+
+			// Reset to default on init
+			activate('app');
+		}
+
+		function detectOS(): { os: string; arch: string } {
+			const ua = navigator.userAgent.toLowerCase();
+			let os = 'linux';
+			let arch = 'x64';
+
+			if (ua.includes('win')) {
+				os = 'windows';
+			} else if (ua.includes('mac')) {
+				os = 'macos';
+			}
+
+			// Detect ARM architecture
+			if (ua.includes('aarch64') || ua.includes('arm64') || ua.includes('arm')) {
+				arch = 'arm64';
+			}
+
+			return { os, arch };
+		}
+
+		function highlightRecommended() {
+			// Clear previous recommendations
+			const prev = document.querySelectorAll<HTMLElement>('.download-card[data-recommended]');
+			prev.forEach((card) => card.removeAttribute('data-recommended'));
+
+			const { os, arch } = detectOS();
+
+			// For macOS, default to Apple Silicon (arm64) unless Intel detected
+			const targetArch = os === 'macos' && arch === 'x64' ? 'x64' : os === 'macos' ? 'arm64' : arch;
+
+			const selector = `.download-card[data-os="${os}"][data-arch="${targetArch}"]`;
+			const card = document.querySelector<HTMLElement>(selector);
+			if (card) {
+				card.setAttribute('data-recommended', '');
+			}
+
+			// Show the detected-hint text
+			const hint = document.getElementById('detected-hint');
+			if (hint && card) {
+				hint.hidden = false;
+			}
+		}
+
+		initDownloadToggle();
+		highlightRecommended();
+		document.addEventListener('astro:after-swap', () => {
+			initDownloadToggle();
+			highlightRecommended();
+		});
+	</script>
 </Base>
+
+<style>
+	/* ==========================================================================
+	   Downloads Page — Scoped Styles
+	   ========================================================================== */
+
+	/* ===== Hero ===== */
+
+	.hero {
+		padding-block-start: calc(var(--nav-height) + var(--space-7));
+		padding-block-end: var(--space-6);
+		background-color: var(--bg-deep);
+	}
+
+	.hero h1 {
+		margin-block-end: var(--space-4);
+	}
+
+	.hero__product {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-block-end: var(--space-2);
+	}
+
+	.hero__lead {
+		font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+		max-width: 36rem;
+	}
+
+	.hero__lead strong {
+		color: var(--text-primary);
+		font-weight: var(--weight-semibold);
+	}
+
+	.hero__links {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+	}
+
+	.hero__meta {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		margin-block-end: var(--space-5);
+		flex-wrap: wrap;
+	}
+
+	.version-badge {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-semibold);
+		color: var(--accent);
+		background-color: var(--accent-subtle);
+		padding: var(--space-1) var(--space-3);
+		border-radius: var(--border-radius-sm);
+		line-height: 1;
+	}
+
+	.hero__separator {
+		color: var(--text-muted);
+	}
+
+	.hero__note {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+	}
+
+	/* ===== Sections ===== */
+
+	.section {
+		padding-block: var(--space-6);
+	}
+
+	.section h2 {
+		margin-block-end: var(--space-4);
+	}
+
+	.section h3 {
+		margin-block-start: var(--space-6);
+		margin-block-end: var(--space-3);
+	}
+
+	/* ===== Download Toggle ===== */
+
+	.download-toggle {
+		display: inline-flex;
+		gap: 0;
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius-sm);
+		overflow: hidden;
+		margin-block-start: var(--space-4);
+	}
+
+	.download-toggle__btn {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-semibold);
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+		background: transparent;
+		border: none;
+		padding: var(--space-2) var(--space-5);
+		cursor: pointer;
+		transition:
+			background-color var(--transition-fast),
+			color var(--transition-fast);
+		line-height: 1;
+	}
+
+	.download-toggle__btn:hover {
+		color: var(--text-secondary);
+		background-color: var(--surface-hover);
+	}
+
+	.download-toggle__btn[aria-selected='true'] {
+		background-color: var(--accent);
+		color: var(--bg-void);
+	}
+
+	/* ===== Zip Card (wide variant) ===== */
+
+	.download-card--wide {
+		grid-column: 1 / -1;
+	}
+
+	.download-card__desc {
+		font-size: var(--text-small);
+		color: var(--text-secondary);
+		line-height: var(--leading-normal);
+		margin: 0;
+	}
+
+	.download-card__desc code {
+		font-size: var(--text-code);
+	}
+
+	/* ===== Zip Instructions ===== */
+
+	.zip-instructions {
+		margin-block-start: var(--space-4);
+		padding-block-start: var(--space-4);
+		border-top: 1px solid var(--border);
+	}
+
+	.zip-instructions__heading {
+		font-family: var(--font-body);
+		font-size: var(--text-small);
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		margin: 0 0 var(--space-3) 0;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.zip-instructions__steps {
+		margin: 0;
+		padding-inline-start: var(--space-5);
+	}
+
+	.zip-instructions__steps li {
+		font-size: var(--text-small);
+		color: var(--text-secondary);
+		line-height: var(--leading-normal);
+		margin-block: var(--space-2);
+	}
+
+	.zip-instructions__steps code {
+		font-size: var(--text-code);
+		color: var(--text-primary);
+	}
+
+	.zip-instructions__steps strong {
+		color: var(--text-primary);
+	}
+
+	.zip-instructions__note {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin-block-start: var(--space-3);
+		margin-block-end: 0;
+	}
+
+	.zip-instructions__note code {
+		font-size: var(--text-code);
+	}
+
+	/* ===== Download Grid ===== */
+
+	.download-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-4);
+		margin-block-start: var(--space-5);
+	}
+
+	.download-card {
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		padding: var(--space-5);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		transition:
+			background-color var(--transition-fast),
+			border-color var(--transition-fast);
+	}
+
+	.download-card:hover {
+		background-color: var(--surface-hover);
+		border-color: var(--border-accent);
+	}
+
+	/* ===== Recommended Badge (OS Detection) ===== */
+
+	.download-card[data-recommended] {
+		border-color: var(--accent);
+		position: relative;
+	}
+
+	.download-card[data-recommended]::after {
+		content: 'Recommended';
+		position: absolute;
+		top: calc(-1 * var(--space-2));
+		right: var(--space-3);
+		padding: var(--space-1) var(--space-2);
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--bg-void);
+		background-color: var(--accent);
+		border-radius: var(--border-radius-sm);
+	}
+
+	.detected-hint {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		font-family: var(--font-mono);
+		margin-block-start: var(--space-2);
+	}
+
+	.download-card__platform {
+		font-family: var(--font-body);
+		font-size: var(--text-h3);
+		font-weight: var(--weight-bold);
+		color: var(--text-primary);
+		margin: 0;
+	}
+
+	.download-card__arch {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin: 0;
+	}
+
+	.download-card__btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-semibold);
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+		text-decoration: none;
+		padding: var(--space-2) var(--space-4);
+		border: 1px solid var(--accent);
+		border-radius: var(--border-radius-sm);
+		color: var(--accent);
+		background: transparent;
+		margin-block-start: var(--space-2);
+		align-self: flex-start;
+		transition:
+			background-color var(--transition-fast),
+			color var(--transition-fast);
+		line-height: 1;
+	}
+
+	.download-card__btn:hover {
+		background-color: var(--accent);
+		color: var(--bg-void);
+		text-decoration: none;
+	}
+
+	@media (min-width: 640px) {
+		.download-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (min-width: 960px) {
+		.download-grid {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	/* ===== Requirements ===== */
+
+	.requirements-list {
+		margin-block-start: var(--space-4);
+		padding-inline-start: var(--space-5);
+	}
+
+	.requirements-list li {
+		margin-block: var(--space-3);
+		color: var(--text-secondary);
+		line-height: var(--leading-normal);
+	}
+
+	.requirements-list strong {
+		color: var(--text-primary);
+	}
+
+	/* ===== Responsive ===== */
+
+	@media (max-width: 480px) {
+		.hero {
+			padding-block-start: calc(var(--nav-height) + var(--space-6));
+			padding-block-end: var(--space-5);
+		}
+	}
+</style>

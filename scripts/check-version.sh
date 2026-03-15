@@ -18,7 +18,7 @@ jq -e '.version, .extensionId, .extensionName, .updateUrl, .githubRepo, .domains
 
 ERRORS=0
 CHECKS=0
-EXPECTED_CHECKS=56
+EXPECTED_CHECKS=59
 
 check() {
   local file=$1 actual=$2 actual_display
@@ -120,12 +120,6 @@ check "website/public/scripts/install.ps1 (EXTENSION_ID)" "$INSTALL_PS1_ID"
 UNINSTALL_PS1_ID=$(grep '^\$EXTENSION_ID' website/public/scripts/uninstall.ps1 | head -1 | sed 's/.*"\(.*\)".*/\1/')
 check "website/public/scripts/uninstall.ps1 (EXTENSION_ID)" "$UNINSTALL_PS1_ID"
 
-echo ""
-echo "Checking Extension ID in website docs..."
-
-check_contains "website/src/pages/docs/manual.astro" "$EXPECTED"
-check_contains "website/src/pages/docs/troubleshoot.astro" "$EXPECTED"
-
 # ── Extension Name ───────────────────────────────────────────────────────────
 
 EXPECTED=$(jq -r .extensionName version.json)
@@ -159,6 +153,9 @@ EXPECTED=$(jq -r .updateUrl version.json)
 echo ""
 echo "Checking Update URL ($EXPECTED)..."
 
+MANIFEST_UPDATE_URL=$(jq -r '.update_url // empty' extension/manifest.json)
+check "extension/manifest.json (update_url)" "$MANIFEST_UPDATE_URL"
+
 GO_UPDATE_URL=$(grep 'UpdateURL\s*=' installer/config.go | sed 's/.*"\(.*\)".*/\1/')
 check "installer/config.go (UpdateURL)" "$GO_UPDATE_URL"
 
@@ -170,11 +167,6 @@ check "website/public/scripts/install-mac.sh (UPDATE_URL)" "$INSTALL_MAC_URL"
 
 INSTALL_PS1_URL=$(grep '^\$UPDATE_URL' website/public/scripts/install.ps1 | head -1 | sed 's/.*"\(.*\)".*/\1/')
 check "website/public/scripts/install.ps1 (UPDATE_URL)" "$INSTALL_PS1_URL"
-
-echo ""
-echo "Checking Update URL in website docs..."
-
-check_contains "website/src/pages/docs/manual.astro" "$EXPECTED"
 
 # ── Domains ──────────────────────────────────────────────────────────────────
 
@@ -193,9 +185,10 @@ DOMAIN_WEBSITE=$(jq -r '.domains.website' version.json)
 echo ""
 echo "Checking website domain in pages ($DOMAIN_WEBSITE)..."
 
-check_not_contains "website/src/pages/install.astro" "$DOMAIN_WEBSITE"
-check_not_contains "website/src/pages/downloads.astro" "$DOMAIN_WEBSITE"
-check_contains "website/src/pages/docs/troubleshoot.astro" "$DOMAIN_WEBSITE"
+check_contains "website/src/pages/install.astro" "versionInfo.domains"
+check_contains "website/src/pages/downloads.astro" "versionInfo.domains"
+check_contains "website/src/pages/docs/troubleshoot.astro" "versionInfo.version"
+check_contains "website/src/pages/downloads.astro" "versionInfo.version"
 
 # ── Static assets ───────────────────────────────────────────────────────────
 
@@ -225,7 +218,14 @@ check_contains "website/public/_redirects" "https://github.com/$(jq -r .githubRe
 check_contains "website/public/_redirects" "https://github.com/$(jq -r .githubRepo version.json)/releases/download/v$(jq -r .version version.json)/installer-macos-amd64"
 check_contains "website/public/_redirects" "/ps                      /scripts/install.ps1"
 check_contains "website/public/_redirects" "/sh                      /scripts/install.sh"
-check_contains "website/src/pages/docs/manual.astro" "autocr.nicx.me"
+check_contains "website/public/_redirects" "/mac"
+check_contains "website/public/_redirects" "/ps-uninstall"
+check_contains "website/src/pages/docs/manual.astro" "versionInfo.domains"
+
+# website/public/version.json — extension auto-update endpoint
+WEB_PUBLIC_VERSION=$(jq -r .version website/public/version.json 2>/dev/null || echo "MISSING")
+EXPECTED=$(jq -r .version version.json)
+check "website/public/version.json version" "$WEB_PUBLIC_VERSION"
 
 # ── Policy Filename Consistency ──────────────────────────────────────────────
 
@@ -249,6 +249,7 @@ check_contains "docs/CLOUDFLARE-SETUP.md" '| **Production branch** | `master` |'
 check_contains "docs/ARCHITECTURE.md" 'website deployment branch (`master` in the current setup)'
 check_contains "website/README.md" '- **Production branch:** `master`'
 check_contains "website/src/components/Footer.astro" "blob/master/LICENSE"
+check_contains "website/src/components/Footer.astro" "versionInfo.version"
 check_contains ".github/workflows/deploy.yml" "needs: [create-release]"
 check_contains ".github/workflows/deploy.yml" "Gate master Pages deploy on published GitHub Release assets"
 

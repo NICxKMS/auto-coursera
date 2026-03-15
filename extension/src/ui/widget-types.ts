@@ -9,12 +9,12 @@
  *   - src/utils/constants.ts (COLORS)
  */
 
-import type { RuntimeScopeDescriptor, RuntimeStateView } from '../types/runtime';
+import type { RuntimeStateView, RuntimeStatus } from '../types/runtime';
 
 // ── Widget Status ───────────────────────────────────────────────
 
 /** Widget status mirrors the extension's runtime state */
-export type WidgetStatus = 'idle' | 'processing' | 'active' | 'error' | 'disabled';
+export type WidgetStatus = RuntimeStatus;
 
 // ── Position ────────────────────────────────────────────────────
 
@@ -58,7 +58,6 @@ export interface PillState {
 	text: string;
 	icon: string;
 	bgClass: string;
-	animation: 'none' | 'shimmer' | 'pulse' | 'flash';
 }
 
 // ── Store Events ────────────────────────────────────────────────
@@ -76,11 +75,6 @@ export interface ContentBridge {
 	retry(): void;
 	/** Full page refresh and re-detect */
 	refresh(): void;
-}
-
-export interface WidgetRuntimeBinding {
-	scope: RuntimeScopeDescriptor;
-	state: RuntimeStateView;
 }
 
 // ── Defaults ────────────────────────────────────────────────────

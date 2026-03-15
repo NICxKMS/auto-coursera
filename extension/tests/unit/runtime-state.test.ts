@@ -5,6 +5,7 @@ import {
 	SESSION_RUNTIME_SCOPES_KEY,
 	SESSION_RUNTIME_TAB_SCOPES_KEY,
 } from '../../src/types/runtime';
+import { chromeMock } from '../mocks/chrome';
 
 function buildScope(tabId: number, pageInstanceId: string, pageUrl: string) {
 	return {
@@ -43,7 +44,7 @@ describe('RuntimeStateManager', () => {
 			failedCount: 1,
 		});
 
-		const sessionStore = chrome.storage.session._getStore() as Record<string, unknown>;
+		const sessionStore = chromeMock.storage.session._getStore() as Record<string, unknown>;
 		expect(sessionStore[SESSION_RUNTIME_TAB_SCOPES_KEY]).toEqual({
 			'7': scope.scopeId,
 		});

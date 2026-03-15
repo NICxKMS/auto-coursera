@@ -1,199 +1,1050 @@
 ---
-import { readFile } from 'node:fs/promises';
-
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
-import InstallButton from '../components/InstallButton.astro';
-import OSDetector from '../components/OSDetector.astro';
-import ScriptBlock from '../components/ScriptBlock.astro';
+import versionInfo from '@root/version.json';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import CopyButton from '../components/CopyButton.astro';
 import Base from '../layouts/Base.astro';
 
-const versionInfo = JSON.parse(
-  await readFile(new URL('../../../version.json', import.meta.url), 'utf-8'),
-) as {
-  version: string;
-  githubRepo: string;
-};
-
-const currentVersion = versionInfo.version;
-const githubReleaseBase = `https://github.com/${versionInfo.githubRepo}/releases/download/v${currentVersion}`;
-const installerDownloads = {
-	windows: `${githubReleaseBase}/installer-windows-amd64.exe`,
-	macosArm64: `${githubReleaseBase}/installer-macos-arm64`,
-	macosIntel: `${githubReleaseBase}/installer-macos-amd64`,
-	linux: `${githubReleaseBase}/installer-linux-amd64`,
-} as const;
+// Build-time domain reference: versionInfo.domains.website
+const siteUrl = versionInfo.domains.website;
 ---
 
-<Base title="Install" description="Download and install Auto-Coursera Assistant for your operating system. One-click installers for Windows, macOS, and Linux, with ARM64 variants available from the full downloads matrix.">
-  <Header />
-  <OSDetector />
+<Base
+	title="Install Auto-Coursera — Single-Command Browser Setup"
+	description="Install Auto-Coursera with a single terminal command. Automatic browser setup for Chrome, Edge, and Brave on Linux, macOS, and Windows."
+	canonicalPath="/install/"
+>
+	<!-- ================================================================
+	     HERO
+	     ================================================================ -->
+	<section class="hero" data-bg="deep" aria-labelledby="install-heading">
+		<div class="container-narrow">
+			<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
+			<Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Install' }]} />
+			<h1 id="install-heading">Install Auto-Coursera</h1>
+			<div class="hero__meta">
+				<span class="version-badge">v{versionInfo.version}</span>
+				<span class="hero__separator" aria-hidden="true">&middot;</span>
+				<span class="hero__note">Free &amp; open source</span>
+			</div>
+		<p class="hero__lead">
+			One terminal command sets up the extension on
+			<strong>Chrome</strong>, <strong>Edge</strong>,
+			<strong>Brave</strong>, and all Chromium browsers —
+			across Linux, macOS, and Windows.
+		</p>
+		</div>
+	</section>
 
-  <main id="main-content" class="py-16 sm:py-24 px-4">
-    <div class="max-w-4xl mx-auto">
-      <!-- ═══════════════════ TITLE ═══════════════════ -->
-      <div class="text-center mb-16 animate-fade-in">
-        <p class="section-label">Install</p>
-        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Get Auto-Coursera Assistant</h1>
-        <p class="text-lg text-surface-400 max-w-xl mx-auto mb-4">
-          One-click install for the most common targets. The native installer is the recommended path and handles the browser policy setup automatically.
-        </p>
-        <div id="os-badge" class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm text-surface-300">
-          <span class="w-2 h-2 rounded-full bg-surface-600 animate-glow-pulse" id="os-dot"></span>
-          <span id="os-label">Detecting your OS…</span>
-        </div>
-      </div>
+	<!-- ================================================================
+	     AI ACCURACY DISCLAIMER
+	     ================================================================ -->
+	<section class="section section--flush" data-bg="deep" aria-labelledby="ai-disclaimer">
+		<div class="container-narrow">
+			<aside class="callout callout--warning" aria-labelledby="ai-disclaimer">
+				<p class="callout__title" id="ai-disclaimer">AI answers are not guaranteed</p>
+				<p>
+					Auto-Coursera uses AI models that can and do make mistakes.
+					Always review the highlighted answers before submitting —
+					especially on graded assessments.
+				</p>
+			</aside>
+		</div>
+	</section>
 
-      <!-- ═══════════════════ METHOD 1: INSTALLERS ═══════════════════ -->
-      <section class="mb-16 animate-slide-up delay-100">
-        <div class="flex items-center gap-3 mb-6">
-          <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-500/15 text-primary-400 text-sm font-bold">1</span>
-          <h2 class="text-xl font-semibold text-white">Download Installer</h2>
-          <span class="badge ml-auto">Recommended</span>
-        </div>
+	<!-- ================================================================
+	     PLATFORM INSTALL COMMANDS
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="commands-heading">
+		<div class="container-narrow">
+			<h2 id="commands-heading">One-command install</h2>
+			<p>Open a terminal and run the command for your platform.</p>
 
-        <div id="install-buttons" class="grid sm:grid-cols-3 gap-4">
-          <div data-install-os="windows">
-            <InstallButton os="windows" label="Windows Installer" href={installerDownloads.windows} size=".exe — ~8 MB" />
-          </div>
-          <div data-install-os="macos">
-            <InstallButton os="macos" label="macOS (Apple Silicon)" href={installerDownloads.macosArm64} size="M1/M2/M3/M4 — ~8 MB" />
-          </div>
-          <div data-install-os="macos-intel">
-            <InstallButton os="macos" label="macOS (Intel)" href={installerDownloads.macosIntel} size="Intel x86_64 — ~8 MB" />
-          </div>
-          <div data-install-os="linux">
-            <InstallButton os="linux" label="Linux Installer" href={installerDownloads.linux} size="x64 — ~8 MB" />
-          </div>
-        </div>
+			<div class="platform-tabs" role="tablist" aria-label="Install commands by platform">
+				<button id="tab-install-linux" class="platform-tabs__tab" role="tab" data-tab="linux" aria-controls="install-panel-linux" aria-selected="false">Linux</button>
+				<button id="tab-install-macos" class="platform-tabs__tab" role="tab" data-tab="macos" aria-controls="install-panel-macos" aria-selected="false">macOS</button>
+				<button id="tab-install-windows" class="platform-tabs__tab" role="tab" data-tab="windows" aria-controls="install-panel-windows" aria-selected="false">Windows</button>
+			</div>
 
-        <p class="mt-4 text-sm text-surface-500">
-          Need a different architecture? The <a href="/downloads" class="text-primary-400 hover:text-primary-300">full downloads matrix</a>
-          also includes Windows ARM64 and Linux ARM64 installers, plus the direct script/manual paths.
-        </p>
-      </section>
+			<!-- Linux -->
+			<div class="platform-panel" id="install-panel-linux" role="tabpanel" aria-labelledby="tab-install-linux" data-tab="linux">
+				<div class="code-block">
+					<pre><code>curl -fsSL autocr.nicx.me/sh | sh</code></pre>
+					<CopyButton text="curl -fsSL autocr.nicx.me/sh | sh" label="Copy Linux install command" />
+				</div>
+				<p class="code-note">
+					<a href={`https://github.com/${versionInfo.githubRepo}/blob/master/website/public/scripts/install.sh`} target="_blank" rel="noopener noreferrer">View source</a> — always inspect scripts before running them.
+				</p>
+				<div class="callout callout--info callout--compact">
+					<p class="callout__title">Requires sudo</p>
+					<p>
+						The install script needs root privileges to write browser policy files.
+						When piping from <code>curl</code>, the script cannot prompt for your password — it will fail silently.
+					</p>
+					<p>
+						Run with sudo directly:
+					</p>
+					<div class="code-block">
+						<pre><code>curl -fsSL autocr.nicx.me/sh | sudo sh</code></pre>
+						<CopyButton text="curl -fsSL autocr.nicx.me/sh | sudo sh" label="Copy Linux install command with sudo" />
+					</div>
+					<p>
+						Or save and run the script manually:
+					</p>
+					<div class="code-block">
+						<pre><code>curl -fsSL autocr.nicx.me/sh -o install.sh && chmod +x install.sh && sudo ./install.sh</code></pre>
+						<CopyButton text="curl -fsSL autocr.nicx.me/sh -o install.sh && chmod +x install.sh && sudo ./install.sh" label="Copy Linux save-and-run command" />
+					</div>
+				</div>
+			<details class="troubleshoot" id="faq-linux-troubleshoot">
+				<summary>Troubleshooting</summary>
+				<ul>
+					<li><code>curl: command not found</code> — install curl with your package manager (<code>sudo apt install curl</code> on Debian/Ubuntu, <code>sudo dnf install curl</code> on Fedora).</li>
+					<li><code>Permission denied</code> — the script will ask for <code>sudo</code> when it needs to write browser policy files. Make sure your user has sudo access.</li>
+					<li>If Chrome/Brave/Edge isn't detected, the script installs the extension but can't apply the browser policy. See the <a href="/docs/manual/">manual install guide</a>.</li>
+				</ul>
+			</details>
+			</div>
 
-      <!-- ═══════════════════ METHOD 2: TERMINAL ═══════════════════ -->
-      <section class="mb-16 animate-slide-up delay-200">
-        <details class="group" id="terminal-section">
-          <summary class="flex items-center gap-3 mb-6 cursor-pointer list-none select-none">
-            <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-800 text-surface-400 text-sm font-bold group-open:bg-primary-500/15 group-open:text-primary-400 transition-colors">2</span>
-            <h2 class="text-xl font-semibold text-white">Advanced: Install via Terminal</h2>
-            <svg class="w-5 h-5 text-surface-500 ml-auto transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </summary>
+			<!-- macOS -->
+			<div class="platform-panel" id="install-panel-macos" role="tabpanel" aria-labelledby="tab-install-macos" data-tab="macos" hidden>
+				<div class="code-block">
+					<pre><code>curl -fsSL autocr.nicx.me/mac | sh</code></pre>
+					<CopyButton text="curl -fsSL autocr.nicx.me/mac | sh" label="Copy macOS install command" />
+				</div>
+				<p class="code-note">
+					<a href={`https://github.com/${versionInfo.githubRepo}/blob/master/website/public/scripts/install-mac.sh`} target="_blank" rel="noopener noreferrer">View source</a> — always inspect scripts before running them.
+				</p>
+				<div class="callout callout--info callout--compact">
+					<p class="callout__title">May require sudo</p>
+					<p>
+						The install script writes browser policy files, which may need root privileges.
+						If you get a permission error, run with sudo:
+					</p>
+					<div class="code-block">
+						<pre><code>curl -fsSL autocr.nicx.me/mac | sudo sh</code></pre>
+						<CopyButton text="curl -fsSL autocr.nicx.me/mac | sudo sh" label="Copy macOS install command with sudo" />
+					</div>
+				</div>
+			<details class="troubleshoot" id="faq-macos-troubleshoot">
+				<summary>Troubleshooting</summary>
+				<ul>
+					<li>On Apple Silicon Macs, the script works identically — no Rosetta needed.</li>
+					<li>If macOS Gatekeeper blocks the script, open <strong>System Settings → Privacy &amp; Security</strong> and allow the download.</li>
+					<li>If the browser doesn't detect the extension after install, restart the browser completely (quit and reopen).</li>
+				</ul>
+			</details>
+			</div>
 
-          <div id="script-blocks" class="space-y-6 pl-11">
-            <p class="text-sm text-surface-500">These scripts write the same <code>ExtensionInstallForcelist</code> policy as the native installer. Use them for automation or shell-first environments, not as a separate install mechanism.</p>
-            <div data-script-os="windows">
-              <ScriptBlock command="irm __WEBSITE_ORIGIN__/scripts/install.ps1 | iex" label="Windows (PowerShell)" />
-            </div>
-            <div data-script-os="linux">
-              <ScriptBlock command="curl -fsSL __WEBSITE_ORIGIN__/scripts/install.sh | sudo bash" label="Linux" />
-            </div>
-            <div data-script-os="macos">
-              <ScriptBlock command="curl -fsSL __WEBSITE_ORIGIN__/scripts/install-mac.sh | bash" label="macOS" />
-            </div>
-            <p class="text-xs text-surface-500 leading-relaxed">
-              Windows will relaunch with an Administrator UAC prompt when needed. On Linux, a saved local <code>install.sh</code> can relaunch itself through <code>sudo</code>, but piped one-liners should still keep <code>| sudo bash</code> because stdin-run shells cannot safely self-elevate in every environment. macOS uses user defaults and does not require <code>sudo</code>.
-            </p>
-          </div>
-        </details>
-      </section>
+			<!-- Windows -->
+			<div class="platform-panel" id="install-panel-windows" role="tabpanel" aria-labelledby="tab-install-windows" data-tab="windows" hidden>
+				<div class="code-block">
+					<pre><code>irm autocr.nicx.me/ps | iex</code></pre>
+					<CopyButton text="irm autocr.nicx.me/ps | iex" label="Copy Windows install command" />
+				</div>
+				<p class="code-note">
+					<a href={`https://github.com/${versionInfo.githubRepo}/blob/master/website/public/scripts/install.ps1`} target="_blank" rel="noopener noreferrer">View source</a> — run in <strong>PowerShell</strong> (not Command Prompt).
+				</p>
+			<details class="troubleshoot" id="faq-windows-troubleshoot">
+				<summary>Troubleshooting</summary>
+				<ul>
+					<li><code>irm: The term 'irm' is not recognized</code> — you need PowerShell 5.1+. Open PowerShell from the Start Menu, not cmd.exe.</li>
+					<li>If UAC prompts for admin access, click <strong>Yes</strong> — the script needs it to write browser policy registry keys.</li>
+					<li>Windows Defender SmartScreen may warn about the script. Click <strong>More info → Run anyway</strong>.</li>
+				</ul>
+			</details>
+			</div>
+		</div>
+	</section>
 
-      <!-- ═══════════════════ WHAT HAPPENS NEXT ═══════════════════ -->
-      <section class="animate-slide-up delay-300">
-        <div class="glass-strong p-8 md:p-10 relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-primary-600/5 to-transparent" aria-hidden="true"></div>
-          <div class="relative">
-            <h2 class="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-              <svg class="w-5 h-5 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 16v-4"></path>
-                <path d="M12 8h.01"></path>
-              </svg>
-              What happens after install?
-            </h2>
+	<!-- ================================================================
+	     BROWSER RESTART WARNING  (FIX-H07)
+	     ================================================================ -->
+	<section class="section section--flush" data-bg="void" aria-labelledby="restart-warning">
+		<div class="container-narrow">
+			<aside class="callout callout--restart" aria-labelledby="restart-warning">
+				<p class="callout__title" id="restart-warning">⚠ You must restart your browser</p>
+				<p>
+					After installation, <strong>close all browser windows and reopen the browser</strong>.
+					The extension won't activate until you restart — refreshing a tab is not enough.
+				</p>
+			</aside>
+		</div>
+	</section>
 
-            <ol class="space-y-5">
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">1</span>
-                <div>
-                  <p class="text-surface-200 font-medium">Extension is installed automatically</p>
-                  <p class="text-sm text-surface-500">The installer or script writes a browser policy entry that force-installs the extension.</p>
-                </div>
-              </li>
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">2</span>
-                <div>
-                  <p class="text-surface-200 font-medium">Restart your browser</p>
-                  <p class="text-sm text-surface-500">Close and reopen Chrome (or your Chromium browser) to activate the extension.</p>
-                </div>
-              </li>
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">3</span>
-                <div>
-                  <p class="text-surface-200 font-medium">Add your API key</p>
-                  <p class="text-sm text-surface-500">Click the extension icon and enter your AI provider API key. That's&nbsp;it&nbsp;—&nbsp;you're&nbsp;ready.</p>
-                </div>
-              </li>
-            </ol>
-          </div>
-        </div>
-      </section>
+	<!-- ================================================================
+	     DOWNLOADS CROSS-LINK
+	     ================================================================ -->
+	<section class="section section--flush" data-bg="void" aria-label="Alternative install methods">
+		<div class="container-narrow">
+			<p class="downloads-nudge">
+				Prefer to install via app or as an unpacked extension?
+				<a href="/downloads/">See the downloads page →</a>
+			</p>
+		</div>
+	</section>
 
-      <!-- ═══════════════════ HELP ═══════════════════ -->
-      <div class="mt-12 text-center animate-slide-up delay-400">
-        <p class="text-surface-500 text-sm">
-          Having trouble? Check the <a href="/docs/troubleshoot" class="text-primary-400 hover:text-primary-300">troubleshooting guide</a>
-          or <a href="/docs/manual" class="text-primary-400 hover:text-primary-300">install manually</a>.
-        </p>
-      </div>
-    </div>
-  </main>
+	<!-- ================================================================
+	     WHAT HAPPENS AFTER INSTALL  (FIX-H06 + FIX-H08)
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="post-install-heading">
+		<div class="container-narrow">
+			<h2 id="post-install-heading">What happens after install</h2>
 
-  <Footer />
+			<ol class="steps">
+				<li class="step">
+					<h3 class="step__title">
+						<span class="step__number">1</span>
+						Check the terminal output
+					</h3>
+					<p>
+						You'll see a message like
+						<strong>"Auto-Coursera installed successfully"</strong>
+						in your terminal. If you see errors instead, check the
+						troubleshooting section for your platform above.
+					</p>
+				</li>
+				<li class="step">
+					<h3 class="step__title">
+						<span class="step__number">2</span>
+						Restart your browser
+					</h3>
+					<p>
+						Close <strong>all</strong> browser windows (not just the
+						active tab) and reopen. The extension only activates
+						after a full restart.
+					</p>
+				</li>
+				<li class="step">
+					<h3 class="step__title">
+						<span class="step__number">3</span>
+						Look for the 🎓 button on Coursera
+					</h3>
+					<p>
+						Navigate to any Coursera quiz page. You'll see a small
+						<strong>🎓 graduation cap button</strong> (the floating
+						action button) in the <strong>bottom-right corner</strong>
+						of the page. This button <strong>only appears on
+						Coursera pages</strong> — you won't see it on other
+						websites.
+					</p>
+				</li>
+				<li class="step">
+					<h3 class="step__title">
+						<span class="step__number">4</span>
+						Set up your API key
+					</h3>
+					<p>
+						Click the 🎓 button to open the control panel, then
+						click the <strong>gear/settings icon</strong> to open
+						settings. Paste an API key from any
+						<a href="/docs/setup/">supported provider</a> — most
+						offer free tiers.
+					</p>
+				</li>
+			</ol>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     ALTERNATIVE INSTALL PATHS  (relocated from hero — FIX-H14)
+	     ================================================================ -->
+	<section class="section section--flush" data-bg="deep" aria-labelledby="alt-paths">
+		<div class="container-narrow">
+			<p class="alt-paths" id="alt-paths">
+				Prefer to do it yourself?
+				<a href="/docs/manual/">Manual install guide</a> or
+				<a href="/downloads/">download installers</a>.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     "MANAGED BY YOUR ORGANIZATION" CALLOUT
+	     ================================================================ -->
+	<section class="section section--flush" data-bg="deep" aria-labelledby="org-notice-heading">
+		<div class="container-narrow">
+			<aside class="callout callout--accent" aria-labelledby="org-notice-heading">
+				<p class="callout__title" id="org-notice-heading">
+					You'll see "Managed by your organization" — that's normal
+				</p>
+				<p>
+					After installation, Chrome's extensions page will show
+					<strong>"Installed by your organization"</strong> or
+					<strong>"Managed by your organization"</strong>. This
+					message appears because Auto-Coursera is installed via
+					browser policy (the same mechanism enterprises use) — not
+					through the Chrome Web Store.
+				</p>
+				<p>
+					<strong>Your browser has not been compromised.</strong> No
+					organization is controlling your browser. The policy only
+					installs and enables this single extension. You can remove
+					it at any time by running the
+					<a href="#uninstall-heading">uninstall command</a> below.
+				</p>
+			</aside>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     APP INSTALLER
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="installer-heading">
+		<div class="container-narrow">
+			<h2 id="installer-heading">App installers</h2>
+			<p>
+				Prefer a downloadable installer? Platform-specific packages are
+				available for Windows, macOS, and Linux.
+			</p>
+			<p>
+				<a href="/downloads/">Browse all downloads</a>
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     SETUP STEPS
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="steps-heading">
+		<div class="container-narrow">
+			<h2 id="steps-heading">Get started in three steps</h2>
+
+			<ol class="steps">
+				<li class="step">
+					<h3 class="step__title">
+						<span class="step__number">1</span>
+						Install the extension
+					</h3>
+					<p>
+						Run the command above or
+						<a href="/downloads/">download an installer</a>.
+						The script detects your browser and applies the
+						extension automatically.
+					</p>
+				</li>
+			<li class="step">
+				<h3 class="step__title">
+					<span class="step__number">2</span>
+					Add an API key
+				</h3>
+				<p>
+					On any Coursera quiz page, click the <strong>🎓 button</strong>
+					in the bottom-right corner, then click the
+					<strong>gear/settings icon</strong>. Enter an API key from
+					one of the supported AI providers. Free tiers are available.
+					See the <a href="/docs/setup/">setup guide</a> for details.
+				</p>
+			</li>
+				<li class="step">
+					<h3 class="step__title">
+						<span class="step__number">3</span>
+						Open a quiz on Coursera
+					</h3>
+					<p>
+						Navigate to any Coursera quiz page. The extension detects
+						questions automatically and highlights answers with
+						confidence colors.
+					</p>
+				</li>
+			</ol>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     PERMISSIONS
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="permissions-heading">
+		<div class="container-narrow">
+			<h2 id="permissions-heading">What permissions does it need?</h2>
+			<p>
+				Auto-Coursera requests only the permissions it needs to
+				function. Here's a quick summary:
+			</p>
+
+			<table class="permissions-table">
+				<thead>
+					<tr>
+						<th>Permission</th>
+						<th>Why</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><code>activeTab</code></td>
+						<td>Read quiz questions from the Coursera page you're viewing</td>
+					</tr>
+					<tr>
+						<td><code>alarms</code></td>
+						<td>Schedule periodic update checks (every 6 hours)</td>
+					</tr>
+					<tr>
+						<td><code>storage</code></td>
+						<td>Save your settings and encrypted API keys locally</td>
+					</tr>
+					<tr>
+						<td><code>tabs</code></td>
+						<td>Open the settings page on first install</td>
+					</tr>
+					<tr>
+						<td>Coursera hosts</td>
+						<td>Run the content script on Coursera quiz pages</td>
+					</tr>
+					<tr>
+						<td>Update server</td>
+						<td>Check for and download extension updates</td>
+					</tr>
+					<tr>
+						<td>AI provider APIs</td>
+						<td>Send quiz questions to the AI provider you configured</td>
+					</tr>
+					<tr>
+						<td>Image CDNs</td>
+						<td>Download question images hosted on Coursera's CDNs</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<p class="permissions-link">
+				For detailed privacy explanations of each permission, see our
+				<a href="/privacy/#permissions-heading">Privacy Policy</a>.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     UNINSTALL
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="uninstall-heading">
+		<div class="container-narrow">
+			<h2 id="uninstall-heading">Uninstall</h2>
+
+			<h3>Linux</h3>
+			<div class="code-block">
+				<pre><code>curl -fsSL autocr.nicx.me/sh | sh -s -- --uninstall</code></pre>
+				<CopyButton text="curl -fsSL autocr.nicx.me/sh | sh -s -- --uninstall" label="Copy uninstall command for Linux" />
+			</div>
+
+			<h3>macOS</h3>
+			<div class="code-block">
+				<pre><code>curl -fsSL autocr.nicx.me/mac | sh -s -- --uninstall</code></pre>
+				<CopyButton text="curl -fsSL autocr.nicx.me/mac | sh -s -- --uninstall" label="Copy uninstall command for macOS" />
+			</div>
+
+			<h3>Windows</h3>
+			<div class="code-block">
+				<pre><code>irm autocr.nicx.me/ps-uninstall | iex</code></pre>
+				<CopyButton text="irm autocr.nicx.me/ps-uninstall | iex" label="Copy uninstall command for Windows" />
+			</div>
+
+			<h3>Manual removal</h3>
+			<p>
+				Open your browser's extension management page
+				(<code>chrome://extensions</code> in Chrome), find
+				Auto-Coursera, and click <strong>Remove</strong>. That's it —
+				no files are left behind in your browser profile.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     FAQ
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="faq-heading">
+		<div class="container-narrow">
+			<h2 id="faq-heading">Frequently asked questions</h2>
+
+		<details class="faq-item" id="faq-not-on-chrome-store">
+			<summary>Why isn't this on the Chrome Web Store?</summary>
+				<p>
+					Chrome Web Store policies prohibit extensions that
+					interact with academic content in this way. Auto-Coursera
+					is distributed as a sideloaded extension using browser
+					policy — the same mechanism enterprises use to deploy
+					internal tools. The installer script handles this
+					automatically.
+				</p>
+				<p>
+					The full source code is available on
+					<a href={`https://github.com/${versionInfo.githubRepo}`} target="_blank" rel="noopener noreferrer">GitHub</a>.
+					You can audit every line before installing.
+				</p>
+			</details>
+
+		<details class="faq-item" id="faq-is-it-free">
+			<summary>Is it really free?</summary>
+				<p>
+					The extension itself is completely free and open source.
+					You provide your own API key for the AI provider, and
+					most providers offer free tiers that are more than enough
+					for quiz use.
+				</p>
+			</details>
+
+		<details class="faq-item" id="faq-auto-update">
+			<summary>Does it auto-update?</summary>
+				<p>
+					Yes. The extension checks for updates every 6 hours and
+					applies them silently via Chromium's built-in extension
+					update mechanism. No action needed on your part.
+				</p>
+			</details>
+
+		<details class="faq-item" id="faq-firefox-support">
+			<summary>Can I use it on Firefox?</summary>
+				<p>
+					Not currently. Auto-Coursera uses Chrome extension APIs
+					(Manifest V3) and Chromium-specific features. Firefox
+					support would require a separate build with different
+					APIs.
+				</p>
+			</details>
+		</div>
+	</section>
 </Base>
 
 <script>
-  document.querySelectorAll<HTMLElement>('#script-blocks code').forEach((codeEl) => {
-    const text = codeEl.textContent;
-    if (!text?.includes('__WEBSITE_ORIGIN__')) return;
-    codeEl.textContent = text.replace(/__WEBSITE_ORIGIN__/g, window.location.origin);
-  });
+	function initInstallTabs() {
+		const tabs = document.querySelectorAll<HTMLButtonElement>('.platform-tabs__tab');
+		const panels = document.querySelectorAll<HTMLElement>('.platform-panel');
+		const tablist = document.querySelector<HTMLElement>('.platform-tabs');
+		if (!tabs.length || !panels.length || !tablist) return;
 
-  document.addEventListener('os-detected', (e: Event) => {
-    const { os } = (e as CustomEvent<{ os: string }>).detail;
-    if (os === 'unknown') return;
+		function activateTab(platform: string) {
+			tabs.forEach((tab) => {
+				const isActive = tab.dataset.tab === platform;
+				tab.setAttribute('aria-selected', String(isActive));
+				tab.tabIndex = isActive ? 0 : -1;
+			});
+			panels.forEach((panel) => {
+				const isActive = panel.dataset.tab === platform;
+				panel.hidden = !isActive;
+			});
+		}
 
-    // Update OS badge
-    const dot = document.getElementById('os-dot');
-    const label = document.getElementById('os-label');
-    if (dot) dot.classList.replace('bg-surface-600', 'bg-emerald-400');
-    const names: Record<string, string> = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
-    if (label) label.textContent = `Detected: ${names[os] || os}`;
+		function detectOS(): string {
+			const ua = navigator.userAgent.toLowerCase();
+			if (ua.includes('win')) return 'windows';
+			if (ua.includes('mac')) return 'macos';
+			return 'linux';
+		}
 
-    // Reorder install buttons — move detected OS first
-    const container = document.getElementById('install-buttons');
-    if (container) {
-      const detected = container.querySelector(`[data-install-os="${os}"]`);
-      if (detected) {
-        container.prepend(detected);
-        // Mark as recommended
-        const card = detected.querySelector('.install-card');
-        if (card && !card.classList.contains('border-primary-500/25')) {
-          card.classList.remove('glass', 'hover:bg-white/[0.05]', 'hover:border-white/[0.12]', 'hover:shadow-glow');
-          card.classList.add('bg-gradient-to-r', 'from-primary-600/20', 'to-primary-500/10', 'border', 'border-primary-500/25', 'shadow-lg', 'shadow-primary-500/10', 'hover:shadow-glow-lg', 'hover:border-primary-400/40');
-        }
-      }
-    }
+		activateTab(detectOS());
 
-    // Reorder script blocks — detected OS first
-    const scriptContainer = document.getElementById('script-blocks');
-    if (scriptContainer) {
-      const detectedScript = scriptContainer.querySelector(`[data-script-os="${os}"]`);
-      if (detectedScript) scriptContainer.prepend(detectedScript);
-    }
-  });
+		tabs.forEach((tab) => {
+			tab.addEventListener('click', () => {
+				const platform = tab.dataset.tab;
+				if (platform) activateTab(platform);
+			});
+		});
+
+		tablist.addEventListener('keydown', (e) => {
+			const order = ['linux', 'macos', 'windows'];
+			const current = document.querySelector<HTMLButtonElement>(
+				'.platform-tabs__tab[aria-selected="true"]'
+			);
+			if (!current) return;
+			const currentIndex = order.indexOf(current.dataset.tab ?? '');
+			let nextIndex = -1;
+
+			if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+				e.preventDefault();
+				nextIndex = (currentIndex + 1) % order.length;
+			} else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+				e.preventDefault();
+				nextIndex = (currentIndex - 1 + order.length) % order.length;
+			} else if (e.key === 'Home') {
+				e.preventDefault();
+				nextIndex = 0;
+			} else if (e.key === 'End') {
+				e.preventDefault();
+				nextIndex = order.length - 1;
+			}
+
+			if (nextIndex >= 0) {
+				activateTab(order[nextIndex]);
+				const nextTab = document.querySelector<HTMLButtonElement>(
+					`.platform-tabs__tab[data-tab="${order[nextIndex]}"]`
+				);
+				nextTab?.focus();
+			}
+		});
+	}
+
+	initInstallTabs();
+	document.addEventListener('astro:after-swap', initInstallTabs);
 </script>
+
+<style>
+	/* ==========================================================================
+	   Install Page — Scoped Styles
+	   ========================================================================== */
+
+	/* ===== Hero ===== */
+
+	.hero {
+		padding-block-start: calc(var(--nav-height) + var(--space-7));
+		padding-block-end: var(--space-6);
+		background-color: var(--bg-deep);
+	}
+
+	.hero h1 {
+		margin-block-end: var(--space-4);
+	}
+
+	.hero__product {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-block-end: var(--space-2);
+	}
+
+	.hero__meta {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		margin-block-end: var(--space-5);
+		flex-wrap: wrap;
+	}
+
+	.version-badge {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-semibold);
+		color: var(--accent);
+		background-color: var(--accent-subtle);
+		padding: var(--space-1) var(--space-3);
+		border-radius: var(--border-radius-sm);
+		line-height: 1;
+	}
+
+	.hero__separator {
+		color: var(--text-muted);
+	}
+
+	.hero__note {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+	}
+
+	.hero__lead {
+		font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+		max-width: 36rem;
+	}
+
+	.hero__lead strong {
+		color: var(--text-primary);
+		font-weight: var(--weight-semibold);
+	}
+
+	.hero__links {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+	}
+
+	/* ===== Sections ===== */
+
+	.section {
+		padding-block: var(--space-6);
+	}
+
+	.section--flush {
+		padding-block: 0 var(--space-5);
+		display: flow-root; /* BFC prevents child margins collapsing through */
+	}
+
+	.section h2 {
+		margin-block-end: var(--space-4);
+	}
+
+	.section h3 {
+		margin-block-start: var(--space-6);
+		margin-block-end: var(--space-3);
+	}
+
+	.section h3:first-child,
+	.section h2 + p + h3 {
+		margin-block-start: var(--space-5);
+	}
+
+	/* ===== Platform Tabs ===== */
+
+	.platform-tabs {
+		display: flex;
+		gap: 0;
+		border-bottom: 1px solid var(--border);
+		margin-block-start: var(--space-5);
+	}
+
+	.platform-tabs__tab {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		color: var(--text-muted);
+		background: none;
+		border: none;
+		padding: var(--space-2) var(--space-4);
+		cursor: pointer;
+		border-bottom: 2px solid transparent;
+		margin-bottom: -1px;
+		transition:
+			color var(--transition-fast),
+			border-color var(--transition-fast);
+	}
+
+	.platform-tabs__tab:hover {
+		color: var(--text-secondary);
+	}
+
+	.platform-tabs__tab[aria-selected='true'] {
+		color: var(--accent);
+		border-bottom-color: var(--accent);
+	}
+
+	.platform-panel {
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-top: none;
+		border-radius: 0 0 var(--border-radius) var(--border-radius);
+		padding: var(--space-4) var(--space-5);
+	}
+
+	.platform-panel[hidden] {
+		display: none;
+	}
+
+	/* ===== Code Blocks ===== */
+
+	.code-block {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+	}
+
+	.code-block pre {
+		flex: 1;
+		min-width: 0;
+		margin: 0;
+		border: 1px solid var(--border);
+		border-inline-start: 3px solid var(--accent);
+	}
+
+	.platform-panel .code-block pre {
+		background-color: var(--bg-deep);
+		border: 1px solid var(--border);
+		border-inline-start: 3px solid var(--accent);
+	}
+
+	.code-note {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin-block-start: var(--space-2);
+	}
+
+	/* ===== Troubleshooting Dropdowns ===== */
+
+	.troubleshoot {
+		margin-block-start: var(--space-4);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		background-color: var(--bg-deep);
+	}
+
+	.troubleshoot summary {
+		padding: var(--space-3) var(--space-4);
+		font-weight: var(--weight-semibold);
+		font-size: var(--text-small);
+		color: var(--text-secondary);
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.troubleshoot summary::before {
+		content: '▸ ';
+		color: var(--text-muted);
+	}
+
+	.troubleshoot[open] summary::before {
+		content: '▾ ';
+	}
+
+	.troubleshoot summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.troubleshoot ul {
+		padding: 0 var(--space-4) var(--space-4) var(--space-4);
+		margin: 0;
+		padding-inline-start: calc(var(--space-4) + var(--space-5));
+	}
+
+	.troubleshoot li {
+		font-size: var(--text-small);
+		color: var(--text-secondary);
+		margin-block: var(--space-2);
+	}
+
+	/* ===== Steps ===== */
+
+	.steps {
+		list-style: none;
+		padding: 0;
+		margin-block-start: var(--space-5);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-6);
+	}
+
+	.step {
+		margin: 0;
+	}
+
+	.step__title {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		margin-block-end: var(--space-2);
+	}
+
+	.step__number {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-bold);
+		color: var(--accent);
+		background-color: var(--accent-subtle);
+		border-radius: 50%;
+		flex-shrink: 0;
+		line-height: 1;
+	}
+
+	.step p {
+		margin-inline-start: calc(2rem + var(--space-3));
+	}
+
+	/* ===== Permissions Table ===== */
+
+	.permissions-table {
+		width: 100%;
+		margin-block-start: var(--space-5);
+		border-collapse: collapse;
+		font-size: var(--text-body);
+	}
+
+	.permissions-table th,
+	.permissions-table td {
+		padding: var(--space-3) var(--space-4);
+		text-align: left;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.permissions-table thead th {
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		font-size: var(--text-small);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		background-color: var(--surface);
+	}
+
+	.permissions-table tbody td {
+		color: var(--text-secondary);
+		line-height: var(--leading-normal);
+	}
+
+	.permissions-table tbody td:first-child {
+		font-weight: var(--weight-medium);
+		color: var(--text-primary);
+		white-space: nowrap;
+	}
+
+	.permissions-table tbody tr:last-child td {
+		border-bottom: none;
+	}
+
+	.permissions-link {
+		margin-block-start: var(--space-4);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+	}
+
+	/* ===== FAQ ===== */
+
+	details[id] {
+		scroll-margin-top: calc(var(--nav-height) + var(--space-4));
+	}
+
+	.faq-item {
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		margin-block-end: var(--space-3);
+		background-color: var(--surface);
+	}
+
+	.faq-item summary {
+		padding: var(--space-4) var(--space-5);
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.faq-item summary::before {
+		content: '▸ ';
+		color: var(--text-muted);
+	}
+
+	.faq-item[open] summary::before {
+		content: '▾ ';
+	}
+
+	.faq-item summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.faq-item p {
+		padding-inline: var(--space-5);
+		padding-block-end: var(--space-4);
+	}
+
+	.faq-item p:last-child {
+		padding-block-end: var(--space-5);
+	}
+
+	/* ===== Callout Boxes ===== */
+
+	.callout {
+		padding: var(--space-4) var(--space-5);
+		border-radius: var(--border-radius);
+		border: 1px solid var(--border);
+		background-color: var(--surface);
+	}
+
+	.callout__title {
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		margin-block-end: var(--space-2);
+	}
+
+	.callout p {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		line-height: var(--leading-normal);
+	}
+
+	.callout p + p {
+		margin-block-start: var(--space-3);
+	}
+
+	/* Warning variant — amber left border */
+	.callout--warning {
+		border-inline-start: 3px solid var(--warning);
+	}
+
+	.callout--warning .callout__title {
+		color: var(--warning);
+	}
+
+	/* Accent variant — amber left border, for important notices */
+	.callout--accent {
+		border-inline-start: 3px solid var(--accent);
+	}
+
+	.callout--accent .callout__title {
+		color: var(--accent);
+	}
+
+	/* Info variant — neutral, for contextual tips */
+	.callout--info {
+		border-inline-start: 3px solid var(--text-muted);
+		background-color: var(--bg-deep);
+	}
+
+	.callout--info .callout__title {
+		color: var(--text-secondary);
+		font-size: var(--text-small);
+	}
+
+	.callout--info p {
+		font-size: var(--text-small);
+	}
+
+	/* Compact variant — used inside panels */
+	.callout--compact {
+		margin-block-start: var(--space-4);
+		padding: var(--space-3) var(--space-4);
+	}
+
+	.callout--compact .code-block {
+		margin-block-start: var(--space-2);
+	}
+
+	.callout--compact .code-block pre {
+		border: 1px solid var(--border);
+		border-inline-start: 3px solid var(--accent);
+		background-color: var(--surface);
+	}
+
+	/* Restart variant — red/error left border, high urgency */
+	.callout--restart {
+		border-inline-start: 3px solid var(--error);
+		background-color: var(--error-subtle);
+	}
+
+	.callout--restart .callout__title {
+		color: var(--error);
+	}
+
+	/* ===== Alternative Paths ===== */
+
+	.alt-paths {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-align: center;
+		padding-block: var(--space-4);
+		border-top: 1px solid var(--border);
+		margin-block: 0;
+	}
+
+	/* ===== Downloads Cross-Link ===== */
+
+	.downloads-nudge {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-align: center;
+		padding-block: var(--space-4);
+		border-top: 1px solid var(--border);
+		margin-block: 0;
+	}
+
+	/* ===== Responsive ===== */
+
+	@media (max-width: 480px) {
+		.hero {
+			padding-block-start: calc(var(--nav-height) + var(--space-6));
+			padding-block-end: var(--space-5);
+		}
+
+		.code-block {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		pre {
+			font-size: clamp(0.7rem, 2.5vw, var(--text-code));
+			word-break: break-all;
+			white-space: pre-wrap;
+		}
+
+		.step p {
+			margin-inline-start: 0;
+			margin-block-start: var(--space-2);
+		}
+	}
+</style>

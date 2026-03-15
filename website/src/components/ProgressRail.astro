@@ -1,0 +1,185 @@
+---
+const chapters = [
+	{ target: 1, label: 'Chapter 1: The Quiz' },
+	{ target: 2, label: 'Chapter 2: The Mechanism' },
+	{ target: 3, label: 'Chapter 3: The Colors of Confidence' },
+	{ target: 4, label: 'Chapter 4: Get Started' },
+] as const;
+---
+
+<nav class="progress-rail" aria-label="Reading progress">
+	<ol class="progress-rail__dots" role="list">
+		{chapters.map(({ target, label }) => (
+			<li>
+				<button
+					class="progress-rail__dot"
+					data-target={target}
+					aria-label={label}
+				>
+					{target}
+				</button>
+			</li>
+		))}
+	</ol>
+</nav>
+
+<script>
+	function initProgressRail() {
+		const rail = document.querySelector<HTMLElement>('.progress-rail');
+		if (!rail || getComputedStyle(rail).display === 'none') return;
+
+		const dots = document.querySelectorAll<HTMLButtonElement>('.progress-rail__dot');
+		const sections = document.querySelectorAll<HTMLElement>('.chapter');
+		if (!dots.length || !sections.length) return;
+
+		let currentChapter = 1;
+
+		// Update active dot
+		function setActive(chapter: number) {
+			if (chapter === currentChapter) return;
+			currentChapter = chapter;
+			dots.forEach((dot) => {
+				const target = Number(dot.dataset.target);
+				dot.classList.toggle('progress-rail__dot--active', target === chapter);
+			});
+		}
+
+		// Set initial active state
+		dots[0]?.classList.add('progress-rail__dot--active');
+
+		// IntersectionObserver to track which chapter is in view
+		const observer = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting) {
+						const chapter = Number(
+							(entry.target as HTMLElement).dataset.chapter
+						);
+						if (chapter) setActive(chapter);
+					}
+				});
+			},
+			{ threshold: 0.1, rootMargin: '-10% 0px -10% 0px' }
+		);
+
+		sections.forEach((section) => observer.observe(section));
+
+		// Click to scroll — respect prefers-reduced-motion
+		const prefersReducedMotion = window.matchMedia(
+			'(prefers-reduced-motion: reduce)'
+		).matches;
+
+		dots.forEach((dot) => {
+			dot.addEventListener('click', () => {
+				const target = dot.dataset.target;
+				const section = document.querySelector<HTMLElement>(
+					`.chapter[data-chapter="${target}"]`
+				);
+				if (section) {
+					section.scrollIntoView({
+						behavior: prefersReducedMotion ? 'auto' : 'smooth',
+					});
+				}
+			});
+		});
+
+		// Cleanup for ViewTransitions
+		document.addEventListener('astro:before-swap', () => {
+			observer.disconnect();
+		}, { once: true });
+	}
+
+	initProgressRail();
+	document.addEventListener('astro:after-swap', initProgressRail);
+</script>
+
+<style>
+	.progress-rail {
+		position: fixed;
+		right: var(--space-5);
+		top: 50%;
+		transform: translateY(-50%);
+		z-index: 50;
+		display: none;
+	}
+
+	.progress-rail__dots {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		position: relative;
+	}
+
+	/* Connecting line between dots */
+	.progress-rail__dots::before {
+		content: '';
+		position: absolute;
+		top: 6px;
+		bottom: 6px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 1px;
+		background-color: var(--border);
+		z-index: 0;
+	}
+
+	.progress-rail__dots li {
+		margin: 0;
+		padding: var(--space-2) 0;
+		position: relative;
+		z-index: 1;
+	}
+
+	.progress-rail__dot {
+		min-width: 44px;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		background: transparent;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		font-size: 0;
+		line-height: 0;
+		color: transparent;
+		overflow: visible;
+		position: relative;
+	}
+
+	.progress-rail__dot::before {
+		content: '';
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background-color: var(--border);
+		transition:
+			background-color var(--transition-fast),
+			transform var(--transition-fast);
+	}
+
+	.progress-rail__dot:hover::before {
+		background-color: var(--text-muted);
+		transform: scale(1.25);
+	}
+
+	.progress-rail__dot--active::before {
+		background-color: var(--accent);
+	}
+
+	.progress-rail__dot--active:hover::before {
+		background-color: var(--accent-hover);
+	}
+
+	/* Show only on desktop (≥768px) */
+	@media (min-width: 768px) {
+		.progress-rail {
+			display: block;
+		}
+	}
+</style>

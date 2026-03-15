@@ -42,6 +42,8 @@ export const chromeMock = {
 	runtime: {
 		id: 'mock-extension-id-12345',
 		getURL: vi.fn((path: string) => `chrome-extension://mock-extension-id-12345/${path}`),
+		getManifest: vi.fn(() => ({ version: '1.9.1' })),
+		reload: vi.fn(),
 		sendMessage: vi.fn(),
 		onMessage: {
 			addListener: vi.fn(),
@@ -65,6 +67,7 @@ export const chromeMock = {
 		},
 	},
 	tabs: {
+		create: vi.fn(async () => ({ id: 1 })),
 		query: vi.fn(async () => []),
 		sendMessage: vi.fn(),
 		onRemoved: {
@@ -78,6 +81,7 @@ export const chromeMock = {
 	alarms: {
 		create: vi.fn(),
 		clear: vi.fn(),
+		get: vi.fn(async () => null),
 		onAlarm: {
 			addListener: vi.fn(),
 		},

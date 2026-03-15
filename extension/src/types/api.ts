@@ -1,32 +1,4 @@
-import type { ExtractedQuestionType, QuestionType } from './questions';
-
-/** Request sent to an AI provider */
-export interface AIRequest {
-	questionText: string;
-	options: string[];
-	images?: { base64: string; context: string; mime?: string }[];
-	questionType: QuestionType;
-	model?: string;
-	signal?: AbortSignal;
-}
-
-/** Response from an AI provider */
-export interface AIResponse {
-	answerIndices: number[];
-	confidence: number;
-	reasoning: string;
-	provider: string;
-	model: string;
-	tokensUsed: number;
-	latencyMs: number;
-}
-
-/** Parsed JSON answer from AI (the format we request in prompts) */
-export interface ParsedAIAnswer {
-	answer: number[];
-	confidence: number;
-	reasoning: string;
-}
+import type { QuestionSelectionMode } from './questions';
 
 /** Chat message for OpenAI-compatible API */
 export interface ChatMessage {
@@ -61,7 +33,9 @@ export interface AIBatchRequest {
 		questionText: string;
 		options: string[];
 		images?: string[];
-		questionType: ExtractedQuestionType;
+		selectionMode: QuestionSelectionMode;
+		/** Code blocks from embedded editors, for AI context */
+		codeBlocks?: string[];
 	}>;
 	signal?: AbortSignal;
 }
@@ -75,6 +49,8 @@ export interface AIBatchResponse {
 		answer: number[];
 		confidence: number;
 		reasoning: string;
+		/** For numeric/text-input answers (not letter-based) */
+		rawAnswer?: string;
 	}>;
 	tokensUsed: number;
 }
@@ -84,6 +60,5 @@ export interface IAIProvider {
 	readonly name: string;
 	readonly supportsVision: boolean;
 	isAvailable(): Promise<boolean>;
-	solve(request: AIRequest): Promise<AIResponse>;
-	solveBatch?(batchRequest: AIBatchRequest): Promise<AIBatchResponse>;
+	solveBatch(batchRequest: AIBatchRequest): Promise<AIBatchResponse>;
 }

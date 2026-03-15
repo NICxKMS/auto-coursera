@@ -11,7 +11,12 @@
  * External mutations (popup, background) flow in via chrome.storage.onChanged.
  */
 
-import type { RuntimeScopeDescriptor, RuntimeScopeMap, RuntimeStateView } from '../types/runtime';
+import {
+	projectRuntimeReadModel,
+	type RuntimeReadModel,
+	resolveRuntimeStateForScope,
+} from '../runtime/projection';
+import type { RuntimeScopeMap, RuntimeStateView } from '../types/runtime';
 import { SESSION_RUNTIME_SCOPES_KEY } from '../types/runtime';
 import type { PillState, WidgetPosition, WidgetState, WidgetStateKey } from './widget-types';
 import { DEFAULT_WIDGET_STATE } from './widget-types';
@@ -26,30 +31,18 @@ const LOCAL_KEY_MAP: Record<string, WidgetStateKey> = {
 /** Chrome storage key for persisted widget position */
 const POSITION_STORAGE_KEY = '_widgetPosition';
 
-function createScopedRuntimePatch(runtimeState: RuntimeStateView | null): Partial<WidgetState> {
+function createScopedRuntimePatch(readModel: RuntimeReadModel): Partial<WidgetState> {
 	return {
-		status: runtimeState?.status ?? 'idle',
-		provider: runtimeState?.provider ?? '',
-		model: runtimeState?.model ?? '',
-		confidence: runtimeState?.confidence ?? null,
-		lastError: runtimeState?.lastError ?? '',
-		solvedCount: runtimeState?.solvedCount ?? 0,
-		failedCount: runtimeState?.failedCount ?? 0,
-		tokenCount: runtimeState?.tokenCount ?? 0,
-		processingCount: runtimeState?.processingCount ?? 0,
+		status: readModel.status,
+		provider: readModel.provider,
+		model: readModel.model,
+		confidence: readModel.confidence,
+		lastError: readModel.lastError,
+		solvedCount: readModel.solvedCount,
+		failedCount: readModel.failedCount,
+		tokenCount: readModel.tokenCount,
+		processingCount: readModel.processingCount,
 	};
-}
-
-function resolveRuntimeStateForScope(
-	rawScopes: unknown,
-	scopeId: string | null,
-): RuntimeStateView | null {
-	if (!scopeId || !rawScopes || typeof rawScopes !== 'object' || Array.isArray(rawScopes)) {
-		return null;
-	}
-
-	const scopes = rawScopes as RuntimeScopeMap;
-	return scopes[scopeId] ?? null;
 }
 
 // ── Pill State Derivation ───────────────────────────────────────
@@ -58,47 +51,25 @@ function resolveRuntimeStateForScope(
 function derivePillState(state: WidgetState): PillState {
 	switch (state.status) {
 		case 'disabled':
-			return {
-				text: 'Off',
-				icon: '🎓',
-				bgClass: 'ac-fab--disabled',
-				animation: 'none',
-			};
+			return { text: 'Off', icon: '🎓', bgClass: 'ac-fab--disabled' };
 		case 'idle':
-			return {
-				text: 'Ready',
-				icon: '🎓',
-				bgClass: 'ac-fab--idle',
-				animation: 'none',
-			};
+			return { text: 'Ready', icon: '🎓', bgClass: 'ac-fab--idle' };
 		case 'processing':
 			return {
 				text: `Solving ${state.processingCount}...`,
 				icon: '🎓',
 				bgClass: 'ac-fab--processing',
-				animation: 'shimmer',
 			};
 		case 'active':
 			return {
 				text: `✓ ${state.solvedCount} solved`,
 				icon: '🎓',
 				bgClass: 'ac-fab--active',
-				animation: 'flash',
 			};
 		case 'error':
-			return {
-				text: '! Error',
-				icon: '⚠️',
-				bgClass: 'ac-fab--error',
-				animation: 'pulse',
-			};
+			return { text: '! Error', icon: '⚠️', bgClass: 'ac-fab--error' };
 		default:
-			return {
-				text: 'Ready',
-				icon: '🎓',
-				bgClass: 'ac-fab--idle',
-				animation: 'none',
-			};
+			return { text: 'Ready', icon: '🎓', bgClass: 'ac-fab--idle' };
 	}
 }
 
@@ -107,6 +78,7 @@ function derivePillState(state: WidgetState): PillState {
 export class WidgetStore extends EventTarget {
 	private state: WidgetState;
 	private runtimeScopeId: string | null = null;
+	private runtimeState: RuntimeStateView | null = null;
 	private storageListener:
 		| ((changes: Record<string, chrome.storage.StorageChange>, area: string) => void)
 		| null = null;
@@ -205,16 +177,17 @@ export class WidgetStore extends EventTarget {
 		return derivePillState(this.state);
 	}
 
-	setRuntimeScope(
-		scope: RuntimeScopeDescriptor | null,
-		runtimeState?: RuntimeStateView | null,
-	): void {
-		this.runtimeScopeId = scope?.scopeId ?? null;
-		const patch = createScopedRuntimePatch(runtimeState ?? null);
-		if (!this.state.isEnabled) {
-			patch.status = 'disabled';
-		}
-		this.set(patch);
+	setRuntimeState(runtimeState: RuntimeStateView | null): void {
+		this.runtimeScopeId = runtimeState?.scopeId ?? null;
+		this.runtimeState = runtimeState;
+		this.set(
+			createScopedRuntimePatch(
+				projectRuntimeReadModel({
+					enabled: this.state.isEnabled,
+					runtimeState: this.runtimeState,
+				}),
+			),
+		);
 	}
 
 	// ── Chrome Storage Sync ─────────────────────────────────────
@@ -228,14 +201,11 @@ export class WidgetStore extends EventTarget {
 		const localData = await chrome.storage.local.get(['enabled', POSITION_STORAGE_KEY]);
 
 		const localPatch: Partial<WidgetState> = {};
+		let enabled = this.state.isEnabled;
 
 		if (typeof localData.enabled === 'boolean') {
 			localPatch.isEnabled = localData.enabled;
-			if (!localData.enabled) {
-				localPatch.status = 'disabled';
-			} else {
-				localPatch.status = 'idle';
-			}
+			enabled = localData.enabled;
 		}
 
 		if (localData[POSITION_STORAGE_KEY]) {
@@ -259,14 +229,14 @@ export class WidgetStore extends EventTarget {
 			// Session storage may be unavailable (extension reloading, SW restart)
 		}
 
-		const sessionPatch = createScopedRuntimePatch(
-			resolveRuntimeStateForScope(sessionData[SESSION_RUNTIME_SCOPES_KEY], this.runtimeScopeId),
+		this.runtimeState = resolveRuntimeStateForScope(
+			sessionData[SESSION_RUNTIME_SCOPES_KEY] as RuntimeScopeMap | undefined,
+			this.runtimeScopeId,
 		);
 
-		// If extension is disabled, override status regardless of session
-		if (localPatch.isEnabled === false) {
-			sessionPatch.status = 'disabled';
-		}
+		const sessionPatch = createScopedRuntimePatch(
+			projectRuntimeReadModel({ enabled, runtimeState: this.runtimeState }),
+		);
 
 		// 3. Merge both patches
 		this.set({ ...localPatch, ...sessionPatch });
@@ -293,17 +263,13 @@ export class WidgetStore extends EventTarget {
 		) => {
 			const patch: Partial<WidgetState> = {};
 			let hasChanges = false;
+			let nextEnabled = this.state.isEnabled;
 
 			if (area === 'session') {
 				if (SESSION_RUNTIME_SCOPES_KEY in changes) {
-					Object.assign(
-						patch,
-						createScopedRuntimePatch(
-							resolveRuntimeStateForScope(
-								changes[SESSION_RUNTIME_SCOPES_KEY].newValue,
-								this.runtimeScopeId,
-							),
-						),
+					this.runtimeState = resolveRuntimeStateForScope(
+						changes[SESSION_RUNTIME_SCOPES_KEY].newValue,
+						this.runtimeScopeId,
 					);
 					hasChanges = true;
 				}
@@ -313,22 +279,24 @@ export class WidgetStore extends EventTarget {
 				for (const [storageKey, stateKey] of Object.entries(LOCAL_KEY_MAP)) {
 					if (storageKey in changes) {
 						(patch as Record<string, unknown>)[stateKey] = changes[storageKey].newValue;
+						if (storageKey === 'enabled' && typeof changes[storageKey].newValue === 'boolean') {
+							nextEnabled = changes[storageKey].newValue as boolean;
+						}
 						hasChanges = true;
 					}
-				}
-
-				// When extension is toggled off, force disabled status
-				if ('enabled' in changes && changes.enabled.newValue === false) {
-					patch.status = 'disabled';
-				}
-				// When toggled on, set idle (background will push actual status)
-				if ('enabled' in changes && changes.enabled.newValue === true) {
-					patch.status = 'idle';
 				}
 			}
 
 			if (hasChanges) {
-				this.set(patch);
+				this.set({
+					...patch,
+					...createScopedRuntimePatch(
+						projectRuntimeReadModel({
+							enabled: nextEnabled,
+							runtimeState: this.runtimeState,
+						}),
+					),
+				});
 			}
 		};
 

@@ -2,7 +2,7 @@
 
 A complete browser extension distribution platform for **Auto-Coursera Assistant**, an AI-powered Chrome extension that helps with Coursera quizzes. This monorepo contains the extension source, CRX packaging scripts, native installer tooling, and the static website/update surfaces that ship releases.
 
-> **Current release:** **`v1.9.1`** carries the `v1.8.0` widget/runtime work plus the release-coherence fixes that synchronize static website install/download/update surfaces from `version.json`.
+> **Current release:** **`v2.0.0`** introduces NumericQuestion support, a narrative-driven scrollytelling website redesign, and a major extension architecture overhaul with circuit-breaker failover across five AI providers.
 
 ## Architecture
 
@@ -57,10 +57,10 @@ bash scripts/package-crx.sh -v <version> -k extension-key.pem -s extension/dist
 
 | Component        | Path             | Description                                          |
 |------------------|------------------|------------------------------------------------------|
-| **Extension**    | `extension/`     | Chrome MV3 extension with multi-provider AI, floating widget controls, in-page settings overlay, slim popup fallback, and scoped runtime-state UX for the `v1.9.1` release line |
+| **Extension**    | `extension/`     | Chrome MV3 extension with multi-provider AI (OpenRouter, Gemini, Groq, Cerebras, NVIDIA NIM), floating widget, settings overlay, circuit-breaker failover, and NumericQuestion support |
 | **Source**       | `extension/src/` | Extension TypeScript source files                    |
-| **Scripts**      | `scripts/`       | CRX packaging, key generation, and local/manual update XML tooling |
-| **Website**      | `website/`       | Installer-first Astro landing page, advanced script/manual docs, download portal, and static update manifest at autocr.nicx.me |
+| **Scripts**      | `scripts/`       | CRX packaging, key generation, version sync, update XML tooling, and cross-file version verification |
+| **Website**      | `website/`       | Narrative-driven scrollytelling Astro 5 site with Technology Noir aesthetic, 11 page routes, build-time CHANGELOG parser, and static update manifest at autocr.nicx.me |
 | **Installer**    | `installer/`     | Go-based browser-policy installer binaries           |
 | **Docs**         | `docs/`          | Architecture, deployment, and operations guides      |
 | **CI/CD**        | `.github/`       | GitHub Actions workflows and agent definitions       |
@@ -84,9 +84,6 @@ pnpm lint         # Biome lint
 ```bash
 # Generate a new signing key
 bash scripts/generate-key.sh
-
-# Derive extension ID from existing key
-bash scripts/derive-extension-id.sh extension-key.pem
 
 # Package extension as CRX3
 bash scripts/package-crx.sh -v <version> -k extension-key.pem -s extension/dist

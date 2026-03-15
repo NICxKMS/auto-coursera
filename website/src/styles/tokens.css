@@ -1,0 +1,103 @@
+/* ==========================================================================
+   Auto-Coursera Website — Design Tokens
+   "Midnight Engineering" — dark, precise, warm, functional.
+   All CSS custom properties. No element styles.
+   ========================================================================== */
+
+:root {
+	/* ========================================================================
+     1. COLORS
+     ======================================================================== */
+
+	/* --- Backgrounds (chapter scroll progression) --- */
+	--bg-void: #09090b; /* Chapter 1 — the problem */
+	--bg-deep: #18181b; /* Chapter 2 — the mechanism */
+	--bg-deep-alt: #141417; /* Interior page alternation — subtler than void */
+	--bg-warm: #1c1917; /* Chapter 3 — confidence & trust */
+	--bg-resolve: #23201c; /* Chapter 4 — get started (warm arrival) */
+
+	/* --- Text --- */
+	--text-primary: #fafaf9; /* 19.3:1 on darkest — headings, primary body */
+	--text-secondary: #a8a29e; /* 7.1:1  — descriptions, secondary */
+	--text-muted: #a09891; /* 5.0:1 on --bg-deep — footnotes, captions, metadata */
+
+	/* --- Accent (amber) --- */
+	--accent: #f59e0b; /* CTAs, links, interactive highlights */
+	--accent-hover: #d97706; /* Hover/active states */
+	--accent-subtle: rgba(245, 158, 11, 0.1); /* Accent-tinted backgrounds */
+
+	/* --- Semantic --- */
+	--success: #22c55e; /* High confidence, success */
+	--warning: #f97316; /* Medium confidence (orange) */
+	--error: #ef4444; /* Low confidence, errors */
+	--error-subtle: rgba(239, 68, 68, 0.05); /* Error-tinted backgrounds */
+
+	/* --- Surfaces --- */
+	--surface: #1c1c22; /* Cards, panels, code blocks */
+	--surface-hover: #27272e; /* Interactive surface states */
+	--border: #2e2e36; /* Subtle borders */
+	--border-accent: rgba(245, 158, 11, 0.2); /* Accent-tinted borders */
+
+	/* ========================================================================
+     2. TYPOGRAPHY
+     ======================================================================== */
+
+	/* --- Font families --- */
+	--font-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+	--font-body: "Source Sans 3 Variable", "Source Sans 3", system-ui, -apple-system, sans-serif;
+	--font-mono: "JetBrains Mono Variable", "JetBrains Mono", "Cascadia Code", "Fira Code", monospace;
+
+	/* --- Type scale (fluid with clamp) --- */
+	--text-h1: clamp(2.25rem, 1.5rem + 3vw, 4.5rem);
+	--text-h2: clamp(1.5rem, 1.1rem + 1.6vw, 2.5rem);
+	--text-h3: clamp(1.125rem, 1rem + 0.5vw, 1.5rem);
+	--text-body: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+	--text-small: clamp(0.875rem, 0.85rem + 0.1vw, 0.9375rem);
+	--text-code: clamp(0.875rem, 0.85rem + 0.1vw, 0.9375rem);
+	--text-nav: clamp(0.9375rem, 0.9rem + 0.15vw, 1rem);
+
+	/* --- Font weights --- */
+	--weight-regular: 400;
+	--weight-medium: 500;
+	--weight-semibold: 600;
+	--weight-bold: 700;
+
+	/* --- Line heights --- */
+	--leading-tight: 1.2;
+	--leading-normal: 1.6;
+	--leading-loose: 1.8;
+
+	/* ========================================================================
+     3. SPACING
+     ======================================================================== */
+
+	--space-1: 0.25rem; /*   4px */
+	--space-2: 0.5rem; /*   8px */
+	--space-3: 0.75rem; /*  12px */
+	--space-4: 1rem; /*  16px */
+	--space-5: 1.5rem; /*  24px */
+	--space-6: 2rem; /*  32px */
+	--space-7: 3rem; /*  48px */
+	--space-8: 4rem; /*  64px */
+	--space-9: 6rem; /*  96px */
+	--space-10: 8rem; /* 128px */
+
+	/* ========================================================================
+     4. LAYOUT
+     ======================================================================== */
+
+	--content-width: 72rem; /* 1152px — max content width */
+	--content-narrow: 48rem; /* 768px  — narrow content (docs, text-heavy) */
+	--nav-height: 4rem; /* 64px */
+	--border-radius: 0.5rem; /* 8px */
+	--border-radius-sm: 0.25rem; /* 4px */
+	--border-radius-lg: 1rem; /* 16px */
+
+	/* ========================================================================
+     5. TRANSITIONS
+     ======================================================================== */
+
+	--transition-fast: 150ms ease;
+	--transition-base: 300ms ease-out;
+	--transition-slow: 500ms ease-out;
+}

@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { RuntimeStateView } from '../../src/types/runtime';
 import { getRuntimeScopeId, SESSION_RUNTIME_SCOPES_KEY } from '../../src/types/runtime';
 import { WidgetStore } from '../../src/ui/widget-state';
 import { chromeMock, resetChromeMock } from '../mocks/chrome';
 
-function buildRuntimeState(overrides: Partial<Record<string, unknown>> = {}) {
+function buildRuntimeState(overrides: Partial<RuntimeStateView> = {}): RuntimeStateView {
 	const scopeId = getRuntimeScopeId(7, 'page-1');
 	return {
 		tabId: 7,
@@ -40,12 +41,7 @@ describe('WidgetStore scoped runtime sync', () => {
 		});
 
 		const store = new WidgetStore();
-		store.setRuntimeScope({
-			tabId: 7,
-			pageInstanceId: 'page-1',
-			pageUrl: 'https://www.coursera.org/learn/test',
-			scopeId,
-		});
+		store.setRuntimeState(buildRuntimeState());
 		await store.syncFromStorage();
 
 		expect(store.get()).toMatchObject({
@@ -63,17 +59,46 @@ describe('WidgetStore scoped runtime sync', () => {
 		store.destroy();
 	});
 
+	it('downgrades stale active runtime state to idle through the shared projection', async () => {
+		const scopeId = getRuntimeScopeId(7, 'page-1');
+		chromeMock.storage.local._setStore({ enabled: true });
+		chromeMock.storage.session._setStore({
+			[SESSION_RUNTIME_SCOPES_KEY]: {
+				[scopeId]: buildRuntimeState({
+					status: 'active',
+					updatedAt: 1,
+					processingCount: 0,
+				}),
+			},
+		});
+
+		const store = new WidgetStore();
+		store.setRuntimeState(
+			buildRuntimeState({
+				status: 'active',
+				updatedAt: 1,
+				processingCount: 0,
+			}),
+		);
+		await store.syncFromStorage();
+
+		expect(store.get()).toMatchObject({
+			isEnabled: true,
+			status: 'idle',
+			solvedCount: 2,
+			failedCount: 1,
+			tokenCount: 33,
+		});
+
+		store.destroy();
+	});
+
 	it('reacts to scoped runtime storage changes for the active page scope', async () => {
 		const scopeId = getRuntimeScopeId(7, 'page-1');
 		chromeMock.storage.local._setStore({ enabled: true });
 
 		const store = new WidgetStore();
-		store.setRuntimeScope({
-			tabId: 7,
-			pageInstanceId: 'page-1',
-			pageUrl: 'https://www.coursera.org/learn/test',
-			scopeId,
-		});
+		store.setRuntimeState(buildRuntimeState());
 		await store.syncFromStorage();
 
 		const storageListener = chromeMock.storage.onChanged.addListener.mock.calls[0]?.[0] as

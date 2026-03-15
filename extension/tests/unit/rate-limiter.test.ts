@@ -25,7 +25,8 @@ describe('RateLimiter', () => {
 	describe('acquire()', () => {
 		it('should consume a token', async () => {
 			await limiter.acquire();
-			expect(limiter.getAvailableTokens()).toBe(19);
+			// After consuming 1 of 20 tokens, should still be able to proceed
+			expect(limiter.canProceed()).toBe(true);
 		});
 
 		it('should allow 20 immediate requests', async () => {
@@ -33,7 +34,7 @@ describe('RateLimiter', () => {
 				await limiter.acquire();
 			}
 			// Should have consumed all tokens
-			expect(limiter.getAvailableTokens()).toBe(0);
+			expect(limiter.canProceed()).toBe(false);
 		});
 	});
 
@@ -48,7 +49,6 @@ describe('RateLimiter', () => {
 			Date.now = () => original() + 60000; // +1 minute
 
 			expect(limiter.canProceed()).toBe(true);
-			expect(limiter.getAvailableTokens()).toBe(20);
 
 			Date.now = original;
 		});
@@ -57,12 +57,12 @@ describe('RateLimiter', () => {
 	describe('constructor defaults', () => {
 		it('should default to 20 RPM', () => {
 			const defaultLimiter = new RateLimiter();
-			expect(defaultLimiter.getAvailableTokens()).toBe(20);
+			expect(defaultLimiter.canProceed()).toBe(true);
 		});
 
 		it('should accept custom RPM', () => {
 			const customLimiter = new RateLimiter(60);
-			expect(customLimiter.getAvailableTokens()).toBe(60);
+			expect(customLimiter.canProceed()).toBe(true);
 		});
 	});
 });

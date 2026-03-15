@@ -1,11 +1,13 @@
 # Platform download shortcuts
-/download/windows        https://github.com/NICxKMS/auto-coursera/releases/download/v1.9.1/installer-windows-amd64.exe    302
-/download/macos          https://github.com/NICxKMS/auto-coursera/releases/download/v1.9.1/installer-macos-arm64           302
-/download/linux          https://github.com/NICxKMS/auto-coursera/releases/download/v1.9.1/installer-linux-amd64           302
-/download/windows-arm64  https://github.com/NICxKMS/auto-coursera/releases/download/v1.9.1/installer-windows-arm64.exe    302
-/download/linux-arm64    https://github.com/NICxKMS/auto-coursera/releases/download/v1.9.1/installer-linux-arm64           302
-/download/macos-intel    https://github.com/NICxKMS/auto-coursera/releases/download/v1.9.1/installer-macos-amd64           302
+/download/windows        https://github.com/NICxKMS/auto-coursera/releases/download/v2.0.0/installer-windows-amd64.exe    302
+/download/macos          https://github.com/NICxKMS/auto-coursera/releases/download/v2.0.0/installer-macos-arm64           302
+/download/linux          https://github.com/NICxKMS/auto-coursera/releases/download/v2.0.0/installer-linux-amd64           302
+/download/windows-arm64  https://github.com/NICxKMS/auto-coursera/releases/download/v2.0.0/installer-windows-arm64.exe    302
+/download/linux-arm64    https://github.com/NICxKMS/auto-coursera/releases/download/v2.0.0/installer-linux-arm64           302
+/download/macos-intel    https://github.com/NICxKMS/auto-coursera/releases/download/v2.0.0/installer-macos-amd64           302
 
 # Install script shortcuts
 /ps                      /scripts/install.ps1                                   200
 /sh                      /scripts/install.sh                                    200
+/ps-uninstall            /scripts/uninstall.ps1                                 200
+/mac                     /scripts/install-mac.sh                                200

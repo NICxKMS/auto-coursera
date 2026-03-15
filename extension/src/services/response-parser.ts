@@ -1,12 +1,13 @@
-import type { ParsedAIAnswer } from '../types/api';
-import {
-	CONFIDENCE_FALLBACK_CONTEXT,
-	CONFIDENCE_FALLBACK_JSON,
-	CONFIDENCE_FALLBACK_NUMBER,
-	CONFIDENCE_FALLBACK_REGEX,
-	REASONING_MAX_LENGTH,
-} from '../utils/constants';
 import { Logger } from '../utils/logger';
+
+/** Fallback confidence when JSON parse succeeds but confidence missing */
+const CONFIDENCE_FALLBACK_JSON = 0.5;
+
+/** Fallback confidence when regex extraction works */
+const CONFIDENCE_FALLBACK_REGEX = 0.3;
+
+/** Max characters for reasoning truncation */
+const REASONING_MAX_LENGTH = 1000;
 
 const logger = new Logger('ResponseParser');
 
@@ -26,91 +27,21 @@ function normalizeAnswerValues(raw: unknown[]): number[] {
 		})
 		.filter((n) => n >= 0);
 }
-
-/**
- * Parse an AI response into a structured answer.
- * Shared between all providers.
- */
-export function parseAIResponse(content: string): ParsedAIAnswer {
-	// 1. Try JSON parse
-	try {
-		const jsonMatch = content.match(/\{[\s\S]*\}/);
-		if (jsonMatch) {
-			const parsed = JSON.parse(jsonMatch[0]);
-			if (parsed.answer !== undefined) {
-				const normalized = normalizeAnswerValues(
-					Array.isArray(parsed.answer) ? parsed.answer : [parsed.answer],
-				);
-				if (normalized.length > 0) {
-					return {
-						answer: normalized,
-						confidence:
-							typeof parsed.confidence === 'number' ? parsed.confidence : CONFIDENCE_FALLBACK_JSON,
-						reasoning:
-							typeof parsed.reasoning === 'string'
-								? parsed.reasoning.slice(0, REASONING_MAX_LENGTH)
-								: '',
-					};
-				}
-				// Valid JSON but answer values were all invalid — fall through to regex
-			}
-		}
-	} catch {
-		logger.warn('JSON parse failed, trying regex fallback');
-	}
-
-	// 2. Regex fallback: find letter answers with answer context
-	const matches = [...content.matchAll(/(?:^|\n)\s*([A-Z])\s*[).,:]/gim)];
-	if (matches.length > 0) {
-		const indices = [...new Set(matches.map((m) => letterToIndex(m[1])))];
-		return {
-			answer: indices,
-			confidence: CONFIDENCE_FALLBACK_REGEX,
-			reasoning: content.substring(0, 200),
-		};
-	}
-
-	// 2b. Contextual fallback: "answer is A" or "Answer: A"
-	const contextMatches = [...content.matchAll(/(?:answer|select|correct|option)[:\s]+([A-Z])\b/gi)];
-	if (contextMatches.length > 0) {
-		const indices = [...new Set(contextMatches.map((m) => letterToIndex(m[1])))];
-		return {
-			answer: indices,
-			confidence: CONFIDENCE_FALLBACK_CONTEXT,
-			reasoning: content.substring(0, 200),
-		};
-	}
-
-	// 3. Number fallback: find bare numbers 0-9
-	const numMatch = content.match(/\b([0-9])\b/);
-	if (numMatch) {
-		return {
-			answer: [parseInt(numMatch[1], 10)],
-			confidence: CONFIDENCE_FALLBACK_NUMBER,
-			reasoning: 'Number fallback',
-		};
-	}
-
-	throw new Error(`Failed to parse AI response: ${content.substring(0, 200)}`);
-}
-
 /**
  * Parse a batch AI response into individual answers.
  * Shared between all providers.
  */
 export function parseBatchAIResponse(
 	rawContent: string,
-	questions: Array<{
-		uid: string;
-		options?: string[];
-		questionType?: import('../types/questions').ExtractedQuestionType;
-	}>,
+	questions: Array<{ uid: string; selectionMode?: string }>,
 ): {
 	answers: Array<{
 		uid: string;
 		answer: number[];
 		confidence: number;
 		reasoning: string;
+		/** For numeric/text-input answers (not letter-based) */
+		rawAnswer?: string;
 	}>;
 	tokensUsed: number;
 } {
@@ -136,18 +67,50 @@ export function parseBatchAIResponse(
 			const answers = questions.map((q, i) => {
 				const match = parsed.find((p: Record<string, unknown>) => p.uid === q.uid) || parsed[i];
 				if (match) {
+					const confidence =
+						typeof match.confidence === 'number' ? match.confidence : CONFIDENCE_FALLBACK_JSON;
+					const reasoning =
+						typeof match.reasoning === 'string'
+							? match.reasoning.slice(0, REASONING_MAX_LENGTH)
+							: '';
+					const answerValue = match.answer;
+
+					// Numeric/text-input: AI responds with a string answer (e.g. "2.5")
+					if (typeof answerValue === 'string') {
+						return {
+							uid: q.uid,
+							answer: [] as number[],
+							confidence,
+							reasoning,
+							rawAnswer: answerValue,
+						};
+					}
+
+					// Numeric/text-input wrapped in array by json_schema mode (e.g. ["2.5"])
+					if (
+						Array.isArray(answerValue) &&
+						answerValue.length === 1 &&
+						typeof answerValue[0] === 'string' &&
+						!/^[A-Z]$/i.test(answerValue[0])
+					) {
+						return {
+							uid: q.uid,
+							answer: [] as number[],
+							confidence,
+							reasoning,
+							rawAnswer: answerValue[0],
+						};
+					}
+
+					// Multiple-choice: AI responds with array of letters (e.g. ["A", "C"])
 					const answer = normalizeAnswerValues(
-						Array.isArray(match.answer) ? match.answer : [match.answer],
+						Array.isArray(answerValue) ? answerValue : [answerValue],
 					);
 					return {
 						uid: q.uid,
 						answer,
-						confidence:
-							typeof match.confidence === 'number' ? match.confidence : CONFIDENCE_FALLBACK_JSON,
-						reasoning:
-							typeof match.reasoning === 'string'
-								? match.reasoning.slice(0, REASONING_MAX_LENGTH)
-								: '',
+						confidence,
+						reasoning,
 					};
 				}
 				return {

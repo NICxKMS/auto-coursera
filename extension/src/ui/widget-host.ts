@@ -14,18 +14,19 @@
  * Dependencies:
  *   - widget-types.ts      (ContentBridge, WidgetPosition)
  *   - widget-state.ts      (WidgetStore)
- *   - widget-styles.ts     (getWidgetStyleSheet)
+ *   - styles/             (getWidgetStyleSheet — modular CSS-in-TS)
  *   - widget-fab.ts        (FloatingFab)
  *   - widget-panel.ts      (WidgetPanel)
  *   - settings-overlay.ts  (SettingsOverlay)
  */
 
+import type { RuntimeStateView } from '../types/runtime';
 import { SettingsOverlay } from './settings-overlay';
+import { getWidgetStyleSheet } from './styles';
 import { FloatingFab } from './widget-fab';
 import { WidgetPanel } from './widget-panel';
 import { WidgetStore } from './widget-state';
-import { getWidgetStyleSheet } from './widget-styles';
-import type { ContentBridge, WidgetRuntimeBinding } from './widget-types';
+import type { ContentBridge } from './widget-types';
 
 // ── Constants ───────────────────────────────────────────────────
 
@@ -87,7 +88,7 @@ export class WidgetHost {
 	 *
 	 * @returns The WidgetStore instance — use this to push state from content.ts
 	 */
-	mount(bridge: ContentBridge, initialRuntime?: WidgetRuntimeBinding): WidgetStore {
+	mount(bridge: ContentBridge, initialRuntime?: RuntimeStateView): WidgetStore {
 		if (this.root) throw new Error('WidgetHost is already mounted');
 
 		this.bridge = bridge;
@@ -107,7 +108,7 @@ export class WidgetHost {
 		// ── Create store ───────────────────────────────────────
 		this.store = new WidgetStore();
 		if (initialRuntime) {
-			this.store.setRuntimeScope(initialRuntime.scope, initialRuntime.state);
+			this.store.setRuntimeState(initialRuntime);
 		}
 
 		// ── Create components ──────────────────────────────────
@@ -148,8 +149,8 @@ export class WidgetHost {
 		return this.store;
 	}
 
-	setRuntimeScope(binding: WidgetRuntimeBinding | null): void {
-		this.store?.setRuntimeScope(binding?.scope ?? null, binding?.state ?? null);
+	setRuntimeState(runtimeState: RuntimeStateView | null): void {
+		this.store?.setRuntimeState(runtimeState);
 	}
 
 	/**
