@@ -1,28 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OpenRouterProvider } from '../../src/services/openrouter';
 import { RateLimiter } from '../../src/utils/rate-limiter';
-
-function makeResponse(content: string, tokens = 100) {
-	return {
-		ok: true,
-		status: 200,
-		json: async () => ({
-			id: 'chat-123',
-			choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: 'stop' }],
-			usage: { prompt_tokens: 50, completion_tokens: 50, total_tokens: tokens },
-		}),
-		text: async () => '',
-	};
-}
-
-function make429() {
-	return {
-		ok: false,
-		status: 429,
-		statusText: 'Too Many Requests',
-		text: async () => 'rate limited',
-	};
-}
+import {
+	buildSingleBatchContent,
+	createSingleQuestionBatch,
+	getSingleBatchAnswer,
+	make429,
+	makeResponse,
+} from './provider-test-helpers';
 
 describe('OpenRouterProvider', () => {
 	let provider: OpenRouterProvider;
@@ -47,15 +32,14 @@ describe('OpenRouterProvider', () => {
 
 	describe('API call headers', () => {
 		it('should include Authorization header with Bearer token', async () => {
-			fetchMock.mockResolvedValueOnce(
-				makeResponse('{"answer": [0], "confidence": 0.9, "reasoning": "test"}'),
-			);
+			fetchMock.mockResolvedValueOnce(makeResponse(buildSingleBatchContent([0])));
 
-			await provider.solve({
-				questionText: 'What is 1+1?',
-				options: ['1', '2', '3'],
-				questionType: 'single-choice',
-			});
+			await provider.solveBatch(
+				createSingleQuestionBatch({
+					questionText: 'What is 1+1?',
+					options: ['1', '2', '3'],
+				}),
+			);
 
 			const [, init] = fetchMock.mock.calls[0];
 			const headers = init.headers;
@@ -63,30 +47,18 @@ describe('OpenRouterProvider', () => {
 		});
 
 		it('should include HTTP-Referer header', async () => {
-			fetchMock.mockResolvedValueOnce(
-				makeResponse('{"answer": [0], "confidence": 0.9, "reasoning": "test"}'),
-			);
+			fetchMock.mockResolvedValueOnce(makeResponse(buildSingleBatchContent([0])));
 
-			await provider.solve({
-				questionText: 'Test?',
-				options: ['A', 'B'],
-				questionType: 'single-choice',
-			});
+			await provider.solveBatch(createSingleQuestionBatch());
 
 			const [, init] = fetchMock.mock.calls[0];
 			expect(init.headers['HTTP-Referer']).toBeDefined();
 		});
 
 		it('should include X-Title header', async () => {
-			fetchMock.mockResolvedValueOnce(
-				makeResponse('{"answer": [0], "confidence": 0.9, "reasoning": "test"}'),
-			);
+			fetchMock.mockResolvedValueOnce(makeResponse(buildSingleBatchContent([0])));
 
-			await provider.solve({
-				questionText: 'Test?',
-				options: ['A', 'B'],
-				questionType: 'single-choice',
-			});
+			await provider.solveBatch(createSingleQuestionBatch());
 
 			const [, init] = fetchMock.mock.calls[0];
 			expect(init.headers['X-Title']).toBe('Auto-Coursera');
@@ -95,33 +67,21 @@ describe('OpenRouterProvider', () => {
 
 	describe('request body', () => {
 		it('should include response_format in request body', async () => {
-			fetchMock.mockResolvedValueOnce(
-				makeResponse('{"answer": [0], "confidence": 0.9, "reasoning": "test"}'),
-			);
+			fetchMock.mockResolvedValueOnce(makeResponse(buildSingleBatchContent([0])));
 
-			await provider.solve({
-				questionText: 'Test?',
-				options: ['A', 'B'],
-				questionType: 'single-choice',
-			});
+			await provider.solveBatch(createSingleQuestionBatch());
 
 			const [, init] = fetchMock.mock.calls[0];
 			const body = JSON.parse(init.body);
 			expect(body.response_format.type).toBe('json_schema');
-			expect(body.response_format.json_schema.name).toBe('quiz_answer');
+			expect(body.response_format.json_schema.name).toBe('quiz_answers_batch');
 			expect(body.response_format.json_schema.strict).toBe(true);
 		});
 
 		it('should include model in request body', async () => {
-			fetchMock.mockResolvedValueOnce(
-				makeResponse('{"answer": [0], "confidence": 0.9, "reasoning": "test"}'),
-			);
+			fetchMock.mockResolvedValueOnce(makeResponse(buildSingleBatchContent([0])));
 
-			await provider.solve({
-				questionText: 'Test?',
-				options: ['A', 'B'],
-				questionType: 'single-choice',
-			});
+			await provider.solveBatch(createSingleQuestionBatch());
 
 			const [, init] = fetchMock.mock.calls[0];
 			const body = JSON.parse(init.body);
@@ -133,18 +93,12 @@ describe('OpenRouterProvider', () => {
 		it('should retry on 429 and succeed on subsequent attempt', async () => {
 			fetchMock
 				.mockResolvedValueOnce(make429())
-				.mockResolvedValueOnce(
-					makeResponse('{"answer": [1], "confidence": 0.85, "reasoning": "retried"}'),
-				);
+				.mockResolvedValueOnce(makeResponse(buildSingleBatchContent([1], 0.85, 'retried')));
 
-			const result = await provider.solve({
-				questionText: 'Test?',
-				options: ['A', 'B'],
-				questionType: 'single-choice',
-			});
+			const result = await provider.solveBatch(createSingleQuestionBatch());
 
 			expect(fetchMock).toHaveBeenCalledTimes(2);
-			expect(result.answerIndices).toEqual([1]);
+			expect(getSingleBatchAnswer(result).answer).toEqual([1]);
 		});
 	});
 
@@ -155,13 +109,7 @@ describe('OpenRouterProvider', () => {
 				throw error;
 			});
 
-			await expect(
-				provider.solve({
-					questionText: 'Test?',
-					options: ['A', 'B'],
-					questionType: 'single-choice',
-				}),
-			).rejects.toThrow(/timed out/);
+			await expect(provider.solveBatch(createSingleQuestionBatch())).rejects.toThrow(/timed out/);
 		});
 
 		it('should surface REQUEST_CANCELLED when an external abort signal cancels fetch', async () => {
@@ -182,12 +130,7 @@ describe('OpenRouterProvider', () => {
 			});
 
 			const controller = new AbortController();
-			const promise = provider.solve({
-				questionText: 'Test?',
-				options: ['A', 'B'],
-				questionType: 'single-choice',
-				signal: controller.signal,
-			});
+			const promise = provider.solveBatch(createSingleQuestionBatch({}, controller.signal));
 
 			controller.abort();
 
@@ -197,15 +140,9 @@ describe('OpenRouterProvider', () => {
 
 	describe('API URL', () => {
 		it('should call the OpenRouter completions endpoint', async () => {
-			fetchMock.mockResolvedValueOnce(
-				makeResponse('{"answer": [0], "confidence": 0.9, "reasoning": "ok"}'),
-			);
+			fetchMock.mockResolvedValueOnce(makeResponse(buildSingleBatchContent([0], 0.9, 'ok')));
 
-			await provider.solve({
-				questionText: 'Test?',
-				options: ['A', 'B'],
-				questionType: 'single-choice',
-			});
+			await provider.solveBatch(createSingleQuestionBatch());
 
 			const [url] = fetchMock.mock.calls[0];
 			expect(url).toBe('https://openrouter.ai/api/v1/chat/completions');

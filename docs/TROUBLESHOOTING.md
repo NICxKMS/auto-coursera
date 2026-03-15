@@ -334,8 +334,10 @@ The extension ID configured in the policy (registry, JSON file, or plist) does n
 **Step 1: Determine the correct extension ID from the key.**
 
 ```bash
-bash scripts/derive-extension-id.sh extension-key.pem
+bash scripts/generate-key.sh
 ```
+
+The script detects the existing key, displays the current extension ID, and asks before overwriting.
 
 **Step 2: Check what ID is in the policy.**
 
@@ -374,7 +376,7 @@ For the full manual procedure, see [SETUP.md](./SETUP.md).
 
 ```bash
 # All should return the same ID
-bash scripts/derive-extension-id.sh extension-key.pem
+bash scripts/generate-key.sh
 curl -s https://autocr.nicx.me/updates.xml | grep -oP 'appid="\K[^"]+'
 grep EXTENSION_ID installer/config.go | head -1
 ```

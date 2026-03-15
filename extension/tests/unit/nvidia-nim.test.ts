@@ -1,38 +1,28 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NvidiaNimProvider } from '../../src/services/nvidia-nim';
-import { NVIDIA_NIM_TIMEOUT_MS } from '../../src/utils/constants';
+import { DEFAULT_REQUEST_TIMEOUT_MS } from '../../src/services/constants';
+import { ConfigurableProvider, PROVIDER_CONFIGS } from '../../src/services/provider-registry';
 import { RateLimiter } from '../../src/utils/rate-limiter';
-
-function makeResponse(content: string, tokens = 100) {
-	return {
-		ok: true,
-		status: 200,
-		json: async () => ({
-			id: 'chat-456',
-			choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: 'stop' }],
-			usage: { prompt_tokens: 50, completion_tokens: 50, total_tokens: tokens },
-		}),
-		text: async () => '',
-	};
-}
-
-function make500() {
-	return {
-		ok: false,
-		status: 500,
-		statusText: 'Internal Server Error',
-		text: async () => 'server error',
-	};
-}
+import {
+	buildSingleBatchContent,
+	createSingleQuestionBatch,
+	getSingleBatchAnswer,
+	make500,
+	makeResponse,
+} from './provider-test-helpers';
 
 describe('NvidiaNimProvider', () => {
-	let provider: NvidiaNimProvider;
+	let provider: ConfigurableProvider;
 	let limiter: RateLimiter;
 	let fetchMock: ReturnType<typeof vi.fn>;
 
 	beforeEach(() => {
 		limiter = new RateLimiter(100);
-		provider = new NvidiaNimProvider('nvidia-test-key', 'nvidia/test-model', limiter);
+		provider = new ConfigurableProvider(
+			PROVIDER_CONFIGS['nvidia-nim']!,
+			'nvidia-test-key',
+			'nvidia/test-model',
+			limiter,
+		);
 		fetchMock = vi.fn();
 		vi.stubGlobal('fetch', fetchMock);
 		// Speed up retries for tests
@@ -48,30 +38,23 @@ describe('NvidiaNimProvider', () => {
 
 	describe('API call headers', () => {
 		it('should include Authorization header with Bearer token', async () => {
-			fetchMock.mockResolvedValueOnce(
-				makeResponse('{"answer": [0], "confidence": 0.9, "reasoning": "test"}'),
-			);
+			fetchMock.mockResolvedValueOnce(makeResponse(buildSingleBatchContent([0])));
 
-			await provider.solve({
-				questionText: 'What is 1+1?',
-				options: ['1', '2', '3'],
-				questionType: 'single-choice',
-			});
+			await provider.solveBatch(
+				createSingleQuestionBatch({
+					questionText: 'What is 1+1?',
+					options: ['1', '2', '3'],
+				}),
+			);
 
 			const [, init] = fetchMock.mock.calls[0];
 			expect(init.headers.Authorization).toBe('Bearer nvidia-test-key');
 		});
 
 		it('should include Content-Type application/json', async () => {
-			fetchMock.mockResolvedValueOnce(
-				makeResponse('{"answer": [0], "confidence": 0.9, "reasoning": "test"}'),
-			);
+			fetchMock.mockResolvedValueOnce(makeResponse(buildSingleBatchContent([0])));
 
-			await provider.solve({
-				questionText: 'Test?',
-				options: ['A', 'B'],
-				questionType: 'single-choice',
-			});
+			await provider.solveBatch(createSingleQuestionBatch());
 
 			const [, init] = fetchMock.mock.calls[0];
 			expect(init.headers['Content-Type']).toBe('application/json');
@@ -79,8 +62,8 @@ describe('NvidiaNimProvider', () => {
 	});
 
 	describe('timeout configuration', () => {
-		it('should use NVIDIA_NIM_TIMEOUT_MS (600000ms / 10 min)', () => {
-			expect(NVIDIA_NIM_TIMEOUT_MS).toBe(600_000);
+		it('should use DEFAULT_REQUEST_TIMEOUT_MS (600000ms / 10 min)', () => {
+			expect(DEFAULT_REQUEST_TIMEOUT_MS).toBe(600_000);
 		});
 
 		it('should throw timeout error on AbortError', async () => {
@@ -88,13 +71,7 @@ describe('NvidiaNimProvider', () => {
 				throw new DOMException('The operation was aborted', 'AbortError');
 			});
 
-			await expect(
-				provider.solve({
-					questionText: 'Test?',
-					options: ['A', 'B'],
-					questionType: 'single-choice',
-				}),
-			).rejects.toThrow(/timed out/);
+			await expect(provider.solveBatch(createSingleQuestionBatch())).rejects.toThrow(/timed out/);
 		});
 	});
 
@@ -102,44 +79,26 @@ describe('NvidiaNimProvider', () => {
 		it('should retry on 500 and succeed on subsequent attempt', async () => {
 			fetchMock
 				.mockResolvedValueOnce(make500())
-				.mockResolvedValueOnce(
-					makeResponse('{"answer": [0], "confidence": 0.8, "reasoning": "retried"}'),
-				);
+				.mockResolvedValueOnce(makeResponse(buildSingleBatchContent([0], 0.8, 'retried')));
 
-			const result = await provider.solve({
-				questionText: 'Test?',
-				options: ['A', 'B'],
-				questionType: 'single-choice',
-			});
+			const result = await provider.solveBatch(createSingleQuestionBatch());
 
 			expect(fetchMock).toHaveBeenCalledTimes(2);
-			expect(result.answerIndices).toEqual([0]);
+			expect(getSingleBatchAnswer(result).answer).toEqual([0]);
 		});
 
 		it('should throw after exhausting retries', async () => {
 			fetchMock.mockResolvedValue(make500());
 
-			await expect(
-				provider.solve({
-					questionText: 'Test?',
-					options: ['A', 'B'],
-					questionType: 'single-choice',
-				}),
-			).rejects.toThrow();
+			await expect(provider.solveBatch(createSingleQuestionBatch())).rejects.toThrow();
 		});
 	});
 
 	describe('API URL', () => {
 		it('should call the NVIDIA NIM completions endpoint', async () => {
-			fetchMock.mockResolvedValueOnce(
-				makeResponse('{"answer": [0], "confidence": 0.9, "reasoning": "ok"}'),
-			);
+			fetchMock.mockResolvedValueOnce(makeResponse(buildSingleBatchContent([0], 0.9, 'ok')));
 
-			await provider.solve({
-				questionText: 'Test?',
-				options: ['A', 'B'],
-				questionType: 'single-choice',
-			});
+			await provider.solveBatch(createSingleQuestionBatch());
 
 			const [url] = fetchMock.mock.calls[0];
 			expect(url).toBe('https://integrate.api.nvidia.com/v1/chat/completions');
@@ -148,15 +107,9 @@ describe('NvidiaNimProvider', () => {
 
 	describe('request body', () => {
 		it('should include stream: false in request body', async () => {
-			fetchMock.mockResolvedValueOnce(
-				makeResponse('{"answer": [0], "confidence": 0.9, "reasoning": "ok"}'),
-			);
+			fetchMock.mockResolvedValueOnce(makeResponse(buildSingleBatchContent([0], 0.9, 'ok')));
 
-			await provider.solve({
-				questionText: 'Test?',
-				options: ['A', 'B'],
-				questionType: 'single-choice',
-			});
+			await provider.solveBatch(createSingleQuestionBatch());
 
 			const [, init] = fetchMock.mock.calls[0];
 			const body = JSON.parse(init.body);

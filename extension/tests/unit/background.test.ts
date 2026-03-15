@@ -1,20 +1,26 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { MessageRouter } from '../../src/background/router';
-import type { ErrorPayload, Message } from '../../src/types/messages';
+import { createMessageRouter, isAllowedSender } from '../../src/background/message-handlers';
+import type {
+	BackgroundRequestEnvelope,
+	BackgroundResponseMessage,
+	ErrorPayload,
+	TestConnectionResponsePayload,
+} from '../../src/types/messages';
+import { chromeMock } from '../mocks/chrome';
 
 /**
  * Tests for background message routing and sender validation.
  *
  * NOTE: background.ts has module-level side effects (listener registration,
- * provider init). We test the MessageRouter directly from router.ts and
- * replicate the sender validation logic from the onMessage listener.
+ * provider init). We test the MessageRouter directly from router.ts and the
+ * extracted sender validation helper from message-utils.ts.
  */
 
 describe('MessageRouter', () => {
-	let router: MessageRouter;
+	let router: ReturnType<typeof createMessageRouter>;
 
 	beforeEach(() => {
-		router = new MessageRouter();
+		router = createMessageRouter();
 	});
 
 	describe('handler registration and routing', () => {
@@ -24,18 +30,21 @@ describe('MessageRouter', () => {
 				payload: { success: true },
 			}));
 
-			const message: Message = { type: 'SET_ENABLED', payload: true };
+			const message = { type: 'SET_ENABLED' as const, payload: true };
 			const sender = {
 				id: 'ext-id',
 				tab: { url: 'https://www.coursera.org/' },
 			} as chrome.runtime.MessageSender;
 			const result = await router.route(message, sender);
 			expect(result.type).toBe('SET_ENABLED');
-			expect((result.payload as Record<string, unknown>).success).toBe(true);
+			expect((result.payload as { success: boolean }).success).toBe(true);
 		});
 
 		it('should return ERROR for unknown message types', async () => {
-			const message = { type: 'NONEXISTENT_TYPE', payload: null } as unknown as Message;
+			const message = {
+				type: 'NONEXISTENT_TYPE',
+				payload: null,
+			} as unknown as BackgroundRequestEnvelope;
 			const sender = { id: 'ext-id' } as chrome.runtime.MessageSender;
 			const result = await router.route(message, sender);
 			expect(result.type).toBe('ERROR');
@@ -49,7 +58,7 @@ describe('MessageRouter', () => {
 				throw new Error('Provider exploded');
 			});
 
-			const message: Message = { type: 'SOLVE_BATCH', payload: {} };
+			const message = { type: 'SOLVE_BATCH' as const, payload: {} };
 			const sender = { id: 'ext-id' } as chrome.runtime.MessageSender;
 			const result = await router.route(message, sender);
 			expect(result.type).toBe('ERROR');
@@ -63,27 +72,38 @@ describe('MessageRouter', () => {
 				throw new Error('Crash');
 			});
 
-			const message: Message = { type: 'SOLVE_BATCH', payload: {} };
+			const message = { type: 'SOLVE_BATCH' as const, payload: {} };
 			const sender = { id: 'ext-id' } as chrome.runtime.MessageSender;
 			await router.route(message, sender);
 
-			const sessionStore = chrome.storage.session._getStore() as Record<string, unknown>;
+			const sessionStore = chromeMock.storage.session._getStore() as Record<string, unknown>;
 			expect(sessionStore).toEqual({});
 		});
 
 		it('should route multiple different message types correctly', async () => {
 			router.on('TEST_CONNECTION', async () => ({
 				type: 'TEST_CONNECTION',
-				payload: 'connection-ok',
+				payload: {
+					success: true,
+					provider: 'openrouter',
+					model: 'openrouter/free',
+					confidence: 0.91,
+					message: 'connection-ok',
+				} satisfies TestConnectionResponsePayload,
 			}));
-			router.on('SET_ENABLED', async () => ({ type: 'SET_ENABLED', payload: 'enabled-ok' }));
+			router.on('SET_ENABLED', async () => ({
+				type: 'SET_ENABLED',
+				payload: { success: true },
+			}));
 
 			const sender = { id: 'ext-id' } as chrome.runtime.MessageSender;
 			const r1 = await router.route({ type: 'TEST_CONNECTION', payload: {} }, sender);
 			const r2 = await router.route({ type: 'SET_ENABLED', payload: true }, sender);
 
-			expect(r1.payload).toBe('connection-ok');
-			expect(r2.payload).toBe('enabled-ok');
+			expect((r1 as BackgroundResponseMessage<'TEST_CONNECTION'>).payload.message).toBe(
+				'connection-ok',
+			);
+			expect((r2 as BackgroundResponseMessage<'SET_ENABLED'>).payload.success).toBe(true);
 		});
 
 		it('should pass payload and sender to handler', async () => {
@@ -93,10 +113,10 @@ describe('MessageRouter', () => {
 			router.on('SOLVE_BATCH', async (payload, sender) => {
 				receivedPayload = payload;
 				receivedSender = sender;
-				return { type: 'SOLVE_BATCH', payload: { answers: [] } };
+				return { type: 'SOLVE_BATCH', payload: { requestId: 'req-1', answers: [] } };
 			});
 
-			const message: Message = { type: 'SOLVE_BATCH', payload: { questionText: 'test?' } };
+			const message = { type: 'SOLVE_BATCH' as const, payload: { questionText: 'test?' } };
 			const sender = {
 				id: 'ext-id',
 				tab: { id: 42, url: 'https://www.coursera.org/learn/test' },
@@ -110,86 +130,95 @@ describe('MessageRouter', () => {
 });
 
 describe('Sender Validation Logic', () => {
-	/**
-	 * Replicate the exact sender validation from background.ts onMessage listener
-	 * to test it in isolation.
-	 */
 	const MOCK_EXTENSION_ID = 'mock-extension-id-12345';
 
-	function isAllowedSender(sender: chrome.runtime.MessageSender): boolean {
-		const senderUrl = sender.tab?.url || sender.url || '';
-		return (
-			sender.id === MOCK_EXTENSION_ID &&
-			(senderUrl.startsWith('https://www.coursera.org/') ||
-				senderUrl.startsWith('chrome-extension://') ||
-				senderUrl === '')
-		);
-	}
-
 	it('should allow messages from extension popup (empty url)', () => {
-		expect(isAllowedSender({ id: MOCK_EXTENSION_ID } as chrome.runtime.MessageSender)).toBe(true);
+		expect(
+			isAllowedSender({ id: MOCK_EXTENSION_ID } as chrome.runtime.MessageSender, MOCK_EXTENSION_ID),
+		).toBe(true);
 	});
 
 	it('should allow messages from Coursera tabs', () => {
 		expect(
-			isAllowedSender({
-				id: MOCK_EXTENSION_ID,
-				tab: { url: 'https://www.coursera.org/learn/ml' },
-			} as chrome.runtime.MessageSender),
+			isAllowedSender(
+				{
+					id: MOCK_EXTENSION_ID,
+					tab: { url: 'https://www.coursera.org/learn/ml' },
+				} as chrome.runtime.MessageSender,
+				MOCK_EXTENSION_ID,
+			),
 		).toBe(true);
 	});
 
 	it('should allow messages from chrome-extension:// pages', () => {
 		expect(
-			isAllowedSender({
-				id: MOCK_EXTENSION_ID,
-				url: 'chrome-extension://mock-extension-id-12345/options.html',
-			} as chrome.runtime.MessageSender),
+			isAllowedSender(
+				{
+					id: MOCK_EXTENSION_ID,
+					url: 'chrome-extension://mock-extension-id-12345/popup.html',
+				} as chrome.runtime.MessageSender,
+				MOCK_EXTENSION_ID,
+			),
 		).toBe(true);
 	});
 
 	it('should reject messages from non-extension sources', () => {
 		expect(
-			isAllowedSender({
-				id: 'some-other-extension',
-				tab: { url: 'https://www.coursera.org/learn/ml' },
-			} as chrome.runtime.MessageSender),
+			isAllowedSender(
+				{
+					id: 'some-other-extension',
+					tab: { url: 'https://www.coursera.org/learn/ml' },
+				} as chrome.runtime.MessageSender,
+				MOCK_EXTENSION_ID,
+			),
 		).toBe(false);
 	});
 
 	it('should reject messages from non-Coursera tabs', () => {
 		expect(
-			isAllowedSender({
-				id: MOCK_EXTENSION_ID,
-				tab: { url: 'https://evil.com/phish' },
-			} as chrome.runtime.MessageSender),
+			isAllowedSender(
+				{
+					id: MOCK_EXTENSION_ID,
+					tab: { url: 'https://evil.com/phish' },
+				} as chrome.runtime.MessageSender,
+				MOCK_EXTENSION_ID,
+			),
 		).toBe(false);
 	});
 
 	it('should reject messages from Coursera subdomains that are not www', () => {
 		expect(
-			isAllowedSender({
-				id: MOCK_EXTENSION_ID,
-				tab: { url: 'https://evil.coursera.org.fake.com/' },
-			} as chrome.runtime.MessageSender),
+			isAllowedSender(
+				{
+					id: MOCK_EXTENSION_ID,
+					tab: { url: 'https://evil.coursera.org.fake.com/' },
+				} as chrome.runtime.MessageSender,
+				MOCK_EXTENSION_ID,
+			),
 		).toBe(false);
 	});
 
 	it('should reject when extension id matches but URL is wrong', () => {
 		expect(
-			isAllowedSender({
-				id: MOCK_EXTENSION_ID,
-				tab: { url: 'https://google.com' },
-			} as chrome.runtime.MessageSender),
+			isAllowedSender(
+				{
+					id: MOCK_EXTENSION_ID,
+					tab: { url: 'https://google.com' },
+				} as chrome.runtime.MessageSender,
+				MOCK_EXTENSION_ID,
+			),
 		).toBe(false);
 	});
 
 	it('should reject when URL is Coursera but extension id is wrong', () => {
 		expect(
-			isAllowedSender({
-				id: 'wrong-id',
-				tab: { url: 'https://www.coursera.org/' },
-			} as chrome.runtime.MessageSender),
+			isAllowedSender(
+				{
+					id: 'wrong-id',
+					tab: { url: 'https://www.coursera.org/' },
+				} as chrome.runtime.MessageSender,
+				MOCK_EXTENSION_ID,
+			),
 		).toBe(false);
 	});
 });

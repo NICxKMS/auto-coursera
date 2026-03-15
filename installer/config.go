@@ -2,7 +2,7 @@ package main
 
 // AppVersion is injected at build time via ldflags.
 // Default value used for local `go run`.
-var AppVersion = "1.9.1"
+var AppVersion = "2.0.0"
 
 const (
 	ExtensionID   = "alojpdnpiddmekflpagdblmaehbdfcge"

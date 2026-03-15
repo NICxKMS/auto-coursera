@@ -39,8 +39,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Run version sync (idempotent)
+        run: bash scripts/sync-constants.sh
+
       - name: Verify version consistency
         run: bash scripts/check-version.sh
+
+      - name: Verify sync was committed
+        run: |
+          if ! git diff --quiet; then
+            echo "::error::version.json was updated but sync-constants.sh was not run before committing."
+            echo "::error::Please run: bash scripts/sync-constants.sh && git add -A && git commit --amend"
+            echo ""
+            echo "Files that need syncing:"
+            git diff --stat
+            exit 1
+          fi
 
   # ===========================================================================
   # BUILD EXTENSION — Sign and upload CRX (tags only)
@@ -73,8 +87,22 @@ jobs:
       - name: Install extension dependencies
         run: cd extension && pnpm install --frozen-lockfile
 
+      - name: Typecheck extension
+        run: cd extension && pnpm typecheck
+
+      - name: Lint extension
+        run: cd extension && pnpm lint
+
+      - name: Run extension tests
+        run: cd extension && pnpm test
+
       - name: Build extension (production)
         run: cd extension && pnpm build:prod
+
+      - name: Create extension zip
+        run: |
+          cd extension
+          zip -r ../auto-coursera.zip dist/
 
       - name: Guard against placeholder values
         run: |
@@ -129,6 +157,9 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: 'installer/go.sum'
 
+      - name: Vet installer
+        run: cd installer && go vet ./...
+
       - name: Build all platforms
         run: cd installer && make build-all
 
@@ -173,6 +204,7 @@ jobs:
           files: |
             auto_coursera_*.crx
             auto_coursera_*.crx.sha256
+            auto-coursera.zip
             installer-*
             checksums.sha256
           generate_release_notes: true
@@ -204,6 +236,7 @@ jobs:
           REQUIRED_ASSETS=(
             "auto_coursera_${VERSION}.crx"
             "auto_coursera_${VERSION}.crx.sha256"
+            "auto-coursera.zip"
             "installer-windows-amd64.exe"
             "installer-windows-arm64.exe"
             "installer-macos-arm64"

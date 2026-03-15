@@ -1,16 +1,13 @@
 /**
  * QuestionDetector — MutationObserver + Coursera data-testid selector for question detection.
- * REQ: REQ-001, REQ-002, REQ-003
  */
 
-import type { DetectedQuestion, QuestionType } from '../types/questions';
-import { COURSERA_SELECTORS, MUTATION_DEBOUNCE_MS, QUESTION_SELECTORS } from '../utils/constants';
+import type { DetectedQuestion } from '../types/questions';
 import { Logger } from '../utils/logger';
+import { COURSERA_SELECTORS, MUTATION_DEBOUNCE_MS, QUESTION_SELECTORS } from './constants';
+import { isCodeExpressionQuestion } from './question-contract';
 
 const logger = new Logger('QuestionDetector');
-
-/** data-testid value fragment that marks code-expression questions (unsupported) */
-const CODE_EXPRESSION_MARKER = 'CodeExpression';
 
 export class QuestionDetector {
 	private observer: MutationObserver | null = null;
@@ -24,7 +21,6 @@ export class QuestionDetector {
 
 	/**
 	 * Start observing the DOM for question containers.
-	 * AC-002.1: MutationObserver on document.body with {childList: true, subtree: true}
 	 */
 	start(): void {
 		if (this.observer) {
@@ -36,7 +32,7 @@ export class QuestionDetector {
 			childList: true,
 			subtree: true,
 		});
-		// Initial scan for pre-rendered questions (AC-001.4)
+		// Initial scan for pre-rendered questions
 		this.scanPage();
 		logger.info('QuestionDetector started');
 	}
@@ -72,7 +68,6 @@ export class QuestionDetector {
 
 	/**
 	 * Handle DOM mutations with debounce.
-	 * AC-002.2: 300ms debounce for rapid mutations
 	 */
 	private handleMutations(mutations: MutationRecord[]): void {
 		const hasNewNodes = mutations.some((m) => m.addedNodes.length > 0);
@@ -118,7 +113,7 @@ export class QuestionDetector {
 		// Filter code-expression questions, deduplicate nested (keep outermost)
 		const candidates = Array.from(elements).filter((el) => {
 			const testId = el.getAttribute('data-testid') ?? '';
-			if (testId.includes(CODE_EXPRESSION_MARKER)) {
+			if (isCodeExpressionQuestion(testId)) {
 				logger.info(`Skipping unsupported code-expression question: ${testId}`);
 				return false;
 			}
@@ -148,7 +143,6 @@ export class QuestionDetector {
 	/**
 	 * Process a single question element.
 	 * Dedup via WeakSet (element identity). UID derived from data-testid + content hash.
-	 * AC-002.4: Does not re-process previously detected questions.
 	 */
 	private processElement(el: HTMLElement): boolean {
 		if (this.seenElements.has(el)) return false;
@@ -159,44 +153,16 @@ export class QuestionDetector {
 
 		const detected: DetectedQuestion = {
 			element: el,
-			type: this.classifyType(el, testId),
 			uid,
-			processed: false,
 		};
 
-		logger.info(`Detected ${detected.type} question: ${uid} (${testId})`);
+		logger.info(`Detected question: ${uid} (${testId})`);
 		this.onDetect(detected);
 		return true;
 	}
 
 	/**
-	 * Classify question type based on data-testid and DOM contents.
-	 * CheckboxQuestion → multiple-choice (QuestionType has no 'checkbox' variant;
-	 *   the extractor uses a separate type system for the AI prompt).
-	 * MultipleChoiceQuestion → single-choice, images → image-based, else → unknown.
-	 */
-	private classifyType(el: HTMLElement, testId: string): QuestionType {
-		// Check for images first (highest priority)
-		const hasImages = el.querySelectorAll('img').length > 0;
-		if (hasImages) return 'image-based';
-
-		// Use data-testid for deterministic classification
-		if (testId.includes('CheckboxQuestion')) return 'multiple-choice';
-		if (testId.includes('MultipleChoiceQuestion')) return 'single-choice';
-
-		// Fallback: inspect input types
-		const checkboxes = el.querySelectorAll('input[type="checkbox"]');
-		if (checkboxes.length > 0) return 'multiple-choice';
-
-		const radios = el.querySelectorAll('input[type="radio"]');
-		if (radios.length > 0) return 'single-choice';
-
-		return 'unknown';
-	}
-
-	/**
 	 * Compute FNV-1a hash for content deduplication.
-	 * AC-001.3: FNV-1a dedup
 	 */
 	private computeUID(text: string): string {
 		let hash = 2166136261; // FNV offset basis

@@ -12,7 +12,6 @@ export default (env, argv) => {
 			background: './src/background/background.ts',
 			content: './src/content/content.ts',
 			popup: './src/popup/popup.ts',
-			options: './src/options/options.ts',
 		},
 		output: {
 			path: _resolve(__dirname, 'dist'),
@@ -38,8 +37,6 @@ export default (env, argv) => {
 					{ from: 'assets', to: 'assets' },
 					{ from: 'src/popup/popup.html', to: 'popup.html' },
 					{ from: 'src/popup/popup.css', to: 'popup.css' },
-					{ from: 'src/options/options.html', to: 'options.html' },
-					{ from: 'src/options/options.css', to: 'options.css' },
 				],
 			}),
 		],

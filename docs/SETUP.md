@@ -91,11 +91,7 @@ This will:
 
 **Save both values.** You need them for the next step and for GitHub Secrets later.
 
-To re-derive the extension ID from an existing key at any time:
-
-```bash
-bash scripts/derive-extension-id.sh extension-key.pem
-```
+To re-derive the extension ID from an existing key at any time, run `generate-key.sh` — it will detect the existing key, display the current extension ID, and ask before overwriting.
 
 > ⚠️ **Never commit `extension-key.pem` to the repository.** It is already in `.gitignore`. Store it in a secure location and back it up. If the key is lost, the extension ID changes and all deployed policies become invalid.
 
@@ -210,7 +206,7 @@ Add these four secrets:
 | `CF_ACCOUNT_ID` | Cloudflare account ID | Dashboard → **Account Home** → **Account ID** in the sidebar |
 | `CF_API_TOKEN` | API token string | See [token creation](#create-cloudflare-api-token) below |
 | `EXTENSION_PRIVATE_KEY` | Full PEM key content | `cat extension-key.pem` — copy everything including `-----BEGIN` and `-----END` lines |
-| `EXTENSION_ID` | 32-character extension ID | Output from step 3, or run `bash scripts/derive-extension-id.sh extension-key.pem` |
+| `EXTENSION_ID` | 32-character extension ID | Output from step 3, or re-run `bash scripts/generate-key.sh` (detects existing key) |
 
 ### Create Cloudflare API Token
 
@@ -259,8 +255,8 @@ This triggers the website deploy workflow, but `deploy-website-main` only publis
 ### Trigger full release (push a tag)
 
 ```bash
-# Build the extension first
-cd extension && pnpm build && cd ..
+# Build the production/release extension bundle first
+cd extension && pnpm build:prod && cd ..
 
 # Tag and push
 VERSION=$(jq -r .version version.json)
@@ -270,10 +266,14 @@ git push auto-coursera "v${VERSION}"
 
 This triggers the full CI/CD pipeline:
 
-1. `build-extension` — packages CRX, generates checksums
-2. `build-installers` — compiles Go binaries for all platforms, generates checksums
+1. `build-extension` — reruns extension `typecheck`, `lint`, and `test`, then packages the CRX and generates checksums
+2. `build-installers` — reruns installer `go vet`, then compiles Go binaries for all platforms and generates checksums
 3. `create-release` — uploads all artifacts to GitHub Releases
-4. `deploy-website` — rebuilds and deploys Cloudflare Pages (includes static `updates.xml`) after the matching GitHub Release/assets exist
+4. `deploy-website-release` — rebuilds and deploys Cloudflare Pages (includes static `updates.xml`) after the matching GitHub Release/assets exist
+
+The tag-release path intentionally mirrors the PR validation gates before packaging/signing so a tagged release cannot skip the same extension and installer checks that already gate normal review.
+
+For the current contributor-facing release rules and extension architecture boundaries, see [`docs/EXTENSION-GOVERNANCE.md`](./EXTENSION-GOVERNANCE.md).
 
 ---
 
@@ -293,6 +293,9 @@ curl -s -o /dev/null -w "%{http_code}" https://autocr.nicx.me/
 ```bash
 curl -I https://autocr.nicx.me/updates.xml
 # Expected: 200, Content-Type: application/xml (static file on Cloudflare Pages)
+
+jq -r .update_url extension/manifest.json
+# Expected: https://autocr.nicx.me/updates.xml
 ```
 
 ### Install scripts
@@ -315,6 +318,8 @@ After running the installer or a script on a test machine:
 4. Verify the value matches `<your-extension-id>;https://autocr.nicx.me/updates.xml`
 5. Navigate to `chrome://extensions`
 6. The extension should appear as installed (may require a browser restart)
+
+> **Update-contract note:** `ExtensionInstallForcelist` bootstraps installation, but the packaged extension manifest also embeds `update_url: https://autocr.nicx.me/updates.xml` for subsequent update checks. Keep those two values aligned. This repo does not currently use an `ExtensionSettings.override_update_url` policy.
 
 ---
 

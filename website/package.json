@@ -1,19 +1,27 @@
 {
 	"name": "auto-coursera-website",
 	"type": "module",
-	"version": "1.9.1",
+	"version": "2.0.0",
 	"private": true,
 	"scripts": {
 		"dev": "astro dev",
 		"start": "astro dev",
+		"diagrams": "node scripts/generate-diagrams.mjs",
+		"prebuild": "node scripts/generate-diagrams.mjs",
 		"build": "astro build",
 		"preview": "astro preview",
 		"astro": "astro"
 	},
 	"dependencies": {
-		"@astrojs/sitemap": "3.2.1",
-		"@astrojs/tailwind": "^5.1.0",
-		"astro": "^4.16.0",
-		"tailwindcss": "^3.4.0"
+		"@astrojs/sitemap": "^3.7.1",
+		"@fontsource-variable/jetbrains-mono": "^5.2.8",
+		"@fontsource-variable/source-sans-3": "^5.2.8",
+		"@fontsource/instrument-serif": "^5.2.8",
+		"astro": "^6.0.4",
+		"typescript": "^5.9.3"
+	},
+	"devDependencies": {
+		"@mermaid-js/mermaid-cli": "^11.12.0",
+		"sharp": "^0.34.5"
 	}
 }

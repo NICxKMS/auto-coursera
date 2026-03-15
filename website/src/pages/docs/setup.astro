@@ -1,144 +1,647 @@
 ---
-import Footer from '../../components/Footer.astro';
-import Header from '../../components/Header.astro';
-import Base from '../../layouts/Base.astro';
-
-const repoSetupDoc = 'https://github.com/NICxKMS/auto-coursera/blob/master/docs/SETUP.md';
-const repoSigningDoc = 'https://github.com/NICxKMS/auto-coursera/blob/master/docs/SIGNING.md';
+import DocsLayout from '../../layouts/DocsLayout.astro';
 ---
 
-<Base title="Setup Guide" description="Public setup summary for the Auto-Coursera Assistant distribution platform.">
-  <Header />
+<DocsLayout
+	title="API Provider Setup Guide"
+	description="Configure AI providers for Auto-Coursera. Free API keys from OpenRouter, Google Gemini, Groq, Cerebras, and NVIDIA NIM."
+	breadcrumbs={[
+		{ label: 'Home', href: '/' },
+		{ label: 'Docs', href: '/docs/' },
+		{ label: 'Setup Guide' },
+	]}
+	prev={{ label: 'Getting Started', href: '/docs/' }}
+	next={{ label: 'Troubleshooting', href: '/docs/troubleshoot/' }}
+>
+	<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
+	<h1>API Provider Setup</h1>
+	<p class="hero__lead">
+		Configure a free AI provider and start answering Coursera quizzes in minutes.
+	</p>
 
-  <main id="main-content" class="py-16 sm:py-24 px-4">
-    <div class="max-w-4xl mx-auto">
-      <div class="text-center mb-16 animate-fade-in">
-        <p class="section-label">Docs</p>
-        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Setup Guide</h1>
-        <p class="text-lg text-surface-400 max-w-2xl mx-auto">
-          Public deployment summary for operators who want to self-host the Auto-Coursera Assistant distribution stack. This page is intentionally shorter than the full repository guide.
-        </p>
-      </div>
+	<!-- ===== What is an API Key? ===== -->
+	<aside class="callout callout--info" role="note" aria-labelledby="api-key-heading">
+		<p class="callout__title" id="api-key-heading">What is an API key?</p>
+		<p>
+			An API key is a unique password that lets the extension communicate with an
+			AI service. Each provider gives you a free key when you create an account.
+			The key stays on your device — we never see it.
+		</p>
+	</aside>
 
-      <div class="glass p-6 mb-10 animate-slide-up">
-        <div class="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
-          <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-primary-500/15 text-primary-400 shrink-0">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-          </div>
-          <div class="text-sm text-surface-400 leading-relaxed space-y-2">
-            <p><strong class="text-surface-200">What this page covers:</strong> the shortest accurate path to getting your own deployment online.</p>
-            <p><strong class="text-surface-200">What it does not replace:</strong> the full step-by-step operator checklist in <a href={repoSetupDoc} target="_blank" rel="noopener noreferrer" class="text-primary-400 hover:text-primary-300">docs/SETUP.md</a>, which includes every secret, verification step, and deeper troubleshooting path.</p>
-          </div>
-        </div>
-      </div>
+	<!-- ===== How to Open Settings ===== -->
+	<aside class="callout callout--info" role="note" aria-labelledby="open-settings-heading">
+		<p class="callout__title" id="open-settings-heading">How to open settings</p>
+		<ol class="callout__steps">
+			<li>Navigate to any <strong>Coursera quiz page</strong></li>
+			<li>Look for the <strong>🎓 graduation cap button</strong> in the <strong>bottom-right corner</strong> of the page</li>
+			<li>Click it to open the control panel</li>
+			<li>Click the <strong>gear/settings icon</strong></li>
+			<li>Paste your API key in the provider field</li>
+		</ol>
+		<p>
+			The 🎓 button only appears on Coursera pages — you won't see it on other websites.
+		</p>
+	</aside>
 
-      <section class="mb-10 animate-slide-up delay-100">
-        <div class="grid md:grid-cols-2 gap-4">
-          <div class="glass p-6">
-            <h2 class="text-lg font-semibold text-white mb-3">Who this is for</h2>
-            <ul class="space-y-2 text-sm text-surface-400 leading-relaxed list-disc pl-5">
-              <li>Maintainers deploying the public website and update manifest</li>
-              <li>Operators packaging signed CRX releases and native installers</li>
-              <li>Fork owners changing the extension ID, domains, or release repo</li>
-            </ul>
-          </div>
-          <div class="glass p-6">
-            <h2 class="text-lg font-semibold text-white mb-3">Core prerequisites</h2>
-            <ul class="space-y-2 text-sm text-surface-400 leading-relaxed list-disc pl-5">
-              <li>Node.js 20+, pnpm 9+, Go 1.22+, OpenSSL, Git</li>
-              <li>A Cloudflare account and Pages project</li>
-              <li>A GitHub repository where releases will be published</li>
-              <li>A private signing key for the CRX extension ID</li>
-            </ul>
-          </div>
-        </div>
-      </section>
+	<!-- ===== Provider Comparison ===== -->
+	<h2>Provider Comparison</h2>
+	<p>
+		Not sure which provider to pick? Here's a side-by-side overview to help you decide.
+	</p>
+	<div class="docs-table-wrap">
+		<table>
+			<thead>
+				<tr>
+					<th>Provider</th>
+					<th>Free Tier</th>
+					<th>Speed</th>
+					<th>Image Support</th>
+					<th>Notes</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><a href="#openrouter">OpenRouter</a></td>
+					<td>Varies by model</td>
+					<td>Medium</td>
+					<td>Yes (with vision models)</td>
+					<td>Widest model selection, recommended starting point</td>
+				</tr>
+				<tr>
+					<td><a href="#gemini">Google Gemini</a></td>
+					<td class="provider__value--yes">Yes (generous)</td>
+					<td>Fast</td>
+					<td>Yes</td>
+					<td>Good free tier, strong general knowledge</td>
+				</tr>
+				<tr>
+					<td><a href="#groq">Groq</a></td>
+					<td class="provider__value--yes">Yes (rate limited)</td>
+					<td>Very fast</td>
+					<td>No</td>
+					<td>Fastest inference, good for quick quizzes</td>
+				</tr>
+				<tr>
+					<td><a href="#cerebras">Cerebras</a></td>
+					<td class="provider__value--yes">Yes (rate limited)</td>
+					<td>Very fast</td>
+					<td>No</td>
+					<td>Fast inference, limited model selection</td>
+				</tr>
+				<tr>
+					<td><a href="#nvidia">NVIDIA NIM</a></td>
+					<td class="provider__value--limited">Yes (limited)</td>
+					<td>Medium</td>
+					<td>Yes (some models)</td>
+					<td>Enterprise-focused, requires separate API key</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<details class="api-endpoints">
+		<summary>API endpoints (for reference)</summary>
+		<ul>
+			<li><strong>OpenRouter:</strong> <code>https://openrouter.ai/api/v1</code></li>
+			<li><strong>Google Gemini:</strong> <code>https://generativelanguage.googleapis.com/v1beta/openai/chat/completions</code></li>
+			<li><strong>Groq:</strong> <code>https://api.groq.com/openai/v1/chat/completions</code></li>
+			<li><strong>Cerebras:</strong> <code>https://api.cerebras.ai/v1/chat/completions</code></li>
+			<li><strong>NVIDIA NIM:</strong> <code>https://integrate.api.nvidia.com/v1</code></li>
+		</ul>
+	</details>
 
-      <section class="mb-12 animate-slide-up delay-200">
-        <div class="glass-strong p-8 md:p-10 relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-primary-600/5 to-transparent" aria-hidden="true"></div>
-          <div class="relative">
-            <h2 class="text-xl font-semibold text-white mb-6">Deployment checklist</h2>
-            <ol class="space-y-5">
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">1</span>
-                <div>
-                  <p class="text-surface-200 font-medium">Clone the repository and install dependencies</p>
-                  <p class="text-sm text-surface-500">You need the website, extension, and installer workspaces available locally before you can build release assets or publish Pages output.</p>
-                  <div class="glass p-3 mt-3 overflow-x-auto"><code class="text-sm font-mono text-surface-200 whitespace-nowrap">git clone https://github.com/NICxKMS/auto-coursera.git &amp;&amp; cd auto-coursera</code></div>
-                </div>
-              </li>
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">2</span>
-                <div>
-                  <p class="text-surface-200 font-medium">Generate or import the extension signing key</p>
-                  <p class="text-sm text-surface-500">The key determines the extension ID used by installers, scripts, and manual policy instructions. Keep it private and backed up.</p>
-                  <div class="glass p-3 mt-3 overflow-x-auto"><code class="text-sm font-mono text-surface-200 whitespace-nowrap">bash scripts/generate-key.sh</code></div>
-                </div>
-              </li>
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">3</span>
-                <div>
-                  <p class="text-surface-200 font-medium">Configure your release truth</p>
-                  <p class="text-sm text-surface-500">Confirm the extension ID, website domain, update URL, and GitHub repository values are correct everywhere before the first public deploy. The repository docs show the full list of files and secrets.</p>
-                </div>
-              </li>
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">4</span>
-                <div>
-                  <p class="text-surface-200 font-medium">Set up Cloudflare Pages and GitHub Actions secrets</p>
-                  <p class="text-sm text-surface-500">Pages serves the static website and canonical <code>updates.xml</code>; GitHub Releases hosts the CRX and native installer binaries that browsers and users download.</p>
-                </div>
-              </li>
-              <li class="flex gap-4">
-                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary-500/15 text-primary-400 text-xs font-bold shrink-0 mt-0.5">5</span>
-                <div>
-                  <p class="text-surface-200 font-medium">Validate, publish, and verify</p>
-                  <p class="text-sm text-surface-500">Run the consistency checks, build the website, and confirm the live site, downloads, and update manifest all point at the same release version.</p>
-                  <div class="glass p-3 mt-3 overflow-x-auto"><code class="text-sm font-mono text-surface-200 whitespace-nowrap">bash scripts/check-version.sh</code></div>
-                </div>
-              </li>
-            </ol>
-          </div>
-        </div>
-      </section>
+	<!-- ===== Cost Overview ===== -->
+	<h2>Cost Overview</h2>
+	<p>
+		Every supported provider has a free tier. The extension uses each provider's
+		free tier by default — no credit card required, no surprise charges.
+	</p>
+	<p>
+		We recommend configuring at least two providers. If one goes down or hits its
+		rate limit, the extension automatically fails over to the next.
+	</p>
 
-      <section class="mb-12 animate-slide-up delay-300">
-        <div class="grid md:grid-cols-3 gap-4">
-          <div class="glass p-6">
-            <h2 class="text-base font-semibold text-white mb-2">Website output</h2>
-            <p class="text-sm text-surface-400 leading-relaxed">Astro builds a static site that serves installs, docs, downloads, and the live <code>updates.xml</code> manifest from one domain.</p>
-          </div>
-          <div class="glass p-6">
-            <h2 class="text-base font-semibold text-white mb-2">Release assets</h2>
-            <p class="text-sm text-surface-400 leading-relaxed">GitHub Releases stores the signed CRX, checksums, and native installers used by both browser auto-update flow and direct downloads.</p>
-          </div>
-          <div class="glass p-6">
-            <h2 class="text-base font-semibold text-white mb-2">Policy installers</h2>
-            <p class="text-sm text-surface-400 leading-relaxed">Native installers, terminal scripts, and manual docs all write the same <code>ExtensionInstallForcelist</code> policy for supported Chromium browsers.</p>
-          </div>
-        </div>
-      </section>
+	<!-- ===== Provider Cards ===== -->
+	<h2>Providers</h2>
 
-      <section class="animate-slide-up delay-400">
-        <div class="glass p-8">
-          <h2 class="text-lg font-semibold text-white mb-4">Need the full operator guide?</h2>
-          <p class="text-sm text-surface-400 leading-relaxed mb-6">Use the repository docs when you need the exact secret names, Cloudflare setup steps, extension-ID replacement guidance, or signing details.</p>
-          <div class="flex flex-wrap gap-3">
-            <a href={repoSetupDoc} target="_blank" rel="noopener noreferrer" class="btn-primary text-sm px-6 py-2.5 gap-2">
-              Full Setup Doc
-            </a>
-            <a href={repoSigningDoc} target="_blank" rel="noopener noreferrer" class="btn-secondary text-sm px-6 py-2.5 gap-2">
-              Signing Guide
-            </a>
-            <a href="/docs/architecture" class="btn-ghost text-sm px-5 py-2.5">
-              View Architecture Overview
-            </a>
-          </div>
-        </div>
-      </section>
-    </div>
-  </main>
+	<!-- OpenRouter -->
+	<div class="provider" id="openrouter">
+		<div class="provider__header">
+			<h3>OpenRouter <span class="provider__badge">Recommended</span></h3>
+		</div>
+		<div class="provider__meta">
+			<div class="provider__field">
+				<span class="provider__label">Key format</span>
+				<code>sk-or-...</code>
+			</div>
+			<div class="provider__field">
+				<span class="provider__label">Free tier</span>
+				<span class="provider__value provider__value--yes">Yes — many free models</span>
+			</div>
+		</div>
+		<h4>Setup</h4>
+		<ol>
+			<li>Create an account at <a href="https://openrouter.ai/" target="_blank" rel="noopener noreferrer">openrouter.ai</a></li>
+			<li>Go to <strong>Settings → Keys</strong></li>
+			<li>Click <strong>Create Key</strong></li>
+			<li>Copy the key (starts with <code>sk-or-</code>)</li>
+		<li>Paste into Auto-Coursera settings (🎓 → gear icon → OpenRouter field)</li>
+	</ol>
+</div>
 
-  <Footer />
-</Base>
+<!-- Google Gemini -->
+	<div class="provider" id="gemini">
+		<div class="provider__header">
+			<h3>Google Gemini</h3>
+		</div>
+		<div class="provider__meta">
+			<div class="provider__field">
+				<span class="provider__label">Key format</span>
+				<code>AIza...</code>
+			</div>
+			<div class="provider__field">
+				<span class="provider__label">Free tier</span>
+				<span class="provider__value provider__value--yes">Yes</span>
+			</div>
+		</div>
+		<h4>Setup</h4>
+		<ol>
+			<li>Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a></li>
+			<li>Click <strong>Get API Key</strong></li>
+			<li>Click <strong>Create API Key</strong></li>
+			<li>Copy the key (starts with <code>AIza</code>)</li>
+		<li>Paste into Auto-Coursera settings (🎓 → gear icon → Gemini field)</li>
+	</ol>
+</div>
+
+<!-- Groq -->
+	<div class="provider" id="groq">
+		<div class="provider__header">
+			<h3>Groq</h3>
+		</div>
+		<div class="provider__meta">
+			<div class="provider__field">
+				<span class="provider__label">Key format</span>
+				<code>gsk_...</code>
+			</div>
+			<div class="provider__field">
+				<span class="provider__label">Free tier</span>
+				<span class="provider__value provider__value--yes">Yes</span>
+			</div>
+		</div>
+		<h4>Setup</h4>
+		<ol>
+			<li>Go to <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Groq Console</a></li>
+			<li>Navigate to <strong>API Keys</strong></li>
+			<li>Click <strong>Create API Key</strong></li>
+			<li>Copy the key (starts with <code>gsk_</code>)</li>
+		<li>Paste into Auto-Coursera settings (🎓 → gear icon → Groq field)</li>
+	</ol>
+</div>
+
+<!-- Cerebras -->
+	<div class="provider" id="cerebras">
+		<div class="provider__header">
+			<h3>Cerebras</h3>
+		</div>
+		<div class="provider__meta">
+			<div class="provider__field">
+				<span class="provider__label">Key format</span>
+				<code>cbs-...</code>
+			</div>
+			<div class="provider__field">
+				<span class="provider__label">Free tier</span>
+				<span class="provider__value provider__value--yes">Yes</span>
+			</div>
+		</div>
+		<h4>Setup</h4>
+		<ol>
+			<li>Go to <a href="https://cloud.cerebras.ai/" target="_blank" rel="noopener noreferrer">Cerebras Cloud</a></li>
+			<li>Navigate to <strong>API Keys</strong></li>
+			<li>Click <strong>Create</strong></li>
+			<li>Copy the key (starts with <code>cbs-</code>)</li>
+		<li>Paste into Auto-Coursera settings (🎓 → gear icon → Cerebras field)</li>
+	</ol>
+</div>
+
+<!-- NVIDIA NIM -->
+	<div class="provider" id="nvidia">
+		<div class="provider__header">
+			<h3>NVIDIA NIM</h3>
+		</div>
+		<div class="provider__meta">
+			<div class="provider__field">
+				<span class="provider__label">Key format</span>
+				<code>nvapi-...</code>
+			</div>
+			<div class="provider__field">
+				<span class="provider__label">Free tier</span>
+				<span class="provider__value provider__value--limited">Limited</span>
+			</div>
+		</div>
+		<p>
+			NVIDIA NIM is particularly well-suited for image-based questions thanks to
+			its vision models. Best used as a secondary provider alongside OpenRouter
+			or Gemini.
+		</p>
+		<h4>Setup</h4>
+		<ol>
+			<li>Go to <a href="https://build.nvidia.com/" target="_blank" rel="noopener noreferrer">NVIDIA Build</a></li>
+			<li>Navigate to the <strong>API</strong> section</li>
+			<li>Click <strong>Get API Key</strong></li>
+			<li>Copy the key (starts with <code>nvapi-</code>)</li>
+		<li>Paste into Auto-Coursera settings (🎓 → gear icon → NVIDIA field)</li>
+	</ol>
+</div>
+
+	<!-- ===== Extension Settings ===== -->
+	<h2>Extension Settings</h2>
+	<p>
+		After adding your API key, you can fine-tune the extension's behavior
+		in the settings panel (click 🎓 → Settings):
+	</p>
+
+	<h3>Confidence Threshold</h3>
+	<p>
+		A decimal value from 0.0–1.0 that controls the minimum confidence needed to
+		highlight an answer. The default is 0.7. Lower values show more answers;
+		higher values are more selective.
+	</p>
+
+	<h3>Auto-Select</h3>
+	<p>
+		When enabled, high-confidence answers (green) are clicked automatically.
+		Enabled by default — answers above the confidence threshold are
+		automatically selected.
+	</p>
+
+	<h3>Auto-Start</h3>
+	<p>
+		When enabled, quiz solving begins as soon as questions are detected on the
+		page. No need to click the FAB.
+	</p>
+
+	<h3>Provider Priority</h3>
+	<p>
+		Set your preferred primary provider. If it fails or hits a rate limit, the
+		extension automatically tries other configured providers.
+	</p>
+
+	<h3>API Key Storage</h3>
+	<p>
+		All API keys are encrypted at rest with <strong>AES-256-GCM</strong>
+		(PBKDF2, 100K iterations) before being stored in Chrome's local storage.
+		This protects against casual inspection of stored data. Keys are sent
+		directly from the extension to the AI provider over HTTPS — they never
+		pass through our servers.
+	</p>
+
+	<!-- ===== Understanding Confidence ===== -->
+	<h2>Understanding Confidence</h2>
+	<p>
+		Every answer the AI returns includes a <strong>confidence score</strong> — a
+		number between 0 and 1 representing the model's self-assessed probability
+		that its answer is correct. It is <em>not</em> a guarantee of accuracy; it's
+		the AI's best estimate.
+	</p>
+
+	<h3>Confidence Tiers</h3>
+	<p>
+		The extension uses three color-coded tiers to give you a quick visual read:
+	</p>
+	<div class="docs-table-wrap">
+		<table>
+			<thead>
+				<tr>
+					<th>Tier</th>
+					<th>Score Range</th>
+					<th>Color</th>
+					<th>Meaning</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>High</td>
+					<td>≥ 0.8</td>
+					<td><span class="confidence-dot confidence-dot--high"></span> Green</td>
+					<td>Model is very confident — likely correct</td>
+				</tr>
+				<tr>
+					<td>Review</td>
+					<td>0.5 – 0.8</td>
+				<td><span class="confidence-dot confidence-dot--review"></span> Orange</td>
+				<td>Plausible but double-check before submitting</td>
+			</tr>
+			<tr>
+				<td>Low</td>
+				<td>&lt; 0.5</td>
+				<td><span class="confidence-dot confidence-dot--low"></span> Red</td>
+					<td>Uncertain — treat as a guess</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h3>Auto-Select Threshold</h3>
+	<p>
+		The <strong>auto-select threshold</strong> (default <code>0.7</code>)
+		controls which answers are automatically selected when auto-select is
+		enabled. Only answers <em>at or above</em> this threshold get clicked;
+		answers below it are highlighted but left for you to review.
+	</p>
+	<ul>
+		<li>
+			<strong>Raise the threshold</strong> (e.g. 0.85) → fewer answers
+			auto-selected, but each one is more likely correct.
+		</li>
+		<li>
+			<strong>Lower the threshold</strong> (e.g. 0.5) → more answers
+			auto-selected, but with higher risk of incorrect picks.
+		</li>
+	</ul>
+	<p>
+		You can adjust it with the confidence slider in settings
+		(🎓 → gear icon → Confidence Threshold).
+	</p>
+
+	<!-- ===== Rate Limits ===== -->
+	<h2>Rate Limits</h2>
+	<p>
+		To avoid hitting AI provider rate limits, the extension throttles itself
+		using a token-bucket rate limiter.
+	</p>
+
+	<h3>Extension-Side Limits</h3>
+	<ul>
+		<li>
+			Default: <strong>20 requests per minute</strong>. The extension queues
+			requests and releases them at a steady pace.
+		</li>
+		<li>
+			On large quizzes (20+ questions), answers may appear in batches as
+			requests are queued and processed — this is normal.
+		</li>
+		<li>
+			The rate limit can be adjusted in settings (advanced users only).
+			Setting it too high may trigger provider-side rejections.
+		</li>
+	</ul>
+
+	<h3>Provider-Side Limits</h3>
+	<p>
+		Individual AI providers enforce their own rate limits, which vary by plan
+		and provider. If you see a <strong>"rate limit exceeded"</strong> error:
+	</p>
+	<ol>
+		<li>Wait 60 seconds and try again</li>
+		<li>Switch to a different provider (the extension does this automatically via failover)</li>
+		<li>Consider lowering the extension's rate limit setting if errors persist</li>
+	</ol>
+
+	<!-- ===== Install CTA ===== -->
+	<aside class="install-cta" aria-label="Install Auto-Coursera">
+		<p class="install-cta__text">Haven't installed yet? Start here.</p>
+		<a href="/install/" class="btn btn--primary">Install Auto-Coursera</a>
+	</aside>
+
+</DocsLayout>
+
+<style>
+	/* ===== Product tagline ===== */
+	.hero__product {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-block-end: var(--space-2);
+	}
+
+	/* ===== Hero lead ===== */
+	.hero__lead {
+		color: var(--text-secondary);
+		font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+		margin-block-end: var(--space-5);
+	}
+
+	/* ===== How-to Callout ===== */
+	.callout {
+		padding: var(--space-4) var(--space-5);
+		border-radius: var(--border-radius);
+		border: 1px solid var(--border);
+		background-color: var(--surface);
+		margin-block: var(--space-5);
+	}
+
+	.callout__title {
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		margin-block-end: var(--space-2);
+	}
+
+	.callout--info {
+		border-inline-start: 3px solid var(--text-muted);
+		background-color: var(--bg-deep);
+	}
+
+	.callout--info .callout__title {
+		color: var(--text-secondary);
+		font-size: var(--text-small);
+	}
+
+	.callout--info p {
+		font-size: var(--text-small);
+		color: var(--text-secondary);
+	}
+
+	.callout__steps {
+		margin-block: var(--space-2) var(--space-3);
+		padding-inline-start: var(--space-5);
+	}
+
+	.callout__steps li {
+		font-size: var(--text-small);
+		color: var(--text-secondary);
+		margin-block: var(--space-1);
+	}
+
+	/* ===== Provider cards ===== */
+	.provider {
+		margin-block: var(--space-6);
+		padding: var(--space-5);
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+	}
+
+	.provider__header {
+		margin-block-end: var(--space-3);
+	}
+
+	.provider__header h3 {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.provider__badge {
+		display: inline-block;
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding: 0.15em 0.6em;
+		background-color: var(--accent-subtle);
+		color: var(--accent);
+		border: 1px solid var(--border-accent);
+		border-radius: var(--border-radius-sm);
+	}
+
+	.provider__meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-4);
+		margin-block-end: var(--space-4);
+	}
+
+	.provider__field {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.provider__label {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-muted);
+	}
+
+	.provider__value--yes {
+		color: var(--success);
+		font-size: var(--text-small);
+	}
+
+	.provider__value--limited {
+		color: var(--warning);
+		font-size: var(--text-small);
+	}
+
+	.provider h4 {
+		margin-block-start: var(--space-4);
+		margin-block-end: var(--space-2);
+	}
+
+	.provider ol {
+		margin-block-start: var(--space-2);
+	}
+
+	.provider p {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin-block: var(--space-2);
+	}
+
+	/* ===== Table ===== */
+	.docs-table-wrap {
+		overflow-x: auto;
+		margin-block: var(--space-5);
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: var(--text-body);
+	}
+
+	th,
+	td {
+		text-align: left;
+		padding: var(--space-3) var(--space-4);
+		border-bottom: 1px solid var(--border);
+	}
+
+	th {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-muted);
+	}
+
+	td {
+		color: var(--text-secondary);
+	}
+
+	/* ===== API Endpoints Details ===== */
+	.api-endpoints {
+		margin-block: var(--space-4);
+		font-size: var(--text-small);
+		color: var(--text-secondary);
+	}
+
+	.api-endpoints summary {
+		cursor: pointer;
+		font-weight: var(--weight-medium);
+		color: var(--text-muted);
+	}
+
+	.api-endpoints ul {
+		margin-block-start: var(--space-2);
+		padding-inline-start: var(--space-5);
+	}
+
+	.api-endpoints li {
+		margin-block: var(--space-1);
+	}
+
+	.api-endpoints code {
+		font-size: var(--text-small);
+		word-break: break-all;
+	}
+
+	/* ===== Confidence Dots ===== */
+	.confidence-dot {
+		display: inline-block;
+		width: 0.75em;
+		height: 0.75em;
+		border-radius: 50%;
+		vertical-align: middle;
+		margin-inline-end: 0.3em;
+	}
+
+	.confidence-dot--high {
+		background-color: var(--success);
+	}
+
+	.confidence-dot--review {
+		background-color: var(--warning);
+	}
+
+	.confidence-dot--low {
+		background-color: var(--error);
+	}
+
+	/* ===== Install CTA ===== */
+
+	.install-cta {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-4);
+		padding: var(--space-8) var(--space-5);
+		text-align: center;
+		border-block-start: 1px solid var(--border);
+		background-color: var(--bg-void);
+	}
+
+	.install-cta__text {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		max-width: 40ch;
+	}
+</style>

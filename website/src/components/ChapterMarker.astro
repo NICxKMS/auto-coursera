@@ -1,0 +1,14 @@
+---
+interface Props {
+	chapter: 1 | 2 | 3 | 4;
+	id?: string;
+}
+
+const { chapter, id } = Astro.props;
+---
+
+<section class="chapter" data-chapter={chapter} id={id}>
+	<div class="chapter__content">
+		<slot />
+	</div>
+</section>

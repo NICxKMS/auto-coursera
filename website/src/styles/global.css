@@ -1,222 +1,457 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ==========================================================================
+   Auto-Coursera Website — Global Styles
+   Base styles, typography, utilities, and accessibility.
+   ========================================================================== */
 
-@layer base {
-	html {
-		scroll-behavior: smooth;
-		-webkit-font-smoothing: antialiased;
-		-moz-osx-font-smoothing: grayscale;
-	}
+/* --- Tokens & Fonts --- */
+@import "./tokens.css";
+@import "@fontsource/instrument-serif/latin-400.css";
+@import "@fontsource/instrument-serif/latin-400-italic.css";
+@import "@fontsource-variable/source-sans-3";
+@import "@fontsource-variable/jetbrains-mono";
 
-	body {
-		@apply bg-surface-950 text-surface-300 font-sans;
-		min-height: 100vh;
-		background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
-	}
+/* ==========================================================================
+   CSS Reset (modern minimal)
+   ========================================================================== */
 
-	::selection {
-		@apply bg-primary-500/30 text-white;
-	}
-
-	/* Thin custom scrollbar */
-	::-webkit-scrollbar {
-		width: 6px;
-	}
-
-	::-webkit-scrollbar-track {
-		@apply bg-surface-950;
-	}
-
-	::-webkit-scrollbar-thumb {
-		@apply bg-surface-700 rounded-full;
-	}
-
-	::-webkit-scrollbar-thumb:hover {
-		@apply bg-surface-600;
-	}
-
-	* {
-		scrollbar-width: thin;
-		scrollbar-color: #3f3f46 #09090b;
-	}
-
-	h1,
-	h2,
-	h3,
-	h4,
-	h5,
-	h6 {
-		@apply text-white font-semibold tracking-tight;
-	}
-
-	a {
-		@apply text-primary-400 hover:text-primary-300 transition-colors;
-	}
-
-	code {
-		@apply text-xs font-mono bg-surface-800 px-1.5 py-0.5 rounded text-surface-300;
-	}
-
-	:focus-visible {
-		@apply outline-2 outline-offset-2 outline-primary-500;
-	}
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
 }
 
-@layer components {
-	/* ── Glass morphism ─────────────────────────────────── */
-	.glass {
-		@apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.06] rounded-xl;
-	}
-
-	.glass-strong {
-		@apply bg-white/[0.06] backdrop-blur-2xl border border-white/[0.08] rounded-xl;
-	}
-
-	/* ── Buttons ─────────────────────────────────────────── */
-	.btn-primary {
-		@apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-medium text-white
-           bg-gradient-to-r from-primary-600 to-primary-500
-           shadow-glow hover:shadow-glow-lg
-           hover:from-primary-500 hover:to-primary-400
-           transform hover:-translate-y-0.5 active:translate-y-0
-           transition-all duration-200 ease-out
-           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500;
-	}
-
-	.btn-secondary {
-		@apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-medium
-           text-surface-200 bg-white/[0.05] border border-white/[0.1]
-           hover:bg-white/[0.08] hover:border-white/[0.15]
-           transform hover:-translate-y-0.5 active:translate-y-0
-           transition-all duration-200 ease-out
-           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500;
-	}
-
-	.btn-ghost {
-		@apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium
-           text-surface-400 hover:text-white hover:bg-white/[0.05]
-           transition-all duration-200;
-	}
-
-	/* ── Cards ────────────────────────────────────────────── */
-	.card {
-		@apply glass p-6;
-	}
-
-	.card-interactive {
-		@apply glass p-6 transition-all duration-300
-           hover:bg-white/[0.05] hover:border-white/[0.1] hover:shadow-glow
-           hover:-translate-y-1;
-	}
-
-	/* Compat alias used in pages */
-	.card-hover {
-		@apply relative bg-white/[0.02] border border-white/[0.06] rounded-xl p-6
-           transition-all duration-300 ease-out
-           hover:bg-white/[0.04] hover:border-white/[0.1]
-           hover:-translate-y-1 hover:shadow-lg hover:shadow-primary-500/[0.05];
-	}
-
-	/* ── Typography ───────────────────────────────────────── */
-	.text-gradient {
-		@apply bg-clip-text text-transparent bg-gradient-to-r from-primary-400 via-primary-300 to-indigo-400;
-	}
-
-	.section-label {
-		@apply text-primary-400 text-sm font-semibold uppercase tracking-widest mb-3;
-	}
-
-	/* ── Dividers ─────────────────────────────────────────── */
-	.divider {
-		@apply h-px bg-gradient-to-r from-transparent via-white/10 to-transparent;
-	}
-
-	.divider-glow {
-		@apply h-px bg-gradient-to-r from-transparent via-primary-500/30 to-transparent;
-	}
-
-	/* ── Badges ───────────────────────────────────────────── */
-	.badge {
-		@apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-           bg-primary-500/10 text-primary-400 border border-primary-500/20;
-	}
-
-	.badge-glow {
-		@apply badge animate-glow-pulse;
-	}
-
-	/* ── Shimmer ──────────────────────────────────────────── */
-	.shimmer {
-		@apply bg-gradient-to-r from-transparent via-white/5 to-transparent bg-[length:200%_100%] animate-shimmer;
-	}
-
-	/* ── Glow box ─────────────────────────────────────────── */
-	.glow-box {
-		@apply relative;
-	}
-
-	.glow-box::before {
-		content: "";
-		@apply absolute -inset-px rounded-xl opacity-0
-               bg-gradient-to-r from-primary-500/20 via-primary-400/10 to-indigo-500/20
-               transition-opacity duration-500;
-		z-index: -1;
-	}
-
-	.glow-box:hover::before {
-		@apply opacity-100;
-	}
+* {
+	margin: 0;
+	padding: 0;
 }
 
-@layer utilities {
-	.delay-100 {
-		animation-delay: 100ms;
-	}
-
-	.delay-200 {
-		animation-delay: 200ms;
-	}
-
-	.delay-300 {
-		animation-delay: 300ms;
-	}
-
-	.delay-400 {
-		animation-delay: 400ms;
-	}
-
-	.delay-500 {
-		animation-delay: 500ms;
-	}
-
-	.text-balance {
-		text-wrap: balance;
-	}
-
-	/* Compat aliases used in existing pages */
-	.animate-delay-100 {
-		animation-delay: 0.1s;
-	}
-
-	.animate-delay-200 {
-		animation-delay: 0.2s;
-	}
-
-	.animate-delay-300 {
-		animation-delay: 0.3s;
-	}
-
-	.animate-delay-400 {
-		animation-delay: 0.4s;
-	}
-
-	.animate-delay-500 {
-		animation-delay: 0.5s;
-	}
+html {
+	-webkit-text-size-adjust: 100%;
+	-moz-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+	scroll-behavior: smooth;
+	hanging-punctuation: first last;
 }
 
-/* ── Accessibility: Reduced motion ────────────────────── */
+img,
+picture,
+video,
+canvas,
+svg {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+
+input,
+button,
+textarea,
+select {
+	font: inherit;
+	color: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	overflow-wrap: break-word;
+}
+
+/* ==========================================================================
+   Base — html & body
+   ========================================================================== */
+
+html {
+	background-color: var(--bg-void);
+	color: var(--text-primary);
+}
+
+body {
+	font-family: var(--font-body);
+	font-size: var(--text-body);
+	font-weight: var(--weight-regular);
+	line-height: var(--leading-normal);
+	background-color: var(--bg-void);
+	color: var(--text-primary);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	min-height: 100dvh;
+}
+
+/* ==========================================================================
+   Typography
+   ========================================================================== */
+
+h1 {
+	font-family: var(--font-display);
+	font-size: var(--text-h1);
+	font-weight: var(--weight-regular);
+	line-height: var(--leading-tight);
+	color: var(--text-primary);
+	letter-spacing: -0.02em;
+}
+
+h2 {
+	font-family: var(--font-display);
+	font-size: var(--text-h2);
+	font-weight: var(--weight-regular);
+	font-style: italic;
+	line-height: var(--leading-tight);
+	color: var(--text-primary);
+	letter-spacing: -0.01em;
+}
+
+h3 {
+	font-family: var(--font-body);
+	font-size: var(--text-h3);
+	font-weight: var(--weight-bold);
+	line-height: var(--leading-tight);
+	color: var(--text-primary);
+}
+
+h4 {
+	font-family: var(--font-body);
+	font-size: var(--text-body);
+	font-weight: var(--weight-bold);
+	line-height: var(--leading-tight);
+	color: var(--text-primary);
+}
+
+h5 {
+	font-family: var(--font-body);
+	font-size: var(--text-small);
+	font-weight: var(--weight-semibold);
+	line-height: var(--leading-tight);
+	color: var(--text-secondary);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+h6 {
+	font-family: var(--font-body);
+	font-size: var(--text-small);
+	font-weight: var(--weight-medium);
+	line-height: var(--leading-tight);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* Anchor target offset for fixed nav */
+h1[id],
+h2[id],
+h3[id],
+h4[id],
+h5[id],
+h6[id],
+section[id],
+.chapter[id] {
+	scroll-margin-top: calc(var(--nav-height) + var(--space-4));
+}
+
+p {
+	margin-block: var(--space-3);
+	color: var(--text-secondary);
+	line-height: var(--leading-normal);
+}
+
+/* --- Links --- */
+
+a {
+	color: var(--accent);
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+	text-decoration-thickness: 1px;
+	transition: color var(--transition-fast);
+}
+
+a:hover {
+	color: var(--accent-hover);
+	text-decoration-thickness: 2px;
+}
+
+/* --- Lists --- */
+
+ul,
+ol {
+	padding-inline-start: var(--space-5);
+	margin-block: var(--space-3);
+	color: var(--text-secondary);
+}
+
+li {
+	margin-block: var(--space-1);
+	line-height: var(--leading-normal);
+}
+
+li::marker {
+	color: var(--text-muted);
+}
+
+/* --- Code --- */
+
+code {
+	font-family: var(--font-mono);
+	font-size: var(--text-code);
+	background-color: var(--surface);
+	color: var(--accent);
+	padding: 0.15em 0.4em;
+	border-radius: var(--border-radius-sm);
+}
+
+pre {
+	font-family: var(--font-mono);
+	font-size: var(--text-code);
+	line-height: var(--leading-loose);
+	background-color: var(--surface);
+	color: var(--text-primary);
+	padding: var(--space-5);
+	border-radius: var(--border-radius);
+	border: 1px solid var(--border);
+	overflow-x: auto;
+	margin-block: var(--space-4);
+	tab-size: 2;
+}
+
+pre > code {
+	background: none;
+	color: inherit;
+	padding: 0;
+	border-radius: 0;
+	font-size: inherit;
+}
+
+/* --- Kbd --- */
+
+kbd {
+	display: inline-block;
+	padding: var(--space-1) var(--space-2);
+	font-family: var(--font-mono);
+	font-size: var(--text-code);
+	background-color: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--border-radius-sm);
+	white-space: nowrap;
+}
+
+/* --- Blockquote --- */
+
+blockquote {
+	border-inline-start: 3px solid var(--accent);
+	padding-inline-start: var(--space-5);
+	margin-block: var(--space-4);
+	color: var(--text-secondary);
+	font-style: italic;
+}
+
+/* ==========================================================================
+   Button Base Reset
+   ========================================================================== */
+
+button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-family: var(--font-body);
+	font-size: var(--text-body);
+	color: var(--text-primary);
+	line-height: 1;
+	transition:
+		background-color var(--transition-fast),
+		color var(--transition-fast),
+		border-color var(--transition-fast);
+}
+
+button:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+/* ==========================================================================
+   Button Components (.btn)
+   Shared across pages — extracted from page-scoped styles.
+   ========================================================================== */
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-mono);
+	font-size: var(--text-small);
+	font-weight: var(--weight-semibold);
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	text-decoration: none;
+	padding: var(--space-3) var(--space-6);
+	border-radius: var(--border-radius-sm);
+	transition:
+		background-color var(--transition-fast),
+		color var(--transition-fast),
+		border-color var(--transition-fast);
+	line-height: 1;
+	cursor: pointer;
+}
+
+.btn--primary {
+	background-color: var(--accent);
+	color: var(--bg-void);
+	border: 1px solid var(--accent);
+}
+
+.btn--primary:hover {
+	background-color: var(--accent-hover);
+	border-color: var(--accent-hover);
+	color: var(--bg-void);
+	text-decoration: none;
+}
+
+.btn--ghost {
+	background-color: transparent;
+	color: var(--accent);
+	border: 1px solid var(--border-accent);
+}
+
+.btn--ghost:hover {
+	background-color: var(--accent-subtle);
+	border-color: var(--accent);
+	color: var(--accent);
+	text-decoration: none;
+}
+
+/* ==========================================================================
+   Focus Styles
+   ========================================================================== */
+
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+/* Remove default focus ring for mouse users */
+:focus:not(:focus-visible) {
+	outline: none;
+}
+
+/* ==========================================================================
+   Selection / Highlight
+   ========================================================================== */
+
+::selection {
+	background-color: var(--accent-subtle);
+	color: var(--text-primary);
+}
+
+::-moz-selection {
+	background-color: var(--accent-subtle);
+	color: var(--text-primary);
+}
+
+/* ==========================================================================
+   Scrollbar Styling
+   ========================================================================== */
+
+/* Webkit / Blink */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--bg-void);
+}
+
+::-webkit-scrollbar-thumb {
+	background-color: var(--border);
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background-color: var(--text-muted);
+}
+
+/* Firefox */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--border) var(--bg-void);
+}
+
+/* ==========================================================================
+   Skip to Main Content (a11y)
+   ========================================================================== */
+
+.skip-to-main {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 9999;
+	padding: var(--space-3) var(--space-5);
+	background-color: var(--accent);
+	color: var(--bg-void);
+	font-family: var(--font-body);
+	font-weight: var(--weight-semibold);
+	font-size: var(--text-small);
+	text-decoration: none;
+	transform: translateY(-100%);
+	transition: transform var(--transition-fast);
+}
+
+.skip-to-main:focus {
+	transform: translateY(0);
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+
+/* --- Screen reader only --- */
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}
+
+/* --- Containers --- */
+
+.container {
+	width: 100%;
+	max-width: var(--content-width);
+	margin-inline: auto;
+	padding-inline: var(--space-5);
+}
+
+.container-narrow {
+	width: 100%;
+	max-width: var(--content-narrow);
+	margin-inline: auto;
+	padding-inline: var(--space-5);
+}
+
+/* --- Background alternation for interior pages --- */
+[data-bg="void"] {
+	background-color: var(--bg-deep-alt);
+}
+[data-bg="deep"] {
+	background-color: var(--bg-deep);
+}
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
@@ -225,5 +460,11 @@
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
+	}
+
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation-duration: 0s !important;
 	}
 }

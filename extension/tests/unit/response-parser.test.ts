@@ -1,128 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { parseAIResponse, parseBatchAIResponse } from '../../src/services/response-parser';
-
-describe('parseAIResponse', () => {
-	describe('JSON with numeric indices', () => {
-		it('should parse valid JSON with numeric answer', () => {
-			const result = parseAIResponse('{"answer": [0], "confidence": 0.95, "reasoning": "test"}');
-			expect(result.answer).toEqual([0]);
-			expect(result.confidence).toBe(0.95);
-		});
-
-		it('should wrap single numeric answer in array', () => {
-			const result = parseAIResponse('{"answer": 2, "confidence": 0.8, "reasoning": "x"}');
-			expect(result.answer).toEqual([2]);
-		});
-
-		it('should handle multiple numeric indices', () => {
-			const result = parseAIResponse('{"answer": [0, 2, 3], "confidence": 0.9, "reasoning": ""}');
-			expect(result.answer).toEqual([0, 2, 3]);
-		});
-	});
-
-	describe('JSON with letter answers (M1+M2 fix)', () => {
-		it('should convert single letter to 0-based index', () => {
-			const result = parseAIResponse('{"answer": "A", "confidence": 0.95, "reasoning": ""}');
-			expect(result.answer).toEqual([0]);
-		});
-
-		it('should convert letter array to 0-based indices', () => {
-			const result = parseAIResponse('{"answer": ["A", "C"], "confidence": 0.9, "reasoning": ""}');
-			expect(result.answer).toEqual([0, 2]);
-		});
-
-		it('should handle lowercase letters', () => {
-			const result = parseAIResponse('{"answer": ["b", "d"], "confidence": 0.85, "reasoning": ""}');
-			expect(result.answer).toEqual([1, 3]);
-		});
-
-		it('should handle mixed letters and numbers', () => {
-			const result = parseAIResponse('{"answer": ["A", 2], "confidence": 0.7, "reasoning": ""}');
-			expect(result.answer).toEqual([0, 2]);
-		});
-
-		it('should filter out invalid non-letter/non-number values', () => {
-			const result = parseAIResponse(
-				'{"answer": ["A", true, null, "Z"], "confidence": 0.5, "reasoning": ""}',
-			);
-			// "A" → 0, true → -1 (filtered), null → -1 (filtered), "Z" doesn't match A-J but let's check
-			// "Z" is not A-J so it should still work via the regex
-			expect(result.answer).toContain(0); // A
-		});
-
-		it('should parse letters beyond J (extended A-Z range)', () => {
-			// X=23, Y=24 are valid A-Z letters
-			const result = parseAIResponse('{"answer": ["X", "Y"], "confidence": 0.9, "reasoning": ""}');
-			expect(result.answer).toEqual([23, 24]);
-			expect(result.confidence).toBe(0.9);
-		});
-
-		it('should fall through to regex if all answer values are non-letter/non-number', () => {
-			// Non-letter strings cause fallthrough to contextual regex → "answer: B" → index 1
-			const result = parseAIResponse(
-				'{"answer": ["!!", "??"], "confidence": 0.9, "reasoning": ""}\nAnswer: B',
-			);
-			expect(result.answer).toContain(1);
-		});
-	});
-
-	describe('JSON with negative/out-of-range values', () => {
-		it('should filter out negative indices', () => {
-			const result = parseAIResponse('{"answer": [-1, 0, 3], "confidence": 0.8, "reasoning": ""}');
-			expect(result.answer).toEqual([0, 3]);
-		});
-
-		it('should fall through to number fallback when all indices are negative', () => {
-			// [-1] filtered → empty → falls through to regex (no match) → number fallback finds "1"
-			const result = parseAIResponse('{"answer": [-1], "confidence": 0.5, "reasoning": ""}');
-			expect(result.answer).toEqual([1]);
-			expect(result.confidence).toBe(0.2);
-		});
-	});
-
-	describe('regex fallback', () => {
-		it('should find letter answers in structured format', () => {
-			// Contextual regex matches "answer: A" pattern
-			const result = parseAIResponse('The answer: A');
-			expect(result.answer).toEqual([0]);
-			expect(result.confidence).toBe(0.3);
-		});
-
-		it('should find letter at start of line with delimiter', () => {
-			const result = parseAIResponse('A) This is the correct one');
-			expect(result.answer).toContain(0);
-		});
-
-		it('should find multiple answers from context keywords', () => {
-			// Contextual regex requires keyword directly followed by colon/whitespace then letter
-			const result = parseAIResponse('Answer: A\nAlso select: C');
-			expect(result.answer).toContain(0);
-			expect(result.answer).toContain(2);
-		});
-	});
-
-	describe('number fallback', () => {
-		it('should find bare numbers as last resort', () => {
-			const result = parseAIResponse('I think it is 3');
-			expect(result.answer).toEqual([3]);
-			expect(result.confidence).toBe(0.2);
-		});
-	});
-
-	describe('complete failure', () => {
-		it('should throw when nothing parseable', () => {
-			expect(() => parseAIResponse('I have no idea what the answer is')).toThrow(
-				/Failed to parse AI response/,
-			);
-		});
-	});
-});
+import { parseBatchAIResponse } from '../../src/services/response-parser';
 
 describe('parseBatchAIResponse', () => {
-	const questions = [
-		{ uid: 'q1', options: ['A', 'B', 'C', 'D'], questionType: 'multiple-choice' },
-		{ uid: 'q2', options: ['X', 'Y', 'Z'], questionType: 'checkbox' },
-	];
+	const questions = [{ uid: 'q1' }, { uid: 'q2' }];
 
 	describe('JSON array parsing', () => {
 		it('should parse valid batch JSON with letter answers', () => {
@@ -145,6 +25,15 @@ describe('parseBatchAIResponse', () => {
 			expect(result.answers[1].answer).toEqual([1, 2]);
 		});
 
+		it('should unwrap object-wrapped batch responses', () => {
+			const raw = JSON.stringify({
+				answers: [{ uid: 'q1', answer: [1], confidence: 0.8, reasoning: 'wrapped' }],
+			});
+			const result = parseBatchAIResponse(raw, [{ uid: 'q1' }]);
+			expect(result.answers[0].answer).toEqual([1]);
+			expect(result.answers[0].confidence).toBe(0.8);
+		});
+
 		it('should match by uid when available', () => {
 			const raw = JSON.stringify([
 				{ uid: 'q2', answer: [0], confidence: 0.9, reasoning: '' },
@@ -158,7 +47,7 @@ describe('parseBatchAIResponse', () => {
 		});
 	});
 
-	describe('empty/failed answers (M3 fix)', () => {
+	describe('empty/failed answers', () => {
 		it('should return empty answer array with confidence 0 when no match found', () => {
 			const raw = JSON.stringify([{ uid: 'q1', answer: [0], confidence: 0.9, reasoning: '' }]);
 			// q2 has no match in the JSON
@@ -184,6 +73,105 @@ describe('parseBatchAIResponse', () => {
 			const result = parseBatchAIResponse(raw, questions);
 			expect(result.answers[0].answer).toEqual([1]);
 			expect(result.answers[0].confidence).toBe(0.9);
+		});
+	});
+
+	describe('rawAnswer for numeric questions', () => {
+		it('should set rawAnswer and empty answer[] when AI returns string answer', () => {
+			const raw = JSON.stringify([
+				{ uid: 'q1', answer: '2.5', confidence: 0.9, reasoning: 'computed' },
+			]);
+			const result = parseBatchAIResponse(raw, [{ uid: 'q1', selectionMode: 'numeric' }]);
+			expect(result.answers[0].rawAnswer).toBe('2.5');
+			expect(result.answers[0].answer).toEqual([]);
+			expect(result.answers[0].confidence).toBe(0.9);
+		});
+
+		it('should handle mixed batch: some string answers (numeric), some letter answers (MCQ)', () => {
+			const raw = JSON.stringify([
+				{ uid: 'q1', answer: '42', confidence: 0.85, reasoning: 'numeric value' },
+				{ uid: 'q2', answer: ['B'], confidence: 0.9, reasoning: 'letter choice' },
+			]);
+			const questions = [
+				{ uid: 'q1', selectionMode: 'numeric' },
+				{ uid: 'q2', selectionMode: 'single' },
+			];
+			const result = parseBatchAIResponse(raw, questions);
+
+			// First answer is numeric — rawAnswer set, answer empty
+			expect(result.answers[0].rawAnswer).toBe('42');
+			expect(result.answers[0].answer).toEqual([]);
+
+			// Second answer is MCQ — no rawAnswer, answer has indices
+			expect(result.answers[1].rawAnswer).toBeUndefined();
+			expect(result.answers[1].answer).toEqual([1]); // B → index 1
+		});
+
+		it('should handle object-wrapped response with string answers', () => {
+			const raw = JSON.stringify({
+				answers: [{ uid: 'q1', answer: '3.14', confidence: 0.95, reasoning: 'pi' }],
+			});
+			const result = parseBatchAIResponse(raw, [{ uid: 'q1', selectionMode: 'numeric' }]);
+			expect(result.answers[0].rawAnswer).toBe('3.14');
+			expect(result.answers[0].answer).toEqual([]);
+			expect(result.answers[0].confidence).toBe(0.95);
+		});
+
+		it('should NOT set rawAnswer for letter-based answers (existing path unchanged)', () => {
+			const raw = JSON.stringify([
+				{ uid: 'q1', answer: ['A', 'C'], confidence: 0.8, reasoning: 'multiple choice' },
+			]);
+			const result = parseBatchAIResponse(raw, [{ uid: 'q1', selectionMode: 'multiple' }]);
+			expect(result.answers[0].rawAnswer).toBeUndefined();
+			expect(result.answers[0].answer).toEqual([0, 2]); // A → 0, C → 2
+		});
+
+		it('should extract rawAnswer from array-wrapped string answer (json_schema mode)', () => {
+			const raw = JSON.stringify([
+				{ uid: 'q1', answer: ['2.5'], confidence: 0.9, reasoning: 'computed' },
+			]);
+			const result = parseBatchAIResponse(raw, [{ uid: 'q1', selectionMode: 'numeric' }]);
+			expect(result.answers[0].rawAnswer).toBe('2.5');
+			expect(result.answers[0].answer).toEqual([]);
+		});
+
+		it('should NOT treat single-letter array as rawAnswer', () => {
+			const raw = JSON.stringify([
+				{ uid: 'q1', answer: ['A'], confidence: 0.9, reasoning: 'letter choice' },
+			]);
+			const result = parseBatchAIResponse(raw, [{ uid: 'q1', selectionMode: 'single' }]);
+			expect(result.answers[0].rawAnswer).toBeUndefined();
+			expect(result.answers[0].answer).toEqual([0]); // A → index 0
+		});
+
+		it('should NOT treat multi-element string array as rawAnswer', () => {
+			const raw = JSON.stringify([
+				{ uid: 'q1', answer: ['2.5', '3.0'], confidence: 0.9, reasoning: 'multi' },
+			]);
+			const result = parseBatchAIResponse(raw, [{ uid: 'q1', selectionMode: 'numeric' }]);
+			// Not a single-element array, falls through to normalizeAnswerValues
+			expect(result.answers[0].rawAnswer).toBeUndefined();
+			expect(result.answers[0].answer).toEqual([]); // non-letter strings filtered out
+		});
+
+		it('should handle mixed batch with array-wrapped numeric and normal letter answers', () => {
+			const raw = JSON.stringify([
+				{ uid: 'q1', answer: ['2.5'], confidence: 0.85, reasoning: 'numeric value' },
+				{ uid: 'q2', answer: ['A', 'C'], confidence: 0.9, reasoning: 'letter choices' },
+			]);
+			const questions = [
+				{ uid: 'q1', selectionMode: 'numeric' },
+				{ uid: 'q2', selectionMode: 'multiple' },
+			];
+			const result = parseBatchAIResponse(raw, questions);
+
+			// First answer is array-wrapped numeric — rawAnswer set, answer empty
+			expect(result.answers[0].rawAnswer).toBe('2.5');
+			expect(result.answers[0].answer).toEqual([]);
+
+			// Second answer is MCQ — no rawAnswer, answer has indices
+			expect(result.answers[1].rawAnswer).toBeUndefined();
+			expect(result.answers[1].answer).toEqual([0, 2]); // A → 0, C → 2
 		});
 	});
 

@@ -15,10 +15,11 @@
  * Dependencies:
  *   - widget-state.ts  (WidgetStore)
  *   - widget-types.ts  (ContentBridge, WidgetState)
- *   - widget-styles.ts (PANEL_STYLES CSS classes)
+ *   - ./styles/panel.ts (PANEL_STYLES CSS classes)
  */
 
 import { loadSettingsView } from '../settings/domain';
+import { copyToClipboard } from '../utils/clipboard';
 import { getUserFriendlyError } from '../utils/error-messages';
 import type { WidgetStore } from './widget-state';
 import type { ContentBridge, WidgetState } from './widget-types';
@@ -480,19 +481,7 @@ export class WidgetPanel {
 	/** Copy the error banner text to clipboard */
 	private async copyError(): Promise<void> {
 		const text = this.errorTextEl.textContent ?? '';
-		try {
-			await navigator.clipboard.writeText(text);
-		} catch {
-			// Fallback for restricted clipboard contexts
-			const ta = document.createElement('textarea');
-			ta.value = text;
-			ta.style.position = 'fixed';
-			ta.style.opacity = '0';
-			document.body.appendChild(ta);
-			ta.select();
-			document.execCommand('copy');
-			ta.remove();
-		}
+		await copyToClipboard(text);
 	}
 
 	/**

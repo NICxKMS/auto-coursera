@@ -1,4 +1,5 @@
-import type { ErrorPayload, Message, TestConnectionResponsePayload } from '../types/messages';
+import type { Message, TestConnectionResponsePayload } from '../types/messages';
+import { isErrorMessage, isTestConnectionResponseMessage } from '../types/messages';
 import type {
 	AppSettings,
 	ProviderApiKeyField,
@@ -6,8 +7,23 @@ import type {
 	ProviderName,
 } from '../types/settings';
 import { API_KEY_FIELDS, PROVIDER_KEY_MAP, PROVIDER_NAMES } from '../types/settings';
-import { CEREBRAS_MODELS, GEMINI_MODELS, GROQ_MODELS } from '../utils/constants';
 import { getSettings, saveSettings } from '../utils/storage';
+
+const GEMINI_MODELS = [
+	'gemini-3-flash-preview',
+	'gemini-3.1-flash-lite-preview',
+	'gemini-2.5-flash-lite',
+	'gemini-2.5-flash',
+] as const;
+
+const GROQ_MODELS = [
+	'llama-3.3-70b-versatile',
+	'llama-3.1-8b-instant',
+	'mixtral-8x7b-32768',
+	'gemma2-9b-it',
+] as const;
+
+const CEREBRAS_MODELS = ['llama-3.3-70b', 'llama-3.1-8b'] as const;
 
 const KEY_MASK_PREFIX = '\u2022'.repeat(10);
 
@@ -184,6 +200,18 @@ export interface StagedKeyInput {
 	hasStoredValue: boolean;
 }
 
+export interface ProviderAvailability {
+	isConfigured: boolean;
+	isPrimary: boolean;
+}
+
+export interface LoadedSettingsProviderView {
+	keyPlaceholder: string;
+	hasStoredKey: boolean;
+	model: string;
+	availability: ProviderAvailability;
+}
+
 export interface SettingsFormSnapshot {
 	keyInputs: Record<ProviderName, StagedKeyInput>;
 	models: Record<ProviderName, string>;
@@ -195,6 +223,7 @@ export interface SettingsFormSnapshot {
 
 export interface LoadedSettingsView {
 	settings: AppSettings;
+	providers: Record<ProviderName, LoadedSettingsProviderView>;
 	keyPlaceholders: Record<ProviderName, string>;
 	keyHasStoredValue: Record<ProviderName, boolean>;
 	models: Record<ProviderName, string>;
@@ -203,11 +232,52 @@ export interface LoadedSettingsView {
 	autoSelect: boolean;
 	autoStartOnPageLoad: boolean;
 	onboardingComplete: boolean;
+	hasAvailableProvider: boolean;
+	primaryProviderConfigured: boolean;
+	availableProviders: ProviderName[];
 }
 
 export interface SettingsStatusResult {
 	message: string;
 	type: 'success' | 'error';
+}
+
+export interface ResolvedSettingsSnapshot {
+	resolvedApiKeys: Pick<AppSettings, ProviderApiKeyField>;
+	providerAvailability: Record<ProviderName, ProviderAvailability>;
+	hasAvailableProvider: boolean;
+	primaryProviderConfigured: boolean;
+	availableProviders: ProviderName[];
+}
+
+export type SettingsWorkflowAction = 'load' | 'save' | 'test';
+
+export interface SettingsWorkflowHost {
+	getSnapshot(): SettingsFormSnapshot;
+	applyLoadedView(view: LoadedSettingsView): void;
+	setActionPending(action: Exclude<SettingsWorkflowAction, 'load'>, pending: boolean): void;
+	showStatus(result: SettingsStatusResult): void;
+	markPristine?(): void;
+}
+
+export interface SettingsWorkflowMessages {
+	saveSuccess: string;
+	saveError: string;
+	testError: string;
+}
+
+export interface SettingsWorkflowHooks {
+	onError?(action: SettingsWorkflowAction, error: unknown): void;
+}
+
+export type SettingsSaveResult =
+	| { ok: true; view: LoadedSettingsView }
+	| { ok: false; error: unknown };
+
+export interface SettingsWorkflowController {
+	load(): Promise<LoadedSettingsView>;
+	save(): Promise<SettingsSaveResult>;
+	test(): Promise<SettingsStatusResult>;
 }
 
 function toProviderRecord<T>(
@@ -273,9 +343,65 @@ export function shouldShowSettingsOnboarding(
 	return !isOnboardingComplete(source);
 }
 
+export function buildProviderAvailability(
+	source: Partial<Record<ProviderApiKeyField, string | undefined | null>>,
+	primaryProvider: ProviderName,
+): Record<ProviderName, ProviderAvailability> {
+	return toProviderRecord((provider) => {
+		const keyField = PROVIDER_KEY_MAP[provider.name].apiKey;
+		const keyValue = source[keyField];
+		return {
+			isConfigured: typeof keyValue === 'string' ? keyValue.trim().length > 0 : Boolean(keyValue),
+			isPrimary: provider.name === primaryProvider,
+		};
+	});
+}
+
+export function resolveSettingsSnapshot(
+	snapshot: Pick<SettingsFormSnapshot, 'keyInputs' | 'primaryProvider'>,
+	persistedSettings: AppSettings,
+): ResolvedSettingsSnapshot {
+	const resolvedApiKeys = Object.fromEntries(
+		PROVIDER_NAMES.map((providerName) => {
+			const keyField = PROVIDER_KEY_MAP[providerName].apiKey;
+			return [
+				keyField,
+				resolveStagedKeyValue(snapshot.keyInputs[providerName], persistedSettings[keyField]),
+			];
+		}),
+	) as Pick<AppSettings, ProviderApiKeyField>;
+
+	const providerAvailability = buildProviderAvailability(resolvedApiKeys, snapshot.primaryProvider);
+	const availableProviders = PROVIDER_NAMES.filter(
+		(providerName) => providerAvailability[providerName].isConfigured,
+	);
+
+	return {
+		resolvedApiKeys,
+		providerAvailability,
+		hasAvailableProvider: availableProviders.length > 0,
+		primaryProviderConfigured: providerAvailability[snapshot.primaryProvider].isConfigured,
+		availableProviders,
+	};
+}
+
 export function buildLoadedSettingsView(settings: AppSettings): LoadedSettingsView {
+	const providerAvailability = buildProviderAvailability(settings, settings.primaryProvider);
+	const availableProviders = PROVIDER_NAMES.filter(
+		(providerName) => providerAvailability[providerName].isConfigured,
+	);
+
 	return {
 		settings,
+		providers: toProviderRecord((provider) => ({
+			keyPlaceholder: getMaskedKeyPlaceholder(
+				getProviderApiKey(settings, provider.name),
+				provider.keyPlaceholder,
+			),
+			hasStoredKey: Boolean(getProviderApiKey(settings, provider.name)),
+			model: getProviderModel(settings, provider.name),
+			availability: providerAvailability[provider.name],
+		})),
 		keyPlaceholders: toProviderRecord((provider) =>
 			getMaskedKeyPlaceholder(getProviderApiKey(settings, provider.name), provider.keyPlaceholder),
 		),
@@ -287,7 +413,10 @@ export function buildLoadedSettingsView(settings: AppSettings): LoadedSettingsVi
 		confidenceThreshold: settings.confidenceThreshold,
 		autoSelect: settings.autoSelect,
 		autoStartOnPageLoad: settings.autoStartOnPageLoad,
-		onboardingComplete: isOnboardingComplete(settings),
+		onboardingComplete: availableProviders.length > 0,
+		hasAvailableProvider: availableProviders.length > 0,
+		primaryProviderConfigured: providerAvailability[settings.primaryProvider].isConfigured,
+		availableProviders,
 	};
 }
 
@@ -300,23 +429,20 @@ export function resolveStagedApiKeys(
 	snapshot: Pick<SettingsFormSnapshot, 'keyInputs'>,
 	persistedSettings: AppSettings,
 ): Pick<AppSettings, ProviderApiKeyField> {
-	return Object.fromEntries(
-		PROVIDER_NAMES.map((providerName) => {
-			const keyField = PROVIDER_KEY_MAP[providerName].apiKey;
-			return [
-				keyField,
-				resolveStagedKeyValue(snapshot.keyInputs[providerName], persistedSettings[keyField]),
-			];
-		}),
-	) as Pick<AppSettings, ProviderApiKeyField>;
+	return resolveSettingsSnapshot(
+		{ keyInputs: snapshot.keyInputs, primaryProvider: persistedSettings.primaryProvider },
+		persistedSettings,
+	).resolvedApiKeys;
 }
 
 export function buildSettingsSavePayload(
 	snapshot: SettingsFormSnapshot,
 	persistedSettings: AppSettings,
 ): Partial<AppSettings> {
+	const resolved = resolveSettingsSnapshot(snapshot, persistedSettings);
+
 	return {
-		...resolveStagedApiKeys(snapshot, persistedSettings),
+		...resolved.resolvedApiKeys,
 		...buildModelPayload(snapshot.models),
 		primaryProvider: snapshot.primaryProvider,
 		confidenceThreshold: snapshot.confidenceThreshold,
@@ -329,8 +455,10 @@ export function buildTestConnectionSettings(
 	snapshot: SettingsFormSnapshot,
 	persistedSettings: AppSettings,
 ): Partial<AppSettings> {
+	const resolved = resolveSettingsSnapshot(snapshot, persistedSettings);
+
 	return {
-		...resolveStagedApiKeys(snapshot, persistedSettings),
+		...resolved.resolvedApiKeys,
 		...buildModelPayload(snapshot.models),
 		primaryProvider: snapshot.primaryProvider,
 	};
@@ -347,8 +475,8 @@ export async function saveSettingsFromSnapshot(
 export function normalizeTestConnectionResponse(
 	response: Message | undefined,
 ): SettingsStatusResult {
-	if (response?.type === 'TEST_CONNECTION') {
-		const payload = response.payload as TestConnectionResponsePayload;
+	if (isTestConnectionResponseMessage(response)) {
+		const payload: TestConnectionResponsePayload = response.payload;
 		return {
 			type: payload.success ? 'success' : 'error',
 			message: payload.success
@@ -357,10 +485,12 @@ export function normalizeTestConnectionResponse(
 		};
 	}
 
-	const errorPayload = response?.payload as ErrorPayload | undefined;
+	const errorMessage = isErrorMessage(response)
+		? response.payload.message
+		: 'Test connection failed.';
 	return {
 		type: 'error',
-		message: errorPayload?.message || 'Test connection failed.',
+		message: errorMessage,
 	};
 }
 
@@ -368,10 +498,10 @@ export async function testSettingsConnection(
 	snapshot: SettingsFormSnapshot,
 ): Promise<SettingsStatusResult> {
 	const persistedSettings = await getSettings();
+	const resolved = resolveSettingsSnapshot(snapshot, persistedSettings);
 	const stagedSettings = buildTestConnectionSettings(snapshot, persistedSettings);
-	const stagedKeys = resolveStagedApiKeys(snapshot, persistedSettings);
 
-	if (!hasAnyConfiguredApiKey(stagedKeys)) {
+	if (!resolved.hasAvailableProvider) {
 		return {
 			type: 'error',
 			message: '⏭️ No API keys configured',
@@ -384,4 +514,57 @@ export async function testSettingsConnection(
 	})) as Message | undefined;
 
 	return normalizeTestConnectionResponse(response);
+}
+
+export function createSettingsWorkflowController(
+	host: SettingsWorkflowHost,
+	messages: SettingsWorkflowMessages,
+	hooks: SettingsWorkflowHooks = {},
+): SettingsWorkflowController {
+	return {
+		async load() {
+			try {
+				const view = await loadSettingsView();
+				host.applyLoadedView(view);
+				return view;
+			} catch (error) {
+				hooks.onError?.('load', error);
+				throw error;
+			}
+		},
+		async save() {
+			host.setActionPending('save', true);
+			try {
+				const view = await saveSettingsFromSnapshot(host.getSnapshot());
+				host.applyLoadedView(view);
+				host.markPristine?.();
+				host.showStatus({ type: 'success', message: messages.saveSuccess });
+				return { ok: true, view };
+			} catch (error) {
+				host.showStatus({ type: 'error', message: messages.saveError });
+				hooks.onError?.('save', error);
+				return { ok: false, error };
+			} finally {
+				host.setActionPending('save', false);
+			}
+		},
+		async test() {
+			host.setActionPending('test', true);
+			try {
+				const result = await testSettingsConnection(host.getSnapshot());
+				host.showStatus(result);
+				return result;
+			} catch (error) {
+				const result = {
+					type: 'error',
+					message: messages.testError,
+				} satisfies SettingsStatusResult;
+				host.showStatus(result);
+				hooks.onError?.('test', error);
+				return result;
+			} finally {
+				host.setActionPending('test', false);
+			}
+		},
+	};
 }

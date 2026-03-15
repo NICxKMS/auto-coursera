@@ -2,6 +2,10 @@
 // @vitest-environment jsdom
 
 import { beforeEach, describe, expect, it } from 'vitest';
+import {
+	getQuestionSelectionMode,
+	isCodeExpressionQuestion,
+} from '../../src/content/question-contract';
 
 describe('QuestionDetector', () => {
 	beforeEach(() => {
@@ -43,60 +47,56 @@ describe('QuestionDetector', () => {
 		});
 	});
 
-	describe('classifyType logic', () => {
-		function classifyType(el: HTMLElement): string {
-			const hasImages = el.querySelectorAll('img').length > 0;
-			if (hasImages) return 'image-based';
-
-			const checkboxes = el.querySelectorAll('input[type="checkbox"]');
-			if (checkboxes.length > 0) return 'multiple-choice';
-
-			const radios = el.querySelectorAll('input[type="radio"]');
-			if (radios.length > 0) return 'single-choice';
-
-			return 'unknown';
-		}
-
-		it('should classify elements with radio inputs as single-choice', () => {
+	describe('question contract helpers', () => {
+		it('should classify radio inputs as single-select', () => {
 			const el = document.createElement('div');
 			el.innerHTML = `
         <input type="radio" name="q1" value="a">
         <input type="radio" name="q1" value="b">
       `;
-			expect(classifyType(el)).toBe('single-choice');
+			expect(getQuestionSelectionMode(el)).toBe('single');
 		});
 
-		it('should classify elements with checkboxes as multiple-choice', () => {
+		it('should classify checkboxes as multi-select', () => {
 			const el = document.createElement('div');
 			el.innerHTML = `
         <input type="checkbox" name="q1" value="a">
         <input type="checkbox" name="q1" value="b">
       `;
-			expect(classifyType(el)).toBe('multiple-choice');
+			expect(getQuestionSelectionMode(el)).toBe('multiple');
 		});
 
-		it('should classify elements with images as image-based', () => {
+		it('should keep image presence separate from selection mode', () => {
 			const el = document.createElement('div');
-			el.innerHTML = '<img src="test.png" alt="chart"><input type="radio">';
-			expect(classifyType(el)).toBe('image-based');
+			el.innerHTML = '<img src="test.png" alt="chart"><input type="checkbox">';
+			expect(getQuestionSelectionMode(el)).toBe('multiple');
+			expect(el.querySelector('img')).not.toBeNull();
 		});
 
 		it('should classify elements with no inputs as unknown', () => {
 			const el = document.createElement('div');
 			el.innerHTML = '<p>Some text question</p>';
-			expect(classifyType(el)).toBe('unknown');
+			expect(getQuestionSelectionMode(el)).toBe('unknown');
 		});
 
-		it('should prioritize images over checkboxes', () => {
+		it('should honor Coursera testId markers for checkboxes', () => {
 			const el = document.createElement('div');
-			el.innerHTML = '<img src="x.png"><input type="checkbox">';
-			expect(classifyType(el)).toBe('image-based');
+			el.innerHTML = '<input type="radio">';
+			expect(getQuestionSelectionMode(el, 'part-Submission_CheckboxQuestion')).toBe('multiple');
 		});
 
-		it('should prioritize checkboxes over radios', () => {
+		it('should prioritize checkboxes over radios when falling back to DOM inspection', () => {
 			const el = document.createElement('div');
 			el.innerHTML = '<input type="checkbox"><input type="radio">';
-			expect(classifyType(el)).toBe('multiple-choice');
+			expect(getQuestionSelectionMode(el)).toBe('multiple');
+		});
+
+		it('should classify code-expression markers as text input', () => {
+			expect(isCodeExpressionQuestion('part-Submission_CodeExpressionQuestion')).toBe(true);
+			const el = document.createElement('div');
+			expect(getQuestionSelectionMode(el, 'part-Submission_CodeExpressionQuestion')).toBe(
+				'text-input',
+			);
 		});
 	});
 

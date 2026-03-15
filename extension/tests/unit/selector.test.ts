@@ -2,7 +2,12 @@
 // @vitest-environment jsdom
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { AnswerSelector } from '../../src/content/selector';
+import {
+	AnswerSelector,
+	clearProcessing,
+	markError,
+	markProcessing,
+} from '../../src/content/selector';
 import type { AnswerOption } from '../../src/types/questions';
 
 function makeOption(index: number, inputType: 'radio' | 'checkbox' | null = null): AnswerOption {
@@ -192,24 +197,166 @@ describe('AnswerSelector', () => {
 		});
 	});
 
+	describe('fillInput (numeric questions)', () => {
+		/**
+		 * Helper to create a numeric input inside a container with the `.cds-input-root` class
+		 * that `highlightInput` looks for via `closest()`.
+		 */
+		function makeNumericInput(): {
+			input: HTMLInputElement;
+			container: HTMLElement;
+			question: HTMLElement;
+		} {
+			const question = document.createElement('div');
+			const container = document.createElement('div');
+			container.className = 'cds-input-root';
+			const input = document.createElement('input');
+			input.type = 'number';
+			container.appendChild(input);
+			question.appendChild(container);
+			document.body.appendChild(question);
+			return { input, container, question };
+		}
+
+		it('should fill input value via React-compatible native setter', async () => {
+			const { input, question } = makeNumericInput();
+			await selector.fillInput(input, question, '42', 0.9);
+			expect(input.value).toBe('42');
+		});
+
+		it('should dispatch input and change events', async () => {
+			const { input, question } = makeNumericInput();
+			const events: string[] = [];
+			input.addEventListener('input', () => events.push('input'));
+			input.addEventListener('change', () => events.push('change'));
+
+			await selector.fillInput(input, question, '7.5', 0.9);
+
+			expect(events).toContain('input');
+			expect(events).toContain('change');
+		});
+
+		it('should highlight input container with high confidence coloring (green, solid)', async () => {
+			const { input, container, question } = makeNumericInput();
+			await selector.fillInput(input, question, '100', 0.9);
+
+			expect(container.style.outline).toContain('solid');
+			expect(container.style.outline).toContain('#22c55e'); // green for high
+			expect(container.classList.contains('auto-coursera-high')).toBe(true);
+			expect(container.getAttribute('data-auto-coursera-suggestion')).toBe('high');
+		});
+
+		it('should highlight input container with medium confidence coloring (yellow)', async () => {
+			const { input, container, question } = makeNumericInput();
+			await selector.fillInput(input, question, '50', 0.75);
+
+			expect(container.style.outline).toContain('#eab308'); // yellow for medium
+			expect(container.classList.contains('auto-coursera-medium')).toBe(true);
+			expect(container.getAttribute('data-auto-coursera-suggestion')).toBe('medium');
+		});
+
+		it('should use dashed outline in highlight-only mode (below threshold)', async () => {
+			const { input, container, question } = makeNumericInput();
+			// Below the 0.7 threshold → highlight-only mode
+			await selector.fillInput(input, question, '3.14', 0.3);
+
+			expect(container.style.outline).toContain('dashed');
+			expect(container.style.outline).toContain('#f97316'); // orange for low
+			expect(container.classList.contains('highlight-only')).toBe(true);
+			expect(container.classList.contains('auto-coursera-low')).toBe(true);
+		});
+
+		it('should use dashed outline when autoSelect is disabled', async () => {
+			const noAutoSelector = new AnswerSelector(0.7, false);
+			const { input, container, question } = makeNumericInput();
+			await noAutoSelector.fillInput(input, question, '99', 0.95);
+
+			expect(container.style.outline).toContain('dashed');
+			expect(container.classList.contains('highlight-only')).toBe(true);
+		});
+
+		it('should use solid outline when auto-filling (above threshold)', async () => {
+			const { input, container, question } = makeNumericInput();
+			await selector.fillInput(input, question, '256', 0.85);
+
+			expect(container.style.outline).toContain('solid');
+			expect(container.classList.contains('highlight-only')).toBe(false);
+		});
+
+		it('should return FillResult with success: true', async () => {
+			const { input, question } = makeNumericInput();
+			const result = await selector.fillInput(input, question, '12.5', 0.9);
+
+			expect(result).toEqual({
+				success: true,
+				value: '12.5',
+				confidence: 0.9,
+			});
+		});
+
+		it('should return FillResult with success: true even in highlight-only mode', async () => {
+			const { input, question } = makeNumericInput();
+			const result = await selector.fillInput(input, question, '0.5', 0.3);
+
+			expect(result).toEqual({
+				success: true,
+				value: '0.5',
+				confidence: 0.3,
+			});
+		});
+
+		it('should not set input value when below threshold (highlight-only)', async () => {
+			const { input, question } = makeNumericInput();
+			input.value = '123';
+			await selector.fillInput(input, question, '999', 0.3);
+
+			// In highlight-only mode, the value is NOT set — remains at previous value
+			expect(input.value).toBe('123');
+		});
+
+		it('should set outlineOffset and borderRadius on container', async () => {
+			const { input, container, question } = makeNumericInput();
+			await selector.fillInput(input, question, '10', 0.9);
+
+			expect(container.style.outlineOffset).toBe('2px');
+			expect(container.style.borderRadius).toBe('4px');
+		});
+
+		it('should fall back to parentElement when .cds-input-root is not found', async () => {
+			const question = document.createElement('div');
+			const wrapper = document.createElement('div');
+			const input = document.createElement('input');
+			input.type = 'number';
+			wrapper.appendChild(input);
+			question.appendChild(wrapper);
+			document.body.appendChild(question);
+
+			await selector.fillInput(input, question, '5', 0.9);
+
+			// Should highlight the parentElement (wrapper) since no .cds-input-root exists
+			expect(wrapper.style.outline).toContain('solid');
+			expect(wrapper.style.outline).toContain('#22c55e');
+		});
+	});
+
 	describe('static methods', () => {
 		it('markError should set error outline and attribute', () => {
 			const el = document.createElement('div');
-			AnswerSelector.markError(el);
+			markError(el);
 			expect(el.style.outline).toContain('#ef4444');
 			expect(el.getAttribute('data-auto-coursera-error')).toBe('true');
 		});
 
 		it('markProcessing should set processing attribute', () => {
 			const el = document.createElement('div');
-			AnswerSelector.markProcessing(el);
+			markProcessing(el);
 			expect(el.getAttribute('data-auto-coursera-processing')).toBe('true');
 		});
 
 		it('clearProcessing should remove all indicators', () => {
 			const el = document.createElement('div');
-			AnswerSelector.markProcessing(el);
-			AnswerSelector.clearProcessing(el);
+			markProcessing(el);
+			clearProcessing(el);
 			expect(el.getAttribute('data-auto-coursera-processing')).toBeNull();
 			expect(el.getAttribute('data-auto-coursera-error')).toBeNull();
 		});

@@ -1,0 +1,339 @@
+---
+import Breadcrumb from '../components/Breadcrumb.astro';
+import Base from './Base.astro';
+
+interface Props {
+	title: string;
+	description: string;
+	breadcrumbs: Array<{ label: string; href?: string }>;
+	prev?: { label: string; href: string };
+	next?: { label: string; href: string };
+}
+
+const { title, description, breadcrumbs, prev, next } = Astro.props;
+
+const pathname = Astro.url.pathname;
+
+const canonicalPath = pathname.endsWith('/') ? pathname : `${pathname}/`;
+
+const sidebarGroups = [
+	{
+		heading: 'Guides',
+		links: [
+			{ href: '/docs/', label: 'Getting Started' },
+			{ href: '/docs/setup/', label: 'Setup Guide' },
+			{ href: '/docs/troubleshoot/', label: 'Troubleshooting' },
+		],
+	},
+	{
+		heading: 'Reference',
+		links: [
+			{ href: '/docs/manual/', label: 'Manual Install' },
+			{ href: '/docs/architecture/', label: 'Architecture' },
+		],
+	},
+] as const;
+
+function isSidebarActive(href: string): boolean {
+	return pathname === href || pathname === href.slice(0, -1);
+}
+---
+
+<Base title={title} description={description} canonicalPath={canonicalPath}>
+	<div class="docs">
+		<!-- Breadcrumbs -->
+		<div class="docs__breadcrumbs container">
+			<Breadcrumb items={breadcrumbs} />
+		</div>
+
+		<div class="docs__layout container">
+			<!-- Sidebar -->
+			<aside class="docs__sidebar">
+				<!-- Mobile: details/summary toggle -->
+				<details class="docs__sidebar-mobile">
+					<summary>Documentation Menu</summary>
+					<nav aria-label="Documentation (mobile)">
+						{
+							sidebarGroups.map(({ heading, links }) => (
+								<>
+									<span class="sidebar__group-label">{heading}</span>
+									<ul role="list">
+										{links.map(({ href, label }) => (
+											<li>
+												<a
+													href={href}
+													class:list={[
+														'docs__sidebar-link',
+														{ 'docs__sidebar-link--active': isSidebarActive(href) },
+													]}
+													{...(isSidebarActive(href) ? { 'aria-current': 'page' } : {})}
+												>
+													{label}
+												</a>
+											</li>
+										))}
+									</ul>
+								</>
+							))
+						}
+					</nav>
+				</details>
+
+				<!-- Desktop: always visible -->
+				<nav class="docs__sidebar-nav" aria-label="Documentation">
+					{
+						sidebarGroups.map(({ heading, links }) => (
+							<>
+								<span class="sidebar__group-label">{heading}</span>
+								<ul role="list">
+									{links.map(({ href, label }) => (
+										<li>
+											<a
+												href={href}
+												class:list={[
+													'docs__sidebar-link',
+													{ 'docs__sidebar-link--active': isSidebarActive(href) },
+												]}
+												{...(isSidebarActive(href) ? { 'aria-current': 'page' } : {})}
+											>
+												{label}
+											</a>
+										</li>
+									))}
+								</ul>
+							</>
+						))
+					}
+				</nav>
+			</aside>
+
+			<!-- Main content -->
+			<article class="docs__content">
+				<slot />
+			</article>
+		</div>
+
+		<!-- Prev/Next navigation -->
+		{
+			(prev || next) && (
+				<nav class="docs__pager container" aria-label="Page navigation">
+					{prev ? (
+						<a href={prev.href} class="docs__pager-prev">
+							<span class="docs__pager-label">Previous</span>
+							<span class="docs__pager-title">← {prev.label}</span>
+						</a>
+					) : (
+						<span />
+					)}
+					{next && (
+						<a href={next.href} class="docs__pager-next">
+							<span class="docs__pager-label">Next</span>
+							<span class="docs__pager-title">{next.label} →</span>
+						</a>
+					)}
+				</nav>
+			)
+		}
+	</div>
+</Base>
+
+<style>
+	.docs {
+		padding-block-start: var(--nav-height);
+	}
+
+	/* --- Breadcrumbs --- */
+
+	.docs__breadcrumbs {
+		padding-block: var(--space-4);
+		border-bottom: 1px solid var(--border);
+	}
+
+	/* --- Layout --- */
+
+	.docs__layout {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-6);
+		padding-block: var(--space-5);
+		min-height: calc(100vh - var(--nav-height) - 6rem);
+		min-height: calc(100dvh - var(--nav-height) - 6rem);
+	}
+
+	/* --- Sidebar --- */
+
+	.docs__sidebar-mobile {
+		display: block;
+	}
+
+	.docs__sidebar-nav {
+		display: none;
+	}
+
+	.docs__sidebar-mobile summary {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-muted);
+		cursor: pointer;
+		padding: var(--space-3) var(--space-4);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius-sm);
+		list-style: none;
+		transition: border-color var(--transition-fast);
+	}
+
+	.docs__sidebar-mobile summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.docs__sidebar-mobile summary::before {
+		content: "▸ ";
+	}
+
+	.docs__sidebar-mobile[open] summary::before {
+		content: "▾ ";
+	}
+
+	.docs__sidebar-mobile summary:hover {
+		border-color: var(--accent);
+	}
+
+	.docs__sidebar-mobile nav {
+		padding-block-start: var(--space-3);
+	}
+
+	.docs__sidebar ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.docs__sidebar-link {
+		display: block;
+		padding: var(--space-2) var(--space-3);
+		font-size: var(--text-small);
+		color: var(--text-secondary);
+		text-decoration: none;
+		border-radius: var(--border-radius-sm);
+		transition:
+			color var(--transition-fast),
+			background-color var(--transition-fast);
+	}
+
+	.docs__sidebar-link:hover {
+		color: var(--text-primary);
+		background-color: var(--surface);
+		text-decoration: none;
+	}
+
+	.docs__sidebar-link--active {
+		color: var(--accent);
+		background-color: var(--accent-subtle);
+	}
+
+	.docs__sidebar-link--active:hover {
+		color: var(--accent);
+	}
+
+	.sidebar__group-label {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding-block: var(--space-2);
+		margin-block-start: var(--space-4);
+	}
+
+	.sidebar__group-label:first-child {
+		margin-block-start: 0;
+	}
+
+	/* --- Content --- */
+
+	.docs__content {
+		max-width: var(--content-narrow);
+		width: 100%;
+	}
+
+	/* --- Pager (Prev/Next) --- */
+
+	.docs__pager {
+		display: flex;
+		justify-content: space-between;
+		align-items: stretch;
+		gap: var(--space-4);
+		padding-block: var(--space-5);
+		border-top: 1px solid var(--border);
+	}
+
+	.docs__pager-prev,
+	.docs__pager-next {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		padding: var(--space-4);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		text-decoration: none;
+		transition:
+			border-color var(--transition-fast),
+			background-color var(--transition-fast);
+		min-width: 0;
+	}
+
+	.docs__pager-prev:hover,
+	.docs__pager-next:hover {
+		border-color: var(--accent);
+		background-color: var(--accent-subtle);
+		text-decoration: none;
+	}
+
+	.docs__pager-next {
+		margin-inline-start: auto;
+		text-align: right;
+	}
+
+	.docs__pager-label {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-muted);
+	}
+
+	.docs__pager-title {
+		font-size: var(--text-body);
+		color: var(--accent);
+	}
+
+	/* --- Desktop (≥768px) --- */
+
+	@media (min-width: 768px) {
+		.docs__layout {
+			grid-template-columns: 250px 1fr;
+			gap: var(--space-7);
+		}
+
+		.docs__sidebar-mobile {
+			display: none;
+		}
+
+		.docs__sidebar-nav {
+			display: block;
+			position: sticky;
+			top: calc(var(--nav-height) + var(--space-6));
+			max-height: calc(100vh - var(--nav-height) - var(--space-8));
+			max-height: calc(100dvh - var(--nav-height) - var(--space-8));
+			overflow-y: auto;
+		}
+	}
+</style>

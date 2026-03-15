@@ -5,25 +5,24 @@
  * REQ: REQ-012
  */
 
+import { projectRuntimeReadModel, type RuntimeReadModel } from '../runtime/projection';
 import {
 	getRuntimeStateForTab,
+	type RuntimeStatus,
 	readRuntimeSessionSnapshot,
 	SESSION_RUNTIME_SCOPES_KEY,
 	SESSION_RUNTIME_TAB_SCOPES_KEY,
 } from '../types/runtime';
+import { copyToClipboard } from '../utils/clipboard';
 import { getUserFriendlyError } from '../utils/error-messages';
 import { Logger } from '../utils/logger';
 
 const logger = new Logger('Popup');
-const STALE_ACTIVE_STATE_MS = 60_000;
 
-export interface PopupRuntimeSnapshot {
-	status: string;
-	lastError: string;
-	solvedCount: number;
-	failedCount: number;
-	tokenCount: number;
-}
+export type PopupRuntimeSnapshot = Pick<
+	RuntimeReadModel,
+	'status' | 'lastError' | 'solvedCount' | 'failedCount' | 'tokenCount'
+>;
 
 function getElement<T extends HTMLElement>(id: string): T {
 	const el = document.getElementById(id);
@@ -54,51 +53,16 @@ export function getPopupRuntimeSnapshot(
 	tabId: number | null,
 	enabled: boolean,
 ): PopupRuntimeSnapshot {
-	if (!enabled) {
-		return {
-			status: 'disabled',
-			lastError: '',
-			solvedCount: 0,
-			failedCount: 0,
-			tokenCount: 0,
-		};
-	}
-
-	if (tabId === null) {
-		return {
-			status: 'idle',
-			lastError: '',
-			solvedCount: 0,
-			failedCount: 0,
-			tokenCount: 0,
-		};
-	}
-
 	const snapshot = readRuntimeSessionSnapshot(sessionData);
-	const runtimeState = getRuntimeStateForTab(snapshot, tabId);
-	if (!runtimeState) {
-		return {
-			status: 'idle',
-			lastError: '',
-			solvedCount: 0,
-			failedCount: 0,
-			tokenCount: 0,
-		};
-	}
-
-	const status =
-		runtimeState.status === 'active' &&
-		runtimeState.updatedAt > 0 &&
-		Date.now() - runtimeState.updatedAt > STALE_ACTIVE_STATE_MS
-			? 'idle'
-			: runtimeState.status;
+	const runtimeState = tabId === null ? null : getRuntimeStateForTab(snapshot, tabId);
+	const projected = projectRuntimeReadModel({ enabled, runtimeState });
 
 	return {
-		status,
-		lastError: runtimeState.lastError,
-		solvedCount: runtimeState.solvedCount,
-		failedCount: runtimeState.failedCount,
-		tokenCount: runtimeState.tokenCount,
+		status: projected.status,
+		lastError: projected.lastError,
+		solvedCount: projected.solvedCount,
+		failedCount: projected.failedCount,
+		tokenCount: projected.tokenCount,
 	};
 }
 
@@ -135,16 +99,16 @@ async function init(): Promise<void> {
 					const response = await chrome.tabs.sendMessage(tab.id, { type: 'OPEN_SETTINGS' });
 					if (response?.success) {
 						window.close();
-					} else {
-						chrome.runtime.openOptionsPage();
+						return;
 					}
 				}
 			} catch {
-				chrome.runtime.openOptionsPage();
+				// Overlay unavailable — fall through to open Coursera tab
 			}
-		} else {
-			chrome.runtime.openOptionsPage();
 		}
+		// Not on Coursera or overlay unavailable — open Coursera so settings overlay is accessible
+		chrome.tabs.create({ url: 'https://www.coursera.org/' });
+		window.close();
 	});
 
 	// Clicking anywhere on banner (including copy button) copies error
@@ -200,7 +164,7 @@ async function refreshPopupRuntime(): Promise<void> {
 	);
 
 	enableToggle.checked = enabled;
-	updateStatusDisplay(runtime.status, enabled);
+	updateStatusDisplay(runtime.status);
 	updateButtonState(enabled);
 	updateErrorBanner(runtime.lastError, runtime.status);
 	renderSessionStats(runtime);
@@ -218,18 +182,15 @@ async function handleToggle(): Promise<void> {
 	}
 }
 
-const STATUS_MAP: Record<string, [string, string?]> = {
+const STATUS_MAP: Partial<Record<RuntimeStatus, [string, string?]>> = {
 	active: ['Done', 'active'],
 	processing: ['Processing...', 'processing'],
 	error: ['Error', 'error'],
+	disabled: ['Disabled'],
 };
 
-function updateStatusDisplay(status: string, enabled: boolean): void {
+function updateStatusDisplay(status: RuntimeStatus): void {
 	statusDot.className = 'status-dot';
-	if (!enabled) {
-		statusText.textContent = 'Disabled';
-		return;
-	}
 	const [text, dotClass] = STATUS_MAP[status] ?? ['Idle'];
 	statusText.textContent = text;
 	if (dotClass) statusDot.classList.add(dotClass);
@@ -240,7 +201,7 @@ function updateButtonState(enabled: boolean): void {
 	scanBtn.disabled = !enabled;
 }
 
-function updateErrorBanner(error: string, status: string): void {
+function updateErrorBanner(error: string, status: RuntimeStatus): void {
 	if (status === 'error') {
 		errorBanner.style.display = 'flex';
 		errorText.textContent = error
@@ -254,17 +215,7 @@ function updateErrorBanner(error: string, status: string): void {
 
 async function handleCopyError(): Promise<void> {
 	const fullError = errorText.textContent ?? 'Unknown error';
-	try {
-		await navigator.clipboard.writeText(fullError);
-	} catch {
-		// Fallback for clipboard API not available
-		const textarea = document.createElement('textarea');
-		textarea.value = fullError;
-		document.body.appendChild(textarea);
-		textarea.select();
-		document.execCommand('copy');
-		document.body.removeChild(textarea);
-	}
+	await copyToClipboard(fullError);
 	errorCopyBtn.textContent = '✅ Copied!';
 	errorCopyBtn.classList.add('copied');
 	if (copyResetTimeout) clearTimeout(copyResetTimeout);

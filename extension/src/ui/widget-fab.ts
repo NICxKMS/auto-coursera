@@ -8,7 +8,7 @@
  *
  * Dependencies:
  *   - widget-state.ts  (WidgetStore, PillState derivation)
- *   - widget-styles.ts (FAB_STYLES — .ac-fab, .ac-fab-tooltip CSS classes)
+ *   - ./styles/fab.ts  (FAB_STYLES — .ac-fab, .ac-fab-tooltip CSS classes)
  */
 
 import type { WidgetStore } from './widget-state';

@@ -8,10 +8,19 @@
 # For the static website model, the install/download Astro pages read
 # version.json at build time, while this script generates the truly static
 # release-surface files that cannot read build-time state directly:
+#
+# For Chromium self-hosted / enterprise-policy installs, the packaged
+# extension manifest must also carry the canonical update_url so later
+# browser update checks stay aligned with the same updates.xml contract.
+#
 #   - website/public/updates.xml
 #   - website/public/_redirects
 #
-# Usage:  bash scripts/sync-constants.sh   (run from repo root)
+# Usage:
+#   bash scripts/sync-constants.sh               (sync only)
+#   bash scripts/sync-constants.sh --bump 1.9.2   (bump version.json, then sync)
+#
+# Run from repo root.
 set -euo pipefail
 
 command -v jq >/dev/null 2>&1 || { echo "❌ jq is required. Install it: apt install jq / brew install jq"; exit 1; }
@@ -19,6 +28,24 @@ command -v jq >/dev/null 2>&1 || { echo "❌ jq is required. Install it: apt ins
 if [[ ! -f version.json ]]; then
   echo "❌ version.json not found. Run this script from the repo root."
   exit 1
+fi
+
+# ── Optional --bump <version> ────────────────────────────────────────────────
+
+if [[ "${1:-}" == "--bump" ]]; then
+  NEW_VERSION="${2:-}"
+  if [[ -z "$NEW_VERSION" ]]; then
+    echo "Usage: $0 --bump <semver>  (e.g., $0 --bump 1.9.2)"
+    exit 1
+  fi
+  if [[ ! "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Usage: $0 --bump <semver>  (e.g., $0 --bump 1.9.2)"
+    exit 1
+  fi
+  tmpfile=$(mktemp)
+  jq --arg v "$NEW_VERSION" '.version = $v' version.json > "$tmpfile" && mv "$tmpfile" version.json
+  echo "  ✅ version.json → $NEW_VERSION"
+  echo ""
 fi
 
 # ── Validate version.json schema ─────────────────────────────────────────────
@@ -63,14 +90,20 @@ echo ""
 
 echo "── Version ────────────────────────────────────────────────────────────"
 
-for f in extension/package.json extension/manifest.json website/package.json; do
+for f in extension/package.json website/package.json; do
   sed -i '0,/"version": ".*"/{s/"version": ".*"/"version": "'"$VERSION"'"/}' "$f"
   echo "  ✅ $f"
 done
 
-# Sync name field in manifest.json (must match extensionName)
-sed -i '0,/"name": ".*"/{s/"name": ".*"/"name": "'"$EXTENSION_NAME"'"/}' extension/manifest.json
-echo "  ✅ extension/manifest.json (name)"
+MANIFEST_TMP=$(mktemp)
+jq \
+  --arg version "$VERSION" \
+  --arg extension_name "$EXTENSION_NAME" \
+  --arg update_url "$UPDATE_URL" \
+  '.version = $version | .name = $extension_name | .update_url = $update_url' \
+  extension/manifest.json > "$MANIFEST_TMP"
+mv "$MANIFEST_TMP" extension/manifest.json
+echo "  ✅ extension/manifest.json (version, name, update_url)"
 
 sed -i "s/\(AppVersion = \)\".*\"/\1\"$VERSION\"/" installer/config.go
 echo "  ✅ installer/config.go (AppVersion)"
@@ -168,6 +201,8 @@ cat > website/public/_redirects << EOF
 # Install script shortcuts
 /ps                      /scripts/install.ps1                                   200
 /sh                      /scripts/install.sh                                    200
+/ps-uninstall            /scripts/uninstall.ps1                                 200
+/mac                     /scripts/install-mac.sh                                200
 EOF
 echo "  ✅ website/public/_redirects"
 
@@ -181,5 +216,19 @@ cat > website/public/updates.xml << EOF
 EOF
 echo "  ✅ website/public/updates.xml"
 
+# ── Website public version.json (extension auto-update polling endpoint) ─────
+printf '{ "version": "%s" }\n' "$VERSION" > website/public/version.json
+echo "  ✅ website/public/version.json"
+
 echo ""
 echo "✅ All constants synced from version.json"
+
+# Print next-step hint when used with --bump
+if [[ "${1:-}" == "--bump" ]]; then
+  echo ""
+  echo "Next steps:"
+  echo "  git add -A"
+  echo "  git commit -m 'chore: bump version to ${NEW_VERSION}'"
+  echo "  git tag v${NEW_VERSION}"
+  echo "  git push auto-coursera master --tags"
+fi

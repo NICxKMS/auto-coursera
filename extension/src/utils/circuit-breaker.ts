@@ -1,5 +1,10 @@
-import { CIRCUIT_COOLDOWN_MS, CIRCUIT_FAILURE_THRESHOLD } from './constants';
 import { Logger } from './logger';
+
+/** Number of failures before circuit opens */
+const CIRCUIT_FAILURE_THRESHOLD = 3;
+
+/** Cooldown period after circuit opens (ms) */
+const CIRCUIT_COOLDOWN_MS = 60_000;
 
 const logger = new Logger('CircuitBreaker');
 

@@ -1,106 +1,237 @@
 ---
+import versionInfo from '@root/version.json';
+
 const currentYear = new Date().getFullYear();
-
-interface FooterLink {
-	label: string;
-	href: string;
-	external?: boolean;
-}
-
-const footerSections: { title: string; links: FooterLink[] }[] = [
-	{
-		title: 'Product',
-		links: [
-			{ label: 'Install', href: '/install' },
-			{ label: 'Downloads', href: '/downloads' },
-			{ label: 'Releases', href: '/releases' },
-		],
-	},
-	{
-		title: 'Resources',
-		links: [
-			{ label: 'Documentation', href: '/docs' },
-			{ label: 'Advanced Manual Install', href: '/docs/manual' },
-			{ label: 'Troubleshooting', href: '/docs/troubleshoot' },
-			{ label: 'GitHub', href: 'https://github.com/nicxkms/auto-coursera', external: true },
-		],
-	},
-	{
-		title: 'Legal',
-		links: [
-			{ label: 'Privacy Policy', href: '/privacy' },
-			{
-				label: 'License',
-				href: 'https://github.com/nicxkms/auto-coursera/blob/master/LICENSE',
-				external: true,
-			},
-		],
-	},
-];
 ---
 
-<footer class="relative mt-24" role="contentinfo">
-  <!-- Top gradient divider -->
-  <div class="divider-glow" aria-hidden="true"></div>
+<footer class="footer">
+	<div class="footer__inner container">
+		<div class="footer__brand">
+			<span class="footer__logo">AC</span>
+			<p class="footer__tagline">
+				AI-powered Coursera quiz assistant.<br />Free. Open source.
+			</p>
+		</div>
 
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-    <div class="py-16 sm:py-20 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-14">
+		<div class="footer__columns">
+			<div class="footer__column">
+				<h3 class="footer__heading">Product</h3>
+				<ul role="list">
+					<li><a href="/install/">Install</a></li>
+					<li><a href="/downloads/">Downloads</a></li>
+					<li><a href="/releases/">What's New</a></li>
+					<li><a href="/support/">Support</a></li>
+					<li>
+						<a
+							href={`https://github.com/${versionInfo.githubRepo}`}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="footer__external"
+						>
+							GitHub
+						</a>
+					</li>
+				</ul>
+			</div>
 
-      <!-- Brand column -->
-      <div class="col-span-2 sm:col-span-2 lg:col-span-1">
-        <a href="/" class="flex items-center gap-2.5 text-white hover:text-white group mb-5">
-          <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 shadow-lg shadow-primary-600/20">
-            <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-              <path d="M2 17l10 5 10-5"></path>
-              <path d="M2 12l10 5 10-5"></path>
-            </svg>
-          </div>
-          <span class="text-base font-bold tracking-tight">Auto-Coursera</span>
-        </a>
-        <p class="text-sm text-surface-500 leading-relaxed max-w-[240px]">
-          AI-powered answer assistant for Coursera. Private, fast, and open-source.
-        </p>
-      </div>
+			<div class="footer__column">
+				<h3 class="footer__heading">Documentation</h3>
+				<ul role="list">
+					<li><a href="/docs/">Getting Started</a></li>
+					<li><a href="/docs/setup/">Setup Guide</a></li>
+					<li><a href="/docs/manual/">Manual Install</a></li>
+					<li><a href="/docs/troubleshoot/">Troubleshooting</a></li>
+					<li><a href="/docs/architecture/">Architecture</a></li>
+				</ul>
+			</div>
 
-      <!-- Link columns -->
-      {footerSections.map((section) => (
-        <div>
-          <h3 class="text-xs font-semibold text-surface-400 uppercase tracking-widest mb-4">
-            {section.title}
-          </h3>
-          <ul class="space-y-3">
-            {section.links.map((link) => (
-              <li>
-                <a
-                  href={link.href}
-                  class="text-sm text-surface-500 hover:text-surface-200 transition-colors duration-200 inline-flex items-center gap-1.5"
-                  {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                >
-                  {link.label}
-                  {link.external && (
-                    <svg class="w-3 h-3 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                      <polyline points="15 3 21 3 21 9"></polyline>
-                      <line x1="10" y1="14" x2="21" y2="3"></line>
-                    </svg>
-                  )}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
+			<div class="footer__column">
+				<h3 class="footer__heading">Legal</h3>
+				<ul role="list">
+					<li><a href="/privacy/">Privacy</a></li>
+					<li><a href="/terms/">Terms</a></li>
+					<li>
+						<a
+							href={`https://github.com/${versionInfo.githubRepo}/blob/master/LICENSE`}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="footer__external"
+						>
+							License
+						</a>
+					</li>
+				</ul>
+			</div>
+		</div>
 
-    <!-- Bottom bar -->
-    <div class="border-t border-white/[0.04] py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <p class="text-xs text-surface-400">
-        &copy; 2024&ndash;{currentYear} nicx. All rights reserved.
-      </p>
-      <p class="text-xs text-surface-400">
-        Built with <span class="text-primary-400/60">&hearts;</span> by nicx
-      </p>
-    </div>
-  </div>
+		<div class="footer__bottom">
+			<p>
+				&copy; {currentYear} Auto-Coursera <span class="footer__version">v{versionInfo.version}</span>. Built by
+				<a
+					href="https://github.com/NICxKMS"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="footer__bottom-link"
+				>NICxKMS</a> — open source on
+				<a
+					href={`https://github.com/${versionInfo.githubRepo}`}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="footer__bottom-link"
+				>GitHub</a>
+			</p>
+		</div>
+	</div>
 </footer>
+
+<style>
+	.footer {
+		background-color: var(--bg-void);
+		border-top: 1px solid var(--border);
+		padding-block-start: var(--space-9);
+		padding-block-end: var(--space-7);
+	}
+
+	.footer__inner {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-7);
+	}
+
+	/* --- Brand --- */
+
+	.footer__logo {
+		display: inline-block;
+		font-family: var(--font-mono);
+		font-weight: var(--weight-bold);
+		font-size: var(--text-h3);
+		color: var(--accent);
+		line-height: 1;
+		margin-block-end: var(--space-3);
+	}
+
+	.footer__tagline {
+		color: var(--text-secondary);
+		font-size: var(--text-small);
+		line-height: var(--leading-normal);
+		margin: 0;
+	}
+
+	/* --- Columns --- */
+
+	.footer__columns {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-6);
+	}
+
+	.footer__heading {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-muted);
+		margin-block-end: var(--space-4);
+	}
+
+	.footer__column ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.footer__column a {
+		color: var(--text-secondary);
+		text-decoration: underline;
+		text-decoration-color: var(--border);
+		text-underline-offset: 0.2em;
+		text-decoration-thickness: 1px;
+		font-size: var(--text-small);
+		transition:
+			color var(--transition-fast),
+			text-decoration-color var(--transition-fast);
+		line-height: var(--leading-normal);
+	}
+
+	.footer__column a:hover,
+	.footer__column a:focus-visible {
+		color: var(--text-primary);
+		text-decoration-color: var(--text-primary);
+	}
+
+	/* External link indicator */
+	.footer__external::after {
+		content: " ↗";
+		font-size: 0.75em;
+		opacity: 0.6;
+	}
+
+	/* --- Bottom --- */
+
+	.footer__bottom {
+		border-top: 1px solid var(--border);
+		padding-block-start: var(--space-5);
+	}
+
+	.footer__bottom p {
+		color: var(--text-muted);
+		font-size: var(--text-small);
+		margin: 0;
+	}
+
+	.footer__version {
+		font-family: var(--font-mono);
+		color: var(--text-muted);
+		font-size: var(--text-small);
+	}
+
+	.footer__bottom-link {
+		color: var(--text-secondary);
+		text-decoration: none;
+		transition:
+			color var(--transition-fast),
+			text-decoration var(--transition-fast);
+	}
+
+	.footer__bottom-link:hover,
+	.footer__bottom-link:focus-visible {
+		color: var(--accent);
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+		text-decoration-thickness: 1px;
+	}
+
+	/* --- Responsive --- */
+
+	@media (min-width: 768px) {
+		.footer__columns {
+			grid-template-columns: repeat(3, 1fr);
+		}
+
+		.footer__inner {
+			display: grid;
+			grid-template-columns: 1fr 2fr;
+			grid-template-rows: auto auto;
+			gap: var(--space-7);
+		}
+
+		.footer__brand {
+			grid-column: 1;
+			grid-row: 1;
+		}
+
+		.footer__columns {
+			grid-column: 2;
+			grid-row: 1;
+		}
+
+		.footer__bottom {
+			grid-column: 1 / -1;
+			grid-row: 2;
+		}
+	}
+</style>

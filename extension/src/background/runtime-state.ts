@@ -1,4 +1,8 @@
 import type {
+	RegisterPageContextPayload,
+	RegisterPageContextResponsePayload,
+} from '../types/messages';
+import type {
 	RuntimeScopeDescriptor,
 	RuntimeScopeMap,
 	RuntimeStateView,
@@ -6,13 +10,16 @@ import type {
 	RuntimeTabScopeMap,
 } from '../types/runtime';
 import {
-	SESSION_RUNTIME_SCOPES_KEY,
-	SESSION_RUNTIME_TAB_SCOPES_KEY,
 	createDefaultRuntimeState,
 	getRuntimeScopeId,
 	readRuntimeSessionSnapshot,
+	SESSION_RUNTIME_SCOPES_KEY,
+	SESSION_RUNTIME_TAB_SCOPES_KEY,
 } from '../types/runtime';
-import { APPLY_OUTCOME_TIMEOUT_MS, COLORS } from '../utils/constants';
+import { COLORS } from '../utils/constants';
+
+/** Apply-outcome recovery timeout in ms after solve completes but the page never reports apply status */
+const APPLY_OUTCOME_TIMEOUT_MS = 60 * 1000;
 
 export const PROCESSING_RECOVERY_ALARM_PREFIX = 'runtime-processing-recovery:';
 
@@ -323,13 +330,6 @@ export class RuntimeStateManager {
 		await this.cancelScope(scopeId, 'idle', true);
 	}
 
-	async cancelCurrentScopeForTab(tabId: number, nextStatus: RuntimeStatus = 'idle'): Promise<void> {
-		await this.hydrate();
-		const scopeId = this.tabScopes.get(tabId);
-		if (!scopeId) return;
-		await this.cancelScope(scopeId, nextStatus);
-	}
-
 	async setEnabled(enabled: boolean): Promise<void> {
 		await this.hydrate();
 		for (const scopeId of this.scopes.keys()) {
@@ -483,4 +483,80 @@ export class RuntimeStateManager {
 			chrome.action.setBadgeBackgroundColor({ color: COLORS.SUCCESS });
 		}
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Scope resolution helpers (merged from runtime-scope.ts)
+// ---------------------------------------------------------------------------
+
+export function getTabId(sender: chrome.runtime.MessageSender): number | null {
+	return typeof sender.tab?.id === 'number' ? sender.tab.id : null;
+}
+
+export function buildScopeDescriptor(
+	tabId: number,
+	pageInstanceId: string,
+	pageUrl: string,
+): RuntimeScopeDescriptor {
+	return {
+		tabId,
+		pageInstanceId,
+		pageUrl,
+		scopeId: getRuntimeScopeId(tabId, pageInstanceId),
+	};
+}
+
+export async function resolveCurrentScope(
+	runtimeStateManager: RuntimeStateManager,
+	sender: chrome.runtime.MessageSender,
+	pageInstanceId: string,
+	pageUrl: string,
+): Promise<RuntimeScopeDescriptor | 'invalid' | null> {
+	const tabId = getTabId(sender);
+	if (tabId === null) {
+		return null;
+	}
+
+	const expectedScope = buildScopeDescriptor(tabId, pageInstanceId, pageUrl);
+	const currentState = await runtimeStateManager.getStateForTab(tabId);
+	if (!currentState) {
+		const { enabled } = await chrome.storage.local.get({ enabled: false });
+		await runtimeStateManager.registerScope({
+			tabId,
+			pageInstanceId,
+			pageUrl,
+			enabled: enabled as boolean,
+		});
+		return expectedScope;
+	}
+
+	if (currentState.scopeId !== expectedScope.scopeId) {
+		return 'invalid';
+	}
+
+	return expectedScope;
+}
+
+export async function registerScopeForPage(
+	runtimeStateManager: RuntimeStateManager,
+	sender: chrome.runtime.MessageSender,
+	payload: RegisterPageContextPayload,
+): Promise<RegisterPageContextResponsePayload | null> {
+	const tabId = getTabId(sender);
+	if (tabId === null) {
+		return null;
+	}
+
+	const { enabled } = await chrome.storage.local.get({ enabled: false });
+	const state = await runtimeStateManager.registerScope({
+		tabId,
+		pageInstanceId: payload.pageInstanceId,
+		pageUrl: payload.pageUrl,
+		enabled: enabled as boolean,
+	});
+
+	return {
+		success: true,
+		state,
+	};
 }

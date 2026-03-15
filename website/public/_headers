@@ -1,17 +1,21 @@
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
-  X-XSS-Protection: 1; mode=block
+  X-XSS-Protection: 0
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';
+  # Note: unsafe-inline required for Astro is:inline scripts (chapter observer, mobile nav)
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'
 
 /scripts/*
   Content-Type: text/plain
   Cache-Control: public, max-age=3600
 
 /updates.xml
-  Content-Type: application/xml; charset=utf-8
+  Content-Type: application/xml
   Cache-Control: public, max-age=300
   X-Content-Type-Options: nosniff

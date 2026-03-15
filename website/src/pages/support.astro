@@ -1,163 +1,545 @@
 ---
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
 import Base from '../layouts/Base.astro';
 ---
 
-<Base title="Support" description="Frequently asked questions and help resources for Auto-Coursera Assistant.">
-  <Header />
+<Base
+	title="Support — Auto-Coursera Help, Bugs & Community Resources"
+	description="Get help with Auto-Coursera. Find troubleshooting guides, report bugs, request features, and connect with the community."
+	canonicalPath="/support/"
+>
+	<!-- ================================================================
+	     HERO
+	     ================================================================ -->
+	<section class="hero" data-bg="deep" aria-labelledby="support-heading">
+		<div class="container-narrow">
+			<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
+			<Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Support' }]} />
+			<h1 id="support-heading">Support</h1>
+			<p class="hero__lead">
+				Troubleshooting guides, bug reporting, feature requests,
+				and community resources — all in one place.
+			</p>
+		</div>
+	</section>
 
-  <main id="main-content" class="py-16 sm:py-24 px-4">
-    <div class="max-w-3xl mx-auto">
-      <!-- Title -->
-      <div class="text-center mb-16 animate-fade-in">
-        <p class="section-label">Support</p>
-        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">Help &amp; FAQ</h1>
-        <p class="text-lg text-surface-400 max-w-xl mx-auto">
-          Find answers to common questions about Auto-Coursera Assistant.
-        </p>
-      </div>
+	<!-- ================================================================
+	     QUICK HELP
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="quickhelp-heading">
+		<div class="container">
+			<h2 id="quickhelp-heading">Quick help</h2>
+			<div class="help-grid">
+				<a href="/docs/" class="help-card">
+					<h3>Getting Started</h3>
+					<p>First-time setup and overview of features.</p>
+				</a>
+				<a href="/docs/troubleshoot/" class="help-card">
+					<h3>Troubleshooting</h3>
+					<p>Common problems and how to fix them.</p>
+				</a>
+				<a href="/docs/setup/" class="help-card">
+					<h3>API Setup</h3>
+					<p>How to get and configure an AI provider API key.</p>
+				</a>
+			</div>
+		</div>
+	</section>
 
-      <!-- ═══════════════════ FAQ ═══════════════════ -->
-      <section class="mb-20 space-y-3 animate-slide-up delay-100">
-        <!-- FAQ 1 -->
-        <details class="faq-item group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span>How do I install the extension?</span>
-            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
-            <p>Visit the <a href="/install">Install page</a> and download the installer for your operating system. The installer automatically configures browser policies and installs the extension. After installation, restart your browser and the extension will appear.</p>
-          </div>
-        </details>
+	<!-- ================================================================
+	     COMMON ISSUES
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="issues-heading">
+		<div class="container-narrow">
+			<h2 id="issues-heading">Common issues</h2>
 
-        <!-- FAQ 2 -->
-        <details class="faq-item group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span>Which browsers are supported?</span>
-            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
-            <p>Auto-Coursera Assistant works on all Chromium-based browsers including Google Chrome, Microsoft Edge, Brave, and Chromium. Firefox and Safari are not supported as they use different extension APIs.</p>
-          </div>
-        </details>
+		<details class="faq-item" id="faq-technical-issues">
+			<summary>Having technical issues?</summary>
+				<div class="faq-body">
+					<p>
+						For step-by-step solutions to common problems — the extension
+						not loading, API key errors, browser compatibility, detection
+						issues, and more — see our dedicated
+						<a href="/docs/troubleshoot/">Troubleshooting guide</a>.
+					</p>
+				</div>
+			</details>
 
-        <!-- FAQ 3 -->
-        <details class="faq-item group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span>How does the extension work?</span>
-            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
-            <p>The extension detects quiz pages on Coursera, extracts question text and answer options, then sends them to your configured AI provider. The AI analyzes the question and returns the best answer. Your API key is stored locally — the extension communicates directly with the AI provider.</p>
-          </div>
-        </details>
+		<details class="faq-item" id="faq-auto-update">
+			<summary>Does it auto-update?</summary>
+				<div class="faq-body">
+					<p>
+						Yes. The extension checks for updates every 6 hours
+						using Chromium's built-in extension update mechanism.
+						Updates are downloaded and applied automatically — no
+						action required on your part.
+					</p>
+					<p>
+						You can also manually check for updates from the
+						extension popup or from <code>chrome://extensions</code>.
+					</p>
+				</div>
+			</details>
 
-        <!-- FAQ 4 -->
-        <details class="faq-item group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span>Is my data safe?</span>
-            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
-            <p>Yes. The extension collects zero personal data and has zero tracking. Your API keys are stored in Chrome's local storage on your device and are never transmitted to our servers. Questions are sent directly from your browser to the AI provider you choose.</p>
-          </div>
-        </details>
+		<details class="faq-item" id="faq-wrong-or-low-confidence">
+			<summary>The answers seem wrong or low confidence</summary>
+				<div class="faq-body">
+				<p>
+					Answer accuracy depends on your AI provider and model.
+					The extension uses color-coded highlights to communicate confidence:
+				</p>
+				<ul>
+					<li><strong>High confidence ✓</strong> (green highlight) — score ≥ 0.8. The model is fairly sure, but still verify before submitting.</li>
+					<li><strong>Review suggested ~</strong> (yellow highlight) — score 0.5–0.8. The model is less certain; worth checking.</li>
+					<li><strong>Low confidence !</strong> (red highlight) — score &lt; 0.5. The model is guessing. Always verify these manually.</li>
+				</ul>
+				<p>
+					A red highlight can also indicate an API error or timeout rather than a confidence judgment.
+					If you see red on every answer, check your API key and network connection.
+					For the full confidence model, see the <a href="/docs/#what-to-expect">Getting Started guide</a>.
+				</p>
+				<p>Some tips for improving results:</p>
+				<ul>
+					<li>Try a different provider — some models handle certain question types better than others.</li>
+					<li>The extension works best with multiple-choice and true/false questions.
+						See <a href="/docs/#supported-question-types">supported question types</a>
+						for the full list.</li>
+					<li>Raise the confidence threshold in settings to only auto-select answers the model is more sure about.</li>
+				</ul>
+					<p>For detailed troubleshooting, see the <a href="/docs/troubleshoot/#faq-wrong-answers">answers seem wrong</a> guide.</p>
+				</div>
+			</details>
+		</div>
+	</section>
 
-        <!-- FAQ 5 -->
-        <details class="faq-item group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span>Extension not showing after install?</span>
-            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
-            <p>Make sure you've completely restarted your browser (close all windows, not just tabs). Check <code>chrome://policy</code> to verify the policy is applied. If the policy isn't showing, run the installer again and accept the Administrator or <code>sudo</code> prompt when it appears. See the <a href="/docs/troubleshoot">Troubleshooting guide</a> for more details.</p>
-          </div>
-        </details>
+	<!-- ================================================================
+	     REPORT A BUG
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="bugs-heading">
+		<div class="container-narrow">
+			<h2 id="bugs-heading">Report a bug</h2>
+			<p>
+				Found something broken? Open an issue on GitHub and we'll look
+				into it.
+			</p>
+			<p>
+				<a href="https://github.com/NICxKMS/auto-coursera/issues" target="_blank" rel="noopener noreferrer">
+					Open a GitHub Issue
+				</a>
+			</p>
 
-        <!-- FAQ 6 -->
-        <details class="faq-item group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span>How do I update the extension?</span>
-            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
-            <p>The extension updates automatically. The browser checks for updates using the configured update URL. You don't need to do anything — new versions are installed silently in the background.</p>
-          </div>
-        </details>
+			<h3>What to include in your report</h3>
+			<ul>
+				<li>Your browser name and version (e.g., Chrome 124.0)</li>
+				<li>The extension version (shown in the popup)</li>
+				<li>Any error messages you see (check the browser console with <kbd>F12</kbd>)</li>
+				<li>Steps to reproduce the problem</li>
+				<li>What you expected to happen vs. what actually happened</li>
+			</ul>
 
-        <!-- FAQ 7 -->
-        <details class="faq-item group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span>How do I uninstall?</span>
-            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
-            <p>Download and run the uninstall script for your OS from the <a href="/downloads">Downloads page</a>. On Windows, run <code>uninstall.ps1</code> in PowerShell. On Linux and macOS, run <code>uninstall.sh</code>. This removes the browser policy and the extension.</p>
-          </div>
-        </details>
+			<h3>New to GitHub?</h3>
+			<p>
+				GitHub Issues is a public tracker where anyone can report
+				problems. You'll need a free
+				<a href="https://github.com/signup" target="_blank" rel="noopener noreferrer">GitHub account</a>.
+				Click <strong>"New issue"</strong> on the
+				<a href="https://github.com/NICxKMS/auto-coursera/issues" target="_blank" rel="noopener noreferrer">issues page</a>,
+				describe the problem, and submit. We'll respond on the same thread.
+			</p>
+		</div>
+	</section>
 
-        <!-- FAQ 8 -->
-        <details class="faq-item group glass overflow-hidden">
-          <summary class="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer select-none list-none text-white font-medium hover:bg-white/[0.02] transition-colors">
-            <span>Which AI providers are supported?</span>
-            <svg class="faq-chevron w-5 h-5 text-surface-500 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </summary>
-          <div class="px-6 pb-5 text-surface-400 text-sm leading-relaxed">
-            <p>The extension supports <strong class="text-white">OpenRouter</strong>, <strong class="text-white">Google Gemini</strong>, <strong class="text-white">Groq</strong>, <strong class="text-white">Cerebras</strong>, and <strong class="text-white">NVIDIA NIM</strong>. Each provider has free tiers or free models available. You can switch between providers at any time from the extension popup.</p>
-          </div>
-        </details>
-      </section>
+	<!-- ================================================================
+	     REQUEST A FEATURE
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="features-heading">
+		<div class="container-narrow">
+			<h2 id="features-heading">Request a feature</h2>
+			<p>
+				Have an idea for something Auto-Coursera should do? We'd like to
+				hear it.
+			</p>
+			<p>
+				<a href="https://github.com/NICxKMS/auto-coursera/issues" target="_blank" rel="noopener noreferrer">
+					Open a GitHub Issue
+				</a>
+			</p>
 
-      <!-- ═══════════════════ GET HELP ═══════════════════ -->
-      <section class="animate-slide-up delay-200">
-        <div class="glass-strong p-8 md:p-10 relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-primary-600/5 to-transparent" aria-hidden="true"></div>
-          <div class="relative">
-            <h2 class="text-xl font-semibold text-white mb-6">Still need help?</h2>
+			<h3>What makes a good request</h3>
+			<ul>
+				<li><strong>Describe the problem</strong>, not just the solution. "I can't tell which answers are auto-selected" is more useful than "add a checkmark icon."</li>
+				<li><strong>Give context.</strong> When and why do you need this? What workflow does it improve?</li>
+				<li><strong>Be specific.</strong> "Better UI" is hard to act on. "The popup text is too small on 4K displays" is actionable.</li>
+			</ul>
+		</div>
+	</section>
 
-            <div class="grid sm:grid-cols-2 gap-4">
-              <!-- GitHub Issues -->
-              <a href="https://github.com/nicxkms/auto-coursera/issues" target="_blank" rel="noopener noreferrer" class="card-interactive flex items-center gap-4">
-                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                  </svg>
-                </div>
-                <div>
-                  <p class="text-surface-200 font-medium">Report a Bug</p>
-                  <p class="text-xs text-surface-500">Open an issue on GitHub</p>
-                </div>
-              </a>
+	<!-- ================================================================
+	     SECURITY
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="security-heading">
+		<div class="container-narrow">
+			<h2 id="security-heading">Security issue?</h2>
+			<p>
+				If you've found a security vulnerability, <strong>please report
+				it privately</strong> through GitHub's Security Advisories — not
+				through public issues.
+			</p>
+			<p>
+				<a href="https://github.com/NICxKMS/auto-coursera/security/advisories/new" target="_blank" rel="noopener noreferrer">
+					Report a security vulnerability
+				</a>
+			</p>
+			<p>
+				Private reports let us fix the issue before it becomes public
+				knowledge. We'll acknowledge your report and work on a fix as
+				quickly as we can.
+			</p>
+		</div>
+	</section>
 
-              <!-- Security -->
-              <a href="mailto:security@nicx.me" class="card-interactive flex items-center gap-4">
-                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] text-surface-400">
-                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                  </svg>
-                </div>
-                <div>
-                  <p class="text-surface-200 font-medium">Security Issue</p>
-                  <p class="text-xs text-surface-500">security@nicx.me</p>
-                </div>
-              </a>
-            </div>
+	<!-- ================================================================
+	     ACADEMIC INTEGRITY
+	     ================================================================ -->
+	<section class="section" data-bg="deep" aria-labelledby="integrity-heading">
+		<div class="container-narrow">
+			<h2 id="integrity-heading">A note on academic integrity</h2>
 
-            <p class="text-surface-500 text-sm mt-6">
-              When reporting a bug, include your OS, browser version, extension version, and steps to reproduce the issue.
-            </p>
-          </div>
-        </div>
-      </section>
-    </div>
-  </main>
+			<aside class="callout callout--warning" role="note" aria-labelledby="tos-warning">
+				<p class="callout__title" id="tos-warning">This tool likely violates Coursera's Terms of Service</p>
+				<p>
+					Coursera's
+					<a href="https://www.coursera.org/about/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a>
+					and
+					<a href="https://www.coursera.org/about/terms#honor-code" target="_blank" rel="noopener noreferrer">Honor Code</a>
+					prohibit using automated tools or external assistance on
+					graded assessments. Using Auto-Coursera on graded quizzes
+					or exams almost certainly falls under that prohibition.
+					We're telling you this upfront so you can make an informed
+					decision.
+				</p>
+			</aside>
 
-  <Footer />
+			<h3>Detection risk</h3>
+			<p>
+				No tool is invisible. Here's what you should know:
+			</p>
+			<ul>
+				<li>
+					<strong>Submission patterns</strong> — Coursera can see how
+					quickly you answer questions and your accuracy patterns
+					across attempts. Answering every question correctly in
+					seconds is not a normal human pattern.
+				</li>
+				<li>
+					<strong>Institutional monitoring</strong> — Many universities
+					and employers use their own proctoring software, browser
+					lockdowns, or monitoring tools on top of Coursera. These
+					operate independently and may flag extension activity.
+				</li>
+				<li>
+					<strong>Browser fingerprinting</strong> — Browser extensions
+					leave traces. Sophisticated monitoring can detect the
+					presence of extensions, DOM modifications, or unusual page
+					interactions.
+				</li>
+				<li>
+					<strong>Network traffic</strong> — The extension itself does
+					not phone home or contact any server besides your chosen AI
+					provider (using your own API key). But this doesn't mean
+					your usage is undetectable by other means.
+				</li>
+			</ul>
+
+			<h3>Your responsibility</h3>
+			<p>
+				The developers provide the tool. You decide how to use it, and
+				you assume all risk that comes with that decision. We don't
+				monitor usage, collect data, or have any way to know how you
+				use the extension.
+			</p>
+			<p>
+				<strong>Recommended use:</strong> practice quizzes,
+				self-assessment, corporate training retakes, and learning
+				reinforcement — situations where the quiz is a gate, not a goal.
+				Using it on proctored exams or high-stakes graded assessments
+				carries real risk of academic consequences.
+			</p>
+
+			<h3>Check your institution's policy</h3>
+			<p>
+				Academic integrity policies vary widely. Some institutions
+				explicitly forbid any AI assistance, even on ungraded work.
+				Others are more permissive. Your institution's policy applies
+				regardless of what this tool allows you to do technically.
+				Look it up before you decide.
+			</p>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     COMMUNITY
+	     ================================================================ -->
+	<section class="section" data-bg="void" aria-labelledby="community-heading">
+		<div class="container-narrow">
+			<h2 id="community-heading">Community</h2>
+			<p>
+				Auto-Coursera is open source. Everything happens in the open on
+				GitHub.
+			</p>
+			<ul class="community-links">
+				<li>
+					<a href="https://github.com/NICxKMS/auto-coursera" target="_blank" rel="noopener noreferrer">
+						GitHub Repository
+					</a>
+					— source code, README, and project overview
+				</li>
+				<li>
+					<a href="https://github.com/NICxKMS/auto-coursera/discussions" target="_blank" rel="noopener noreferrer">
+						GitHub Discussions
+					</a>
+					— questions, ideas, and general conversation
+				</li>
+				<li>
+					<a href="https://github.com/NICxKMS/auto-coursera/issues" target="_blank" rel="noopener noreferrer">
+						GitHub Issues
+					</a>
+					— bug reports and feature requests
+				</li>
+			</ul>
+		</div>
+	</section>
+
+	<!-- ================================================================
+	     INSTALL CTA
+	     ================================================================ -->
+	<aside class="install-cta" aria-label="Install Auto-Coursera">
+		<p class="install-cta__text">Found what you need? Get started with Auto-Coursera.</p>
+		<a href="/install/" class="btn btn--primary">Install Auto-Coursera</a>
+	</aside>
 </Base>
 
 <style>
-  .faq-item[open] summary {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  }
+	/* ==========================================================================
+	   Support Page — Scoped Styles
+	   ========================================================================== */
+
+	/* ===== Hero ===== */
+
+	.hero {
+		padding-block-start: calc(var(--nav-height) + var(--space-7));
+		padding-block-end: var(--space-6);
+		background-color: var(--bg-deep);
+	}
+
+	.hero h1 {
+		margin-block-end: var(--space-4);
+	}
+
+	.hero__product {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-block-end: var(--space-2);
+	}
+
+	.hero__lead {
+		font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+		color: var(--text-secondary);
+	}
+
+	/* ===== Sections ===== */
+
+	.section {
+		padding-block: var(--space-6);
+	}
+
+	.section h2 {
+		margin-block-end: var(--space-4);
+	}
+
+	.section h3 {
+		margin-block-start: var(--space-6);
+		margin-block-end: var(--space-3);
+	}
+
+	/* ===== Quick Help Grid ===== */
+
+	.help-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-4);
+		margin-block-start: var(--space-5);
+	}
+
+	.help-card {
+		display: block;
+		padding: var(--space-5);
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		text-decoration: none;
+		transition:
+			background-color var(--transition-fast),
+			border-color var(--transition-fast);
+	}
+
+	.help-card:hover {
+		background-color: var(--surface-hover);
+		border-color: var(--border-accent);
+		text-decoration: none;
+	}
+
+	.help-card h3 {
+		font-family: var(--font-body);
+		font-size: var(--text-h3);
+		font-weight: var(--weight-bold);
+		color: var(--text-primary);
+		margin: 0 0 var(--space-2) 0;
+	}
+
+	.help-card p {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		margin: 0;
+		line-height: var(--leading-normal);
+	}
+
+	@media (min-width: 640px) {
+		.help-grid {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	/* ===== FAQ Items ===== */
+
+	details[id] {
+		scroll-margin-top: calc(var(--nav-height) + var(--space-4));
+	}
+
+	.faq-item {
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		margin-block-end: var(--space-3);
+		background-color: var(--surface);
+	}
+
+	.faq-item summary {
+		padding: var(--space-4) var(--space-5);
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.faq-item summary::before {
+		content: '▸ ';
+		color: var(--text-muted);
+	}
+
+	.faq-item[open] summary::before {
+		content: '▾ ';
+	}
+
+	.faq-item summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.faq-body {
+		padding: 0 var(--space-5) var(--space-5);
+	}
+
+	.faq-body p {
+		margin-block-end: var(--space-3);
+	}
+
+	.faq-body p:last-child {
+		margin-block-end: 0;
+	}
+
+	.faq-body ol,
+	.faq-body ul {
+		margin-block: var(--space-3);
+	}
+
+	.faq-body li {
+		font-size: var(--text-body);
+		margin-block: var(--space-2);
+	}
+
+	.faq-body strong {
+		color: var(--text-primary);
+	}
+
+	/* ===== Community Links ===== */
+
+	.community-links {
+		margin-block-start: var(--space-4);
+		padding-inline-start: var(--space-5);
+	}
+
+	.community-links li {
+		margin-block: var(--space-3);
+		line-height: var(--leading-normal);
+	}
+
+	/* ===== Callout Boxes ===== */
+
+	.callout {
+		padding: var(--space-4) var(--space-5);
+		border-radius: var(--border-radius);
+		border: 1px solid var(--border);
+		background-color: var(--surface);
+		margin-block-end: var(--space-5);
+	}
+
+	.callout__title {
+		font-weight: var(--weight-semibold);
+		color: var(--text-primary);
+		margin-block-end: var(--space-2);
+	}
+
+	.callout p {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		line-height: var(--leading-normal);
+	}
+
+	.callout--warning {
+		border-inline-start: 3px solid var(--warning);
+	}
+
+	.callout--warning .callout__title {
+		color: var(--warning);
+	}
+
+	/* ===== Install CTA ===== */
+
+	.install-cta {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-4);
+		padding: var(--space-8) var(--space-5);
+		text-align: center;
+		border-block-start: 1px solid var(--border);
+		background-color: var(--bg-void);
+	}
+
+	.install-cta__text {
+		color: var(--text-secondary);
+		font-size: var(--text-body);
+		max-width: 40ch;
+	}
+
+	/* ===== Responsive ===== */
+
+	@media (max-width: 480px) {
+		.hero {
+			padding-block-start: calc(var(--nav-height) + var(--space-6));
+			padding-block-end: var(--space-5);
+		}
+	}
 </style>
