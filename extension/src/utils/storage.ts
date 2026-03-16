@@ -17,19 +17,29 @@ export async function getSettings(): Promise<AppSettings> {
 		}
 	}
 
-	for (const key of API_KEY_FIELDS) {
-		result[key] = await decrypt(raw[key] as string);
-	}
+	const decryptedKeys = await Promise.all(
+		API_KEY_FIELDS.map((key) => decrypt(raw[key] as string)),
+	);
+
+	API_KEY_FIELDS.forEach((key, index) => {
+		result[key] = decryptedKeys[index];
+	});
+
 	return result;
 }
 
 export async function saveSettings(settings: Partial<AppSettings>): Promise<void> {
 	const toStore: Record<string, unknown> = { ...settings };
-	for (const key of API_KEY_FIELDS) {
-		if (settings[key] !== undefined) {
-			toStore[key] = await encrypt(settings[key] as string);
-		}
-	}
+
+	const keysToEncrypt = API_KEY_FIELDS.filter((key) => settings[key] !== undefined);
+	const encryptedValues = await Promise.all(
+		keysToEncrypt.map((key) => encrypt(settings[key] as string)),
+	);
+
+	keysToEncrypt.forEach((key, index) => {
+		toStore[key] = encryptedValues[index];
+	});
+
 	await chrome.storage.local.set(toStore);
 }
 
