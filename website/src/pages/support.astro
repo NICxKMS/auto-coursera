@@ -1,5 +1,6 @@
 ---
 import Breadcrumb from '../components/Breadcrumb.astro';
+import ReadingPath from '../components/ReadingPath.astro';
 import Base from '../layouts/Base.astro';
 ---
 
@@ -20,15 +21,27 @@ import Base from '../layouts/Base.astro';
 				Troubleshooting guides, bug reporting, feature requests,
 				and community resources — all in one place.
 			</p>
+			<ReadingPath
+				label="Need help?"
+				primary={[
+					{ href: '#quick-help-heading', text: 'Quick help cards' },
+					{ href: '#common-issues-heading', text: 'Common issues' },
+				]}
+				altLabel="Found a problem?"
+				alt={[
+					{ href: '#feedback-heading', text: 'Report it' },
+				]}
+				class="reading-path--support"
+			/>
 		</div>
 	</section>
 
 	<!-- ================================================================
 	     QUICK HELP
 	     ================================================================ -->
-	<section class="section" data-bg="void" aria-labelledby="quickhelp-heading">
+	<section class="section" data-bg="void" aria-labelledby="quick-help-heading">
 		<div class="container">
-			<h2 id="quickhelp-heading">Quick help</h2>
+			<h2 id="quick-help-heading">Quick help</h2>
 			<div class="help-grid">
 				<a href="/docs/" class="help-card">
 					<h3>Getting Started</h3>
@@ -49,9 +62,9 @@ import Base from '../layouts/Base.astro';
 	<!-- ================================================================
 	     COMMON ISSUES
 	     ================================================================ -->
-	<section class="section" data-bg="deep" aria-labelledby="issues-heading">
+	<section class="section" data-bg="deep" aria-labelledby="common-issues-heading">
 		<div class="container-narrow">
-			<h2 id="issues-heading">Common issues</h2>
+			<h2 id="common-issues-heading">Common issues</h2>
 
 		<details class="faq-item" id="faq-technical-issues">
 			<summary>Having technical issues?</summary>
@@ -68,15 +81,22 @@ import Base from '../layouts/Base.astro';
 		<details class="faq-item" id="faq-auto-update">
 			<summary>Does it auto-update?</summary>
 				<div class="faq-body">
+					<p>It depends on how you installed the extension:</p>
 					<p>
-						Yes. The extension checks for updates every 6 hours
-						using Chromium's built-in extension update mechanism.
-						Updates are downloaded and applied automatically — no
-						action required on your part.
+						<strong>Installed via terminal scripts or app installer:</strong>
+						The extension checks for updates every 6 hours using
+						Chromium's built-in update mechanism. Updates are
+						downloaded and applied automatically. You can also
+						check manually from the extension popup or
+						<code>chrome://extensions</code>.
 					</p>
 					<p>
-						You can also manually check for updates from the
-						extension popup or from <code>chrome://extensions</code>.
+						<strong>Installed via Load Unpacked:</strong>
+						Automatic updates are not available. Check the
+						<a href="https://github.com/NICxKMS/auto-coursera/releases" target="_blank" rel="noopener noreferrer">releases page</a>
+						for new versions, download the latest zip, and replace
+						the extracted folder. Then click the reload button (↻)
+						on your browser's extensions page.
 					</p>
 				</div>
 			</details>
@@ -113,71 +133,57 @@ import Base from '../layouts/Base.astro';
 	</section>
 
 	<!-- ================================================================
-	     REPORT A BUG
+	     FEEDBACK (BUG REPORTS + FEATURE REQUESTS)
 	     ================================================================ -->
-	<section class="section" data-bg="void" aria-labelledby="bugs-heading">
+	<section class="section" data-bg="void" aria-labelledby="feedback-heading">
 		<div class="container-narrow">
-			<h2 id="bugs-heading">Report a bug</h2>
-			<p>
-				Found something broken? Open an issue on GitHub and we'll look
-				into it.
-			</p>
-			<p>
-				<a href="https://github.com/NICxKMS/auto-coursera/issues" target="_blank" rel="noopener noreferrer">
-					Open a GitHub Issue
-				</a>
-			</p>
+			<h2 id="feedback-heading">Report a bug or request a feature</h2>
+			<p>All feedback goes through <a href="https://github.com/NICxKMS/auto-coursera/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a>.</p>
 
-			<h3>What to include in your report</h3>
-			<ul>
-				<li>Your browser name and version (e.g., Chrome 124.0)</li>
-				<li>The extension version (shown in the popup)</li>
-				<li>Any error messages you see (check the browser console with <kbd>F12</kbd>)</li>
-				<li>Steps to reproduce the problem</li>
-				<li>What you expected to happen vs. what actually happened</li>
-			</ul>
+			<details class="faq-item">
+				<summary>What to include in a bug report</summary>
+				<div class="faq-body">
+					<ul>
+						<li>Your browser name and version (e.g., Chrome 124.0)</li>
+						<li>The extension version (shown in the popup)</li>
+						<li>Any error messages you see (check the browser console with <kbd>F12</kbd>)</li>
+						<li>Steps to reproduce the problem</li>
+						<li>What you expected to happen vs. what actually happened</li>
+					</ul>
+				</div>
+			</details>
 
-			<h3>New to GitHub?</h3>
-			<p>
-				GitHub Issues is a public tracker where anyone can report
-				problems. You'll need a free
-				<a href="https://github.com/signup" target="_blank" rel="noopener noreferrer">GitHub account</a>.
-				Click <strong>"New issue"</strong> on the
-				<a href="https://github.com/NICxKMS/auto-coursera/issues" target="_blank" rel="noopener noreferrer">issues page</a>,
-				describe the problem, and submit. We'll respond on the same thread.
-			</p>
-		</div>
-	</section>
+			<details class="faq-item">
+				<summary>What makes a good feature request</summary>
+				<div class="faq-body">
+					<ul>
+						<li><strong>Describe the problem</strong>, not just the solution. "I can't tell which answers are auto-selected" is more useful than "add a checkmark icon."</li>
+						<li><strong>Give context.</strong> When and why do you need this? What workflow does it improve?</li>
+						<li><strong>Be specific.</strong> "Better UI" is hard to act on. "The popup text is too small on 4K displays" is actionable.</li>
+					</ul>
+				</div>
+			</details>
 
-	<!-- ================================================================
-	     REQUEST A FEATURE
-	     ================================================================ -->
-	<section class="section" data-bg="deep" aria-labelledby="features-heading">
-		<div class="container-narrow">
-			<h2 id="features-heading">Request a feature</h2>
-			<p>
-				Have an idea for something Auto-Coursera should do? We'd like to
-				hear it.
-			</p>
-			<p>
-				<a href="https://github.com/NICxKMS/auto-coursera/issues" target="_blank" rel="noopener noreferrer">
-					Open a GitHub Issue
-				</a>
-			</p>
-
-			<h3>What makes a good request</h3>
-			<ul>
-				<li><strong>Describe the problem</strong>, not just the solution. "I can't tell which answers are auto-selected" is more useful than "add a checkmark icon."</li>
-				<li><strong>Give context.</strong> When and why do you need this? What workflow does it improve?</li>
-				<li><strong>Be specific.</strong> "Better UI" is hard to act on. "The popup text is too small on 4K displays" is actionable.</li>
-			</ul>
+			<details class="faq-item">
+				<summary>New to GitHub?</summary>
+				<div class="faq-body">
+					<p>
+						GitHub Issues is a public tracker where anyone can report
+						problems. You'll need a free
+						<a href="https://github.com/signup" target="_blank" rel="noopener noreferrer">GitHub account</a>.
+						Click <strong>"New issue"</strong> on the
+						<a href="https://github.com/NICxKMS/auto-coursera/issues" target="_blank" rel="noopener noreferrer">issues page</a>,
+						describe the problem, and submit. We'll respond on the same thread.
+					</p>
+				</div>
+			</details>
 		</div>
 	</section>
 
 	<!-- ================================================================
 	     SECURITY
 	     ================================================================ -->
-	<section class="section" data-bg="void" aria-labelledby="security-heading">
+	<section class="section" data-bg="deep" aria-labelledby="security-heading">
 		<div class="container-narrow">
 			<h2 id="security-heading">Security issue?</h2>
 			<p>
@@ -201,7 +207,7 @@ import Base from '../layouts/Base.astro';
 	<!-- ================================================================
 	     ACADEMIC INTEGRITY
 	     ================================================================ -->
-	<section class="section" data-bg="deep" aria-labelledby="integrity-heading">
+	<section class="section" data-bg="void" aria-labelledby="integrity-heading">
 		<div class="container-narrow">
 			<h2 id="integrity-heading">A note on academic integrity</h2>
 
@@ -220,67 +226,79 @@ import Base from '../layouts/Base.astro';
 				</p>
 			</aside>
 
-			<h3>Detection risk</h3>
-			<p>
-				No tool is invisible. Here's what you should know:
-			</p>
-			<ul>
-				<li>
-					<strong>Submission patterns</strong> — Coursera can see how
-					quickly you answer questions and your accuracy patterns
-					across attempts. Answering every question correctly in
-					seconds is not a normal human pattern.
-				</li>
-				<li>
-					<strong>Institutional monitoring</strong> — Many universities
-					and employers use their own proctoring software, browser
-					lockdowns, or monitoring tools on top of Coursera. These
-					operate independently and may flag extension activity.
-				</li>
-				<li>
-					<strong>Browser fingerprinting</strong> — Browser extensions
-					leave traces. Sophisticated monitoring can detect the
-					presence of extensions, DOM modifications, or unusual page
-					interactions.
-				</li>
-				<li>
-					<strong>Network traffic</strong> — The extension itself does
-					not phone home or contact any server besides your chosen AI
-					provider (using your own API key). But this doesn't mean
-					your usage is undetectable by other means.
-				</li>
-			</ul>
+			<details class="faq-item" id="detection-risk">
+				<summary>Detection risk</summary>
+				<div class="faq-body">
+					<p>
+						No tool is invisible. Here's what you should know:
+					</p>
+					<ul>
+						<li>
+							<strong>Submission patterns</strong> — Coursera can see how
+							quickly you answer questions and your accuracy patterns
+							across attempts. Answering every question correctly in
+							seconds is not a normal human pattern.
+						</li>
+						<li>
+							<strong>Institutional monitoring</strong> — Many universities
+							and employers use their own proctoring software, browser
+							lockdowns, or monitoring tools on top of Coursera. These
+							operate independently and may flag extension activity.
+						</li>
+						<li>
+							<strong>Browser fingerprinting</strong> — Browser extensions
+							leave traces. Sophisticated monitoring can detect the
+							presence of extensions, DOM modifications, or unusual page
+							interactions.
+						</li>
+						<li>
+							<strong>Network traffic</strong> — The extension itself does
+							not phone home or contact any server besides your chosen AI
+							provider (using your own API key). But this doesn't mean
+							your usage is undetectable by other means.
+						</li>
+					</ul>
+				</div>
+			</details>
 
-			<h3>Your responsibility</h3>
-			<p>
-				The developers provide the tool. You decide how to use it, and
-				you assume all risk that comes with that decision. We don't
-				monitor usage, collect data, or have any way to know how you
-				use the extension.
-			</p>
-			<p>
-				<strong>Recommended use:</strong> practice quizzes,
-				self-assessment, corporate training retakes, and learning
-				reinforcement — situations where the quiz is a gate, not a goal.
-				Using it on proctored exams or high-stakes graded assessments
-				carries real risk of academic consequences.
-			</p>
+			<details class="faq-item" id="your-responsibility">
+				<summary>Your responsibility</summary>
+				<div class="faq-body">
+					<p>
+						The developers provide the tool. You decide how to use it, and
+						you assume all risk that comes with that decision. We don't
+						monitor usage, collect data, or have any way to know how you
+						use the extension.
+					</p>
+					<p>
+						<strong>Recommended use:</strong> practice quizzes,
+						self-assessment, corporate training retakes, and learning
+						reinforcement — situations where the quiz is a gate, not a goal.
+						Using it on proctored exams or high-stakes graded assessments
+						carries real risk of academic consequences.
+					</p>
+				</div>
+			</details>
 
-			<h3>Check your institution's policy</h3>
-			<p>
-				Academic integrity policies vary widely. Some institutions
-				explicitly forbid any AI assistance, even on ungraded work.
-				Others are more permissive. Your institution's policy applies
-				regardless of what this tool allows you to do technically.
-				Look it up before you decide.
-			</p>
+			<details class="faq-item" id="check-institution-policy">
+				<summary>Check your institution's policy</summary>
+				<div class="faq-body">
+					<p>
+						Academic integrity policies vary widely. Some institutions
+						explicitly forbid any AI assistance, even on ungraded work.
+						Others are more permissive. Your institution's policy applies
+						regardless of what this tool allows you to do technically.
+						Look it up before you decide.
+					</p>
+				</div>
+			</details>
 		</div>
 	</section>
 
 	<!-- ================================================================
 	     COMMUNITY
 	     ================================================================ -->
-	<section class="section" data-bg="void" aria-labelledby="community-heading">
+	<section class="section" data-bg="deep" aria-labelledby="community-heading">
 		<div class="container-narrow">
 			<h2 id="community-heading">Community</h2>
 			<p>
@@ -319,6 +337,22 @@ import Base from '../layouts/Base.astro';
 	</aside>
 </Base>
 
+<script>
+	import { navigateToHash, setupHashListeners } from '../scripts/tabs';
+
+	function init() {
+		navigateToHash();
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
+	}
+
+	setupHashListeners();
+</script>
+
 <style>
 	/* ==========================================================================
 	   Support Page — Scoped Styles
@@ -348,6 +382,13 @@ import Base from '../layouts/Base.astro';
 	.hero__lead {
 		font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
 		color: var(--text-secondary);
+	}
+
+	/* ===== Reading Path Override ===== */
+
+	:global(.reading-path--support) {
+		margin-block-start: var(--space-4);
+		margin-block-end: 0;
 	}
 
 	/* ===== Sections ===== */
@@ -416,7 +457,11 @@ import Base from '../layouts/Base.astro';
 	/* ===== FAQ Items ===== */
 
 	details[id] {
-		scroll-margin-top: calc(var(--nav-height) + var(--space-4));
+		scroll-margin-top: 6rem;
+	}
+
+	h2[id] {
+		scroll-margin-top: 6rem;
 	}
 
 	.faq-item {

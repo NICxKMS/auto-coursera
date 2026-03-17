@@ -1,6 +1,7 @@
 ---
 import versionInfo from '@root/version.json';
 import CopyButton from '../../components/CopyButton.astro';
+import ReadingPath from '../../components/ReadingPath.astro';
 import DocsLayout from '../../layouts/DocsLayout.astro';
 ---
 
@@ -12,6 +13,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 		{ label: 'Docs', href: '/docs/' },
 		{ label: 'Manual Install' },
 	]}
+	next={{ label: 'Architecture', href: '/docs/architecture/' }}
 >
 	<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
 	<h1>Manual Installation</h1>
@@ -19,8 +21,68 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 		Build from source or install a pre-built release on any Chromium browser.
 	</p>
 
+	<blockquote class="intro-note">
+		<strong>Recommended:</strong> The fastest way to install is to download the extension zip and load it unpacked into your browser. Follow the steps below.
+	</blockquote>
+
+	<ReadingPath
+		label="Quick path:"
+		primary={[
+			{ href: '#download-pre-built', text: 'Download' },
+			{ href: '#loading-unpacked', text: 'Load in your browser' },
+		]}
+		altLabel="Other methods:"
+		alt={[
+			{ href: '#building-from-source', text: 'Build from source' },
+			{ href: '#shell-installers', text: 'Shell installers' },
+		]}
+	/>
+
+	<!-- ===== Loading Unpacked ===== -->
+	<h2 id="loading-unpacked">Loading the Unpacked Extension</h2>
+	<p>
+		After downloading a <code>.zip</code> release (or building from source), load
+		the extension into your browser:
+	</p>
+
+	<div class="browser-tabs-wrapper">
+		<div class="browser-tabs" data-tab-group="browser" role="tablist" aria-label="Browser instructions">
+			<button role="tab" data-tab="chrome" aria-controls="panel-chrome" aria-selected="true" tabindex="0">Chrome</button>
+			<button role="tab" data-tab="edge" aria-controls="panel-edge" aria-selected="false" tabindex="-1">Edge</button>
+			<button role="tab" data-tab="brave" aria-controls="panel-brave" aria-selected="false" tabindex="-1">Brave</button>
+		</div>
+		<div id="panel-chrome" role="tabpanel" data-tab="chrome">
+			<ol>
+				<li>Navigate to <code>chrome://extensions</code></li>
+				<li>Enable <strong>Developer mode</strong> (toggle in the top-right corner)</li>
+				<li>Click <strong>Load unpacked</strong></li>
+				<li>Select the <code>extension/dist</code> folder</li>
+			</ol>
+		</div>
+		<div id="panel-edge" role="tabpanel" data-tab="edge" hidden>
+			<ol>
+				<li>Navigate to <code>edge://extensions</code></li>
+				<li>Enable <strong>Developer mode</strong> (toggle in the left sidebar)</li>
+				<li>Click <strong>Load unpacked</strong></li>
+				<li>Select the <code>extension/dist</code> folder</li>
+			</ol>
+		</div>
+		<div id="panel-brave" role="tabpanel" data-tab="brave" hidden>
+			<ol>
+				<li>Navigate to <code>brave://extensions</code></li>
+				<li>Enable <strong>Developer mode</strong></li>
+				<li>Click <strong>Load unpacked</strong></li>
+				<li>Select the <code>extension/dist</code> folder</li>
+			</ol>
+		</div>
+	</div>
+
+	<aside class="callout callout--info browser-note">
+		<p><strong>Other Chromium browsers</strong> (Vivaldi, Arc, Opera, etc.) — the same steps apply. Navigate to your browser's extensions page and enable Developer mode.</p>
+	</aside>
+
 	<!-- ===== Download Pre-built ===== -->
-	<h2>Download Pre-built</h2>
+	<h2 id="download-pre-built">Download Pre-built</h2>
 	<p>
 		The fastest way to get started without building anything. Download the latest
 		release and load it into your browser:
@@ -41,92 +103,82 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 		</li>
 	</ul>
 
-	<!-- ===== Prerequisites ===== -->
-	<h2>Prerequisites</h2>
-	<p>To build from source, you'll need:</p>
-	<ul>
-		<li><strong>Node.js</strong> v18 or later</li>
-		<li><strong>Git</strong></li>
-		<li><strong>pnpm</strong> — the project's package manager</li>
-		<li>A <strong>Chromium-based browser</strong> (Chrome, Edge, Brave, Vivaldi, Arc, etc.)</li>
-	</ul>
+	<!-- ===== Prerequisites + Building from Source ===== -->
+	<details class="alt-method" id="building-from-source">
+		<summary>Building from source (for developers)</summary>
 
-	<!-- ===== Building from Source ===== -->
-	<h2>Building from Source</h2>
-	<p>Clone the repo and build the extension:</p>
-	<div class="code-block">
-		<pre><code>git clone https://github.com/NICxKMS/auto-coursera.git
+		<h2 id="prerequisites">Prerequisites</h2>
+		<p>To build from source, you'll need:</p>
+		<ul>
+			<li><strong>Node.js</strong> v18 or later</li>
+			<li><strong>Git</strong></li>
+			<li><strong>pnpm</strong> — the project's package manager</li>
+			<li>A <strong>Chromium-based browser</strong> (Chrome, Edge, Brave, Vivaldi, Arc, etc.)</li>
+		</ul>
+
+		<!-- ===== Building from Source ===== -->
+		<h2>Building from Source</h2>
+		<p>Clone the repo and build the extension:</p>
+		<div class="code-block">
+			<pre><code>git clone https://github.com/NICxKMS/auto-coursera.git
 cd auto-coursera/extension
 pnpm install
 pnpm build</code></pre>
-		<CopyButton text="git clone https://github.com/NICxKMS/auto-coursera.git && cd auto-coursera/extension && pnpm install && pnpm build" label="Copy build from source commands" />
-	</div>
-	<p>
-		The built extension will be in the <code>extension/dist</code> directory.
-	</p>
-
-	<!-- ===== Loading Unpacked ===== -->
-	<h2>Loading the Unpacked Extension</h2>
-	<p>
-		After building (or extracting a <code>.zip</code> release), load the extension
-		into your browser:
-	</p>
-
-	<h3>Chrome</h3>
-	<ol>
-		<li>Navigate to <code>chrome://extensions</code></li>
-		<li>Enable <strong>Developer mode</strong> (toggle in the top-right corner)</li>
-		<li>Click <strong>Load unpacked</strong></li>
-		<li>Select the <code>extension/dist</code> folder</li>
-	</ol>
-
-	<h3>Edge</h3>
-	<ol>
-		<li>Navigate to <code>edge://extensions</code></li>
-		<li>Enable <strong>Developer mode</strong> (toggle in the left sidebar)</li>
-		<li>Click <strong>Load unpacked</strong></li>
-		<li>Select the <code>extension/dist</code> folder</li>
-	</ol>
-
-	<h3>Brave</h3>
-	<ol>
-		<li>Navigate to <code>brave://extensions</code></li>
-		<li>Enable <strong>Developer mode</strong></li>
-		<li>Click <strong>Load unpacked</strong></li>
-		<li>Select the <code>extension/dist</code> folder</li>
-	</ol>
-
-	<h3>Other Chromium Browsers</h3>
-	<p>
-		Most Chromium-based browsers follow the same pattern. Navigate to your
-		browser's extensions page, enable developer mode, and load the unpacked
-		directory.
-	</p>
+			<CopyButton text="git clone https://github.com/NICxKMS/auto-coursera.git && cd auto-coursera/extension && pnpm install && pnpm build" label="Copy build from source commands" />
+		</div>
+		<p>
+			The built extension will be in the <code>extension/dist</code> directory.
+		</p>
+	</details>
 
 	<!-- ===== CRX File ===== -->
-	<h2>CRX File Installation</h2>
-	<p>
-		If you have a <code>.crx</code> file (from the
-		<a href={`https://github.com/${versionInfo.githubRepo}/releases/latest`} target="_blank" rel="noopener noreferrer">releases page</a>):
-	</p>
-	<ol>
-		<li>Open your browser's extensions page</li>
-		<li>Drag and drop the <code>.crx</code> file onto the page</li>
-		<li>Confirm the installation prompt</li>
-	</ol>
-	<blockquote>
-		<strong>Note:</strong> Some browsers block <code>.crx</code> installations for security reasons.
-		If this happens, extract the <code>.crx</code> (it's a ZIP file) and use the
-		<strong>Load unpacked</strong> method instead.
-	</blockquote>
+	<details class="alt-method" id="crx-installation">
+		<summary>CRX file installation (alternative)</summary>
 
-	<!-- ===== Shell Installers ===== -->
-	<h2 id="shell-installers">Shell Installers</h2>
+		<h2>CRX File Installation</h2>
+		<p>
+			If you have a <code>.crx</code> file (from the
+			<a href={`https://github.com/${versionInfo.githubRepo}/releases/latest`} target="_blank" rel="noopener noreferrer">releases page</a>):
+		</p>
+		<ol>
+			<li>Open your browser's extensions page</li>
+			<li>Drag and drop the <code>.crx</code> file onto the page</li>
+			<li>Confirm the installation prompt</li>
+		</ol>
+		<blockquote>
+			<strong>Note:</strong> Some browsers block <code>.crx</code> installations for security reasons.
+			If this happens, extract the <code>.crx</code> (it's a ZIP file) and use the
+			<strong>Load unpacked</strong> method instead.
+		</blockquote>
+	</details>
+
+	<!-- ===== Updating ===== -->
+	<h2 id="updating">Updating</h2>
+
+	<h3>Installed via Shell Script</h3>
+	<p>Re-run the same install command for your platform. See <a href="#shell-installers">Shell Installers</a> below.</p>
+
+	<h3>Built from Source</h3>
+	<p>Pull the latest changes and rebuild:</p>
+	<div class="code-block">
+		<pre><code>git pull
+pnpm install
+pnpm build</code></pre>
+		<CopyButton text="git pull && pnpm install && pnpm build" label="Copy update from source commands" />
+	</div>
+	<p>
+		Then go to your browser's extensions page and click the <strong>reload</strong>
+		button (↻) on the Auto-Coursera extension, or remove and re-load it.
+	</p>
+
+	<!-- ===== Alternative: Shell Installers ===== -->
+	<h2 id="shell-installers">Alternative: Shell Installers</h2>
 	<p>
 		One-command installers that download the latest release and configure your
 		browser automatically. These use Chrome browser policies to register the
 		extension.
 	</p>
+	<p class="code-note">These commands also serve as the update command — re-run to get the latest version.</p>
 
 	<h3 id="linux-installer">Linux</h3>
 	<div class="code-block">
@@ -153,49 +205,33 @@ pnpm build</code></pre>
 		<a href="/docs/troubleshoot/">Troubleshooting</a> for details.
 	</p>
 
-	<!-- ===== Updating ===== -->
-	<h2>Updating</h2>
-
-	<h3>Installed via Shell Script</h3>
-	<p>Re-run the same install command — it will download and apply the latest release:</p>
-
-	<h4>Linux</h4>
-	<div class="code-block">
-		<pre><code>curl -fsSL autocr.nicx.me/sh | sh</code></pre>
-		<CopyButton text="curl -fsSL autocr.nicx.me/sh | sh" label="Copy Linux update command" />
-	</div>
-
-	<h4>macOS</h4>
-	<div class="code-block">
-		<pre><code>curl -fsSL autocr.nicx.me/mac | sh</code></pre>
-		<CopyButton text="curl -fsSL autocr.nicx.me/mac | sh" label="Copy macOS update command" />
-	</div>
-
-	<h4>Windows (PowerShell)</h4>
-	<div class="code-block">
-		<pre><code>irm autocr.nicx.me/ps | iex</code></pre>
-		<CopyButton text="irm autocr.nicx.me/ps | iex" label="Copy Windows update command" />
-	</div>
-
-	<h3>Built from Source</h3>
-	<p>Pull the latest changes and rebuild:</p>
-	<div class="code-block">
-		<pre><code>git pull
-pnpm install
-pnpm build</code></pre>
-		<CopyButton text="git pull && pnpm install && pnpm build" label="Copy update from source commands" />
-	</div>
-	<p>
-		Then go to your browser's extensions page and click the <strong>reload</strong>
-		button (↻) on the Auto-Coursera extension, or remove and re-load it.
-	</p>
-
 	<!-- ===== Install CTA ===== -->
 	<aside class="install-cta" aria-label="Install Auto-Coursera">
-		<p class="install-cta__text">Prefer the automated installer? One command, no manual steps.</p>
-		<a href="/install/" class="btn btn--primary">Install Auto-Coursera</a>
+		<p class="install-cta__text">Need the full install guide? Automated setup with one command.</p>
+		<a href="/install/" class="btn btn--primary">Full Install Guide</a>
 	</aside>
 </DocsLayout>
+
+<script>
+	import { initTabs, navigateToHash, setupHashListeners } from '../../scripts/tabs';
+
+	const TAB_GROUPS = [
+		{ group: 'browser', defaultTab: 'chrome' }
+	];
+
+	function init() {
+		initTabs(TAB_GROUPS);
+		navigateToHash();
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
+	}
+
+	setupHashListeners();
+</script>
 
 <style>
 	/* ===== Product tagline ===== */
@@ -213,6 +249,15 @@ pnpm build</code></pre>
 		color: var(--text-secondary);
 		font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
 		margin-block-end: var(--space-5);
+	}
+
+	/* ===== Intro note ===== */
+	.intro-note {
+		border-inline-start: 3px solid var(--accent);
+		background-color: var(--bg-void);
+		padding: var(--space-4);
+		margin-block-end: var(--space-5);
+		border-radius: var(--radius, 4px);
 	}
 
 	.code-block {
@@ -254,5 +299,124 @@ pnpm build</code></pre>
 		color: var(--text-secondary);
 		font-size: var(--text-body);
 		max-width: 40ch;
+	}
+
+	/* ===== Browser Tabs ===== */
+
+	.browser-tabs-wrapper {
+		margin-block: var(--space-4);
+	}
+
+	.browser-tabs {
+		display: flex;
+		gap: 0;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.browser-tabs [role="tab"] {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-medium);
+		color: var(--text-muted);
+		background: none;
+		border: none;
+		padding: var(--space-2) var(--space-4);
+		cursor: pointer;
+		border-bottom: 2px solid transparent;
+		margin-bottom: -1px;
+		transition:
+			color var(--transition-fast),
+			border-color var(--transition-fast);
+	}
+
+	.browser-tabs [role="tab"]:hover {
+		color: var(--text-secondary);
+	}
+
+	.browser-tabs [role="tab"][aria-selected="true"] {
+		color: var(--accent);
+		border-bottom-color: var(--accent);
+	}
+
+	.browser-tabs-wrapper [role="tabpanel"] {
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-top: none;
+		border-radius: 0 0 var(--border-radius) var(--border-radius);
+		padding: var(--space-4) var(--space-5);
+	}
+
+	.browser-tabs-wrapper [role="tabpanel"][hidden] {
+		display: none;
+	}
+
+	/* ===== Browser Note Callout ===== */
+
+	.callout {
+		padding: var(--space-4) var(--space-5);
+		border-radius: var(--border-radius);
+		border: 1px solid var(--border);
+		background-color: var(--surface);
+		margin-block: var(--space-5);
+	}
+
+	.callout--info {
+		border-inline-start: 3px solid var(--text-muted);
+		background-color: var(--bg-deep);
+	}
+
+	.callout--info p {
+		font-size: var(--text-small);
+		color: var(--text-secondary);
+	}
+
+	/* ===== Alternative Method Details ===== */
+
+	.alt-method {
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		margin-block: var(--space-5);
+		scroll-margin-top: 6rem;
+	}
+
+	.alt-method summary {
+		padding: var(--space-4) var(--space-5);
+		font-weight: var(--weight-semibold);
+		cursor: pointer;
+		color: var(--text-secondary);
+	}
+
+	.alt-method summary:hover {
+		color: var(--text-primary);
+	}
+
+	.alt-method[open] summary {
+		border-bottom: 1px solid var(--border);
+	}
+
+	.alt-method > :not(summary) {
+		padding-inline: var(--space-5);
+	}
+
+	.alt-method > :last-child {
+		padding-block-end: var(--space-4);
+	}
+
+	/* ===== Code Note ===== */
+
+	.code-note {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin-block-start: var(--space-2);
+	}
+
+	/* ===== Scroll Margin for Anchors ===== */
+
+	h2[id] {
+		scroll-margin-top: 6rem;
+	}
+
+	details[id] {
+		scroll-margin-top: 6rem;
 	}
 </style>

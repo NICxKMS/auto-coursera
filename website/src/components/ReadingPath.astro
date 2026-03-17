@@ -1,0 +1,67 @@
+---
+interface Link {
+	href: string;
+	text: string;
+}
+
+interface Props {
+	label: string;
+	primary: Link[];
+	altLabel: string;
+	alt: Link[];
+	class?: string;
+}
+
+const { label, primary, altLabel, alt, class: className } = Astro.props;
+---
+
+<nav class:list={['reading-path', className]} aria-label="Quick navigation">
+	<strong>{label}</strong>
+	{primary.map((link, i) => (
+		<>
+			{i > 0 && <Fragment>&nbsp;→ </Fragment>}
+			<a href={link.href}>{link.text}</a>
+		</>
+	))}
+	<span class="reading-path__sep">|</span>
+	<span class="reading-path__alt">
+		{altLabel}{' '}
+		{alt.map((link, i) => (
+			<>
+				{i > 0 && ' · '}
+				<a href={link.href}>{link.text}</a>
+			</>
+		))}
+	</span>
+</nav>
+
+<style>
+	.reading-path {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-2);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin-block-end: var(--space-4);
+	}
+
+	.reading-path a {
+		color: var(--accent);
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
+	}
+
+	.reading-path a:hover {
+		color: var(--text-primary);
+	}
+
+	.reading-path__sep {
+		color: var(--border);
+		margin-inline: var(--space-2);
+	}
+
+	.reading-path__alt {
+		color: var(--text-muted);
+	}
+</style>

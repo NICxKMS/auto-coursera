@@ -1,10 +1,9 @@
 ---
 import ChapterMarker from '../components/ChapterMarker.astro';
-import CopyButton from '../components/CopyButton.astro';
 import ExtensionMockup from '../components/ExtensionMockup.astro';
-import PlatformTabs from '../components/PlatformTabs.astro';
 import ProgressRail from '../components/ProgressRail.astro';
 import Base from '../layouts/Base.astro';
+import versionInfo from '@root/version.json';
 import '../styles/chapters.css';
 ---
 
@@ -48,7 +47,7 @@ import '../styles/chapters.css';
 				</div>
 			</div>
 
-			<aside class="install-card" aria-label="Quick install command">
+			<aside class="install-card" aria-label="Quick install steps">
 				<div class="install-card__header">
 					<span class="install-card__dot" aria-hidden="true"></span>
 					<span class="install-card__dot" aria-hidden="true"></span>
@@ -56,21 +55,30 @@ import '../styles/chapters.css';
 					<span class="install-card__title">Quick install</span>
 				</div>
 				<div class="install-card__body">
-					<div class="install-card__command" data-os="linux">
-						<pre><code>curl -fsSL autocr.nicx.me/sh | sh</code></pre>
-						<CopyButton text="curl -fsSL autocr.nicx.me/sh | sh" label="Copy Linux install command" />
-					</div>
-					<div class="install-card__command" data-os="macos">
-						<pre><code>curl -fsSL autocr.nicx.me/mac | sh</code></pre>
-						<CopyButton text="curl -fsSL autocr.nicx.me/mac | sh" label="Copy macOS install command" />
-					</div>
-					<div class="install-card__command" data-os="windows">
-						<pre><code>irm autocr.nicx.me/ps | iex</code></pre>
-						<CopyButton text="irm autocr.nicx.me/ps | iex" label="Copy Windows install command" />
-					</div>
+					<ol class="install-card__steps">
+						<li class="install-card__step">
+							<span class="install-card__step-label">Download the extension zip</span>
+							<a
+								href={`https://github.com/${versionInfo.githubRepo}/releases/latest/download/auto-coursera.zip`}
+								class="btn btn--small btn--accent"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								Download v{versionInfo.version}
+							</a>
+						</li>
+						<li class="install-card__step">
+							<span class="install-card__step-label">Open <code>chrome://extensions</code></span>
+							<span class="install-card__step-detail">Enable Developer Mode</span>
+						</li>
+						<li class="install-card__step">
+							<span class="install-card__step-label">Click "Load unpacked"</span>
+							<span class="install-card__step-detail">Select the extracted <code>dist</code> folder</span>
+						</li>
+					</ol>
 				</div>
 				<p class="install-card__footnote">
-					Works on Linux, macOS &amp; Windows
+					<a href="/install/" class="install-card__guide-link">Step-by-step guide &rarr;</a>
 				</p>
 			</aside>
 		</div>
@@ -178,35 +186,15 @@ import '../styles/chapters.css';
 	<ChapterMarker chapter={4} id="get-started">
 		<h2 class="chapter__title">Get started</h2>
 		<p class="chapter__body">
-			One command. Five free AI providers. You don't pay for answers.
+			Ready to install? Download the extension and load it into your browser in under two minutes.
 		</p>
 
-		<PlatformTabs />
-
 		<div class="chapter__actions">
-			<a href="/install/" class="btn btn--primary">Full install guide</a>
-			<a href="/docs/" class="btn btn--ghost">Read the docs</a>
+			<a href="/install/" class="btn btn--primary">Install Auto-Coursera</a>
+			<a href={`https://github.com/${versionInfo.githubRepo}`} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">View on GitHub</a>
 		</div>
 	</ChapterMarker>
 </Base>
-
-<script>
-	function initOSDetection() {
-		const ua = navigator.userAgent.toLowerCase();
-		let os = 'linux';
-		if (ua.includes('win')) os = 'windows';
-		else if (ua.includes('mac')) os = 'macos';
-
-		document
-			.querySelectorAll<HTMLElement>('.install-card__command[data-os]')
-			.forEach((el) => {
-				el.hidden = el.dataset.os !== os;
-			});
-	}
-
-	initOSDetection();
-	document.addEventListener('astro:after-swap', initOSDetection);
-</script>
 
 <style>
 	/* ==========================================================================
@@ -269,7 +257,7 @@ import '../styles/chapters.css';
 		}
 	}
 
-	/* ===== Install Card — Terminal-style command card ===== */
+	/* ===== Install Card — Quick install steps card ===== */
 
 	.install-card {
 		background-color: var(--surface);
@@ -314,34 +302,81 @@ import '../styles/chapters.css';
 		padding: var(--space-4) var(--space-5);
 	}
 
-	.install-card__command {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-	}
-
-	.install-card__command[hidden] {
-		display: none;
-	}
-
-	.install-card__command pre {
-		margin: 0;
-		background: none;
-		border: none;
-		border-radius: 0;
+	.install-card__steps {
+		list-style: none;
+		counter-reset: install-step;
 		padding: 0;
-		flex: 1;
-		min-width: 0;
-		overflow: hidden;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
 	}
 
-	.install-card__command code {
+	.install-card__step {
+		counter-increment: install-step;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.install-card__step::before {
+		content: counter(install-step) ".";
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-bold);
+		color: var(--accent);
+		line-height: 1;
+	}
+
+	.install-card__step-label {
+		font-family: var(--font-body);
+		font-size: var(--text-body);
+		color: var(--text-primary);
+		line-height: var(--leading-normal);
+	}
+
+	.install-card__step-label code {
 		font-family: var(--font-mono);
 		font-size: var(--text-code);
 		color: var(--accent);
 		background: none;
 		padding: 0;
-		white-space: nowrap;
+	}
+
+	.install-card__step-detail {
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		line-height: var(--leading-normal);
+	}
+
+	.install-card__step-detail code {
+		font-family: var(--font-mono);
+		font-size: var(--text-code);
+		color: var(--accent);
+		background: none;
+		padding: 0;
+	}
+
+	.btn--small {
+		display: inline-block;
+		font-family: var(--font-mono);
+		font-size: var(--text-small);
+		font-weight: var(--weight-semibold);
+		padding: var(--space-1) var(--space-3);
+		border-radius: var(--border-radius);
+		text-decoration: none;
+		width: fit-content;
+		margin-block-start: var(--space-1);
+	}
+
+	.btn--accent {
+		background-color: var(--accent);
+		color: var(--bg-void);
+	}
+
+	.btn--accent:hover {
+		opacity: 0.9;
 	}
 
 	.install-card__footnote {
@@ -351,6 +386,16 @@ import '../styles/chapters.css';
 		padding: var(--space-3) var(--space-5);
 		padding-block-start: 0;
 		margin: 0;
+	}
+
+	.install-card__guide-link {
+		color: var(--accent);
+		text-decoration: none;
+		font-weight: var(--weight-medium);
+	}
+
+	.install-card__guide-link:hover {
+		text-decoration: underline;
 	}
 
 	/* ===== Chapter 2 — Mechanism Grid ===== */

@@ -12,5 +12,5 @@ installer/dist/
 installer/installer
 installer/installer.exe
 *.js.map
-docs/superpowers/plans
+# docs/superpowers/plans
 task.md

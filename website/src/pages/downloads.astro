@@ -25,11 +25,9 @@ const siteUrl = versionInfo.domains.website;
 				<span class="hero__separator" aria-hidden="true">&middot;</span>
 				<span class="hero__note">Free &amp; open source</span>
 			</div>
-			<p class="hero__lead">
-				Grab a platform installer for Windows, macOS, or Linux.
-				Available for both <strong>x64</strong> and <strong>ARM64</strong>
-				architectures.
-			</p>
+		<p class="hero__lead">
+			Download the extension package and load it into your browser in minutes.
+		</p>
 			<p class="hero__links">
 				Looking for the one-command install?
 				<a href="/install/">Install page</a>. Want to build from source?
@@ -49,32 +47,32 @@ const siteUrl = versionInfo.domains.website;
 
 			<!-- App / Zip toggle -->
 			<div class="download-toggle" role="tablist" aria-label="Download format">
-				<button
-					id="toggle-app"
-					class="download-toggle__btn"
-					role="tab"
-					data-view="app"
-					aria-controls="view-app"
-					aria-selected="true"
-					tabindex="0"
-				>
-					App
-				</button>
-				<button
-					id="toggle-zip"
-					class="download-toggle__btn"
-					role="tab"
-					data-view="zip"
-					aria-controls="view-zip"
-					aria-selected="false"
-					tabindex="-1"
-				>
-					Zip
-				</button>
+			<button
+				id="toggle-app"
+				class="download-toggle__btn"
+				role="tab"
+				data-view="app"
+				aria-controls="view-app"
+				aria-selected="false"
+				tabindex="-1"
+			>
+				App
+			</button>
+			<button
+				id="toggle-zip"
+				class="download-toggle__btn"
+				role="tab"
+				data-view="zip"
+				aria-controls="view-zip"
+				aria-selected="true"
+				tabindex="0"
+			>
+				Zip
+			</button>
 			</div>
 
-			<!-- App view: platform installer cards -->
-			<div id="view-app" role="tabpanel" aria-labelledby="toggle-app" data-view="app">
+		<!-- App view: platform installer cards -->
+		<div id="view-app" role="tabpanel" aria-labelledby="toggle-app" data-view="app" hidden>
 			<div class="download-grid">
 				<div class="download-card" data-os="windows" data-arch="x64">
 					<h3 class="download-card__platform">Windows</h3>
@@ -114,8 +112,8 @@ const siteUrl = versionInfo.domains.website;
 			</div>
 			</div>
 
-			<!-- Zip view: extension package download -->
-			<div id="view-zip" role="tabpanel" aria-labelledby="toggle-zip" data-view="zip" hidden>
+		<!-- Zip view: extension package download -->
+		<div id="view-zip" role="tabpanel" aria-labelledby="toggle-zip" data-view="zip">
 				<div class="download-grid">
 					<div class="download-card download-card--wide">
 						<h3 class="download-card__platform">Extension Package (.zip)</h3>
@@ -132,19 +130,22 @@ const siteUrl = versionInfo.domains.website;
 							Download .zip
 						</a>
 
-						<div class="zip-instructions">
-							<h4 class="zip-instructions__heading">How to install</h4>
-							<ol class="zip-instructions__steps">
-								<li>Download and extract the zip</li>
-								<li>Open <code>chrome://extensions</code> in your browser</li>
-								<li>Enable <strong>Developer mode</strong> (top-right toggle)</li>
-								<li>Click <strong>Load unpacked</strong> and select the extracted folder</li>
-							</ol>
-							<p class="zip-instructions__note">
-								The archive contains the built <code>dist</code> folder
-								and a <code>.crx</code> file for manual installation.
-							</p>
-						</div>
+					<div class="zip-instructions">
+						<h4 class="zip-instructions__heading">How to install</h4>
+						<ol class="zip-instructions__steps">
+							<li>Download and extract the zip</li>
+							<li>Open <code>chrome://extensions</code> in your browser</li>
+							<li>Enable <strong>Developer mode</strong> (top-right toggle)</li>
+							<li>Click <strong>Load unpacked</strong> and select the extracted folder</li>
+						</ol>
+						<p class="zip-instructions__note">
+							The archive contains the built <code>dist</code> folder
+							and a <code>.crx</code> file for manual installation.
+						</p>
+						<p class="zip-instructions__guide">
+							After downloading, follow the <a href="/install/">install guide</a> to load the extension into your browser.
+						</p>
+					</div>
 					</div>
 				</div>
 			</div>
@@ -210,16 +211,21 @@ const siteUrl = versionInfo.domains.website;
 			const panels = document.querySelectorAll<HTMLElement>('[role="tabpanel"][data-view]');
 			if (!tabs.length || !panels.length) return;
 
-			function activate(view: string) {
-				tabs.forEach((tab) => {
-					const isActive = tab.dataset.view === view;
-					tab.setAttribute('aria-selected', String(isActive));
-					tab.tabIndex = isActive ? 0 : -1;
-				});
-				panels.forEach((panel) => {
-					panel.hidden = panel.dataset.view !== view;
-				});
+		function activate(view: string) {
+			tabs.forEach((tab) => {
+				const isActive = tab.dataset.view === view;
+				tab.setAttribute('aria-selected', String(isActive));
+				tab.tabIndex = isActive ? 0 : -1;
+			});
+			panels.forEach((panel) => {
+				panel.hidden = panel.dataset.view !== view;
+			});
+
+			// Only highlight recommended cards when App view is visible
+			if (view === 'app') {
+				highlightRecommended();
 			}
+		}
 
 			tabs.forEach((tab) => {
 				tab.addEventListener('click', () => {
@@ -262,8 +268,8 @@ const siteUrl = versionInfo.domains.website;
 				}
 			});
 
-			// Reset to default on init
-			activate('app');
+		// Reset to default on init
+		activate('zip');
 		}
 
 		function detectOS(): { os: string; arch: string } {
@@ -308,12 +314,10 @@ const siteUrl = versionInfo.domains.website;
 			}
 		}
 
+	initDownloadToggle();
+	document.addEventListener('astro:after-swap', () => {
 		initDownloadToggle();
-		highlightRecommended();
-		document.addEventListener('astro:after-swap', () => {
-			initDownloadToggle();
-			highlightRecommended();
-		});
+	});
 	</script>
 </Base>
 
@@ -504,6 +508,26 @@ const siteUrl = versionInfo.domains.website;
 
 	.zip-instructions__note code {
 		font-size: var(--text-code);
+	}
+
+	.zip-instructions__guide {
+		font-size: var(--text-small);
+		font-weight: var(--weight-semibold);
+		color: var(--accent);
+		margin-block-start: var(--space-4);
+		padding-block-start: var(--space-3);
+		border-top: 1px solid var(--border);
+		margin-block-end: 0;
+	}
+
+	.zip-instructions__guide a {
+		color: var(--accent);
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
+	}
+
+	.zip-instructions__guide a:hover {
+		color: var(--text-primary);
 	}
 
 	/* ===== Download Grid ===== */

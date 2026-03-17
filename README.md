@@ -24,23 +24,37 @@ flowchart LR
 
 ## Quick Start
 
+### Install (End Users)
+
+1. Download the latest release zip from [GitHub Releases](https://github.com/NICxKMS/auto-coursera/releases/latest/download/auto-coursera.zip)
+2. Extract the zip to a permanent folder
+3. Open your browser's extensions page:
+   - Chrome: `chrome://extensions`
+   - Edge: `edge://extensions`
+   - Brave: `brave://extensions`
+4. Enable **Developer mode**
+5. Click **Load unpacked** and select the extracted `dist` folder
+
+For a detailed guide, visit the [install page](https://autocr.nicx.me/install/).
+
+### Build from Source (Contributors)
+
 ```bash
-# 1. Clone the repository
 git clone https://github.com/nicxkms/auto-coursera.git
-cd auto-coursera
-
-# 2. Install extension dependencies
-cd extension && pnpm install && cd ..
-
-# 3. Build the extension
-cd extension && pnpm build && cd ..
-
-# 4. Generate a signing key (first time only)
-bash scripts/generate-key.sh
-
-# 5. Package as CRX
-bash scripts/package-crx.sh -v <version> -k extension-key.pem -s extension/dist
+cd auto-coursera/extension && pnpm install && pnpm build
 ```
+
+Then follow the Load Unpacked steps above using the `extension/dist` folder.
+
+### Alternative: Terminal Install Scripts
+
+For automated or headless environments:
+
+- **Linux:** `curl -fsSL autocr.nicx.me/sh | sh`
+- **macOS:** `curl -fsSL autocr.nicx.me/mac | sh`
+- **Windows:** `irm autocr.nicx.me/ps | iex`
+
+> These scripts use browser policy to install. See the [install page](https://autocr.nicx.me/install/) for details.
 
 ## Prerequisites
 
@@ -132,7 +146,7 @@ Deployment guides are available in the `docs/` directory:
 
 GitHub Releases stores the CRX and installer binaries, while the static Astro website on Cloudflare Pages serves the landing page, docs, and the canonical `updates.xml` update manifest at `https://autocr.nicx.me/updates.xml`.
 
-End-user installs and updates are driven by browser policy entries (`ExtensionInstallForcelist`) written by the native installer, install scripts, or manual policy steps. The site intentionally treats installers as the primary path; scripts and manual steps remain available for advanced or automated environments.
+End-user installs and updates are driven by browser policy entries (`ExtensionInstallForcelist`) written by the native installer, install scripts, or manual policy steps. The site treats Load Unpacked as the primary installation path; terminal scripts and app installers remain available as alternative methods for automated environments.
 
 ## Configuration Variables
 

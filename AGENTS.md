@@ -16,6 +16,7 @@
 >## Commit Message Format
 >
 >Follow [Conventional Commits](https://www.conventionalcommits.org/) with these conventions:
+>Changelog should always be summary not verbose, and should be written in a way that is understandable to users who may not be familiar with the codebase. The focus should be on the impact of the change rather than the technical details of how it was implemented.
 >- **Subject line**: `type(scope): description` — max 72 characters
 >  - Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`, `perf`, `style`
 >  - Scope: `extension`, `website`, `installer`, `ci`, or omit for cross-cutting changes

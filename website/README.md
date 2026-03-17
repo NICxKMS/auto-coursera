@@ -10,8 +10,8 @@ Installer-first landing page, download portal, and documentation hub for the Aut
 
 | Technology | Version | Purpose |
 |---|---|---|
-| [Astro](https://astro.build/) | 4.x | Static site generator |
-| [Tailwind CSS](https://tailwindcss.com/) | 3.x | Utility-first CSS |
+| [Astro](https://astro.build/) | 6.x | Static site generator |
+| [Tailwind CSS](https://tailwindcss.com/) | 4.x | Utility-first CSS |
 | Cloudflare Pages | — | Hosting & CDN |
 
 ## Development
@@ -28,7 +28,7 @@ pnpm preview      # Preview production build locally
 | Route | File | Description |
 |---|---|---|
 | `/` | `src/pages/index.astro` | Landing page — hero, features, CTA |
-| `/install` | `src/pages/install.astro` | OS detection, recommended installer downloads derived from root `version.json` at build time, advanced terminal one-liners resolved against the current website host |
+| `/install` | `src/pages/install/index.astro` | OS detection, recommended installer downloads derived from root `version.json` at build time, advanced terminal one-liners resolved against the current website host |
 | `/downloads` | `src/pages/downloads.astro` | Native installers derived from root `version.json` at build time, plus advanced scripts and direct download shortcuts |
 | `/releases` | `src/pages/releases.astro` | Version history fetched from the GitHub Releases API at build time |
 | `/support` | `src/pages/support.astro` | Help and contact info |

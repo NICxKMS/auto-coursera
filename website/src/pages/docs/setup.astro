@@ -1,4 +1,5 @@
 ---
+import ReadingPath from '../../components/ReadingPath.astro';
 import DocsLayout from '../../layouts/DocsLayout.astro';
 ---
 
@@ -19,33 +20,48 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 		Configure a free AI provider and start answering Coursera quizzes in minutes.
 	</p>
 
-	<!-- ===== What is an API Key? ===== -->
-	<aside class="callout callout--info" role="note" aria-labelledby="api-key-heading">
-		<p class="callout__title" id="api-key-heading">What is an API key?</p>
-		<p>
-			An API key is a unique password that lets the extension communicate with an
-			AI service. Each provider gives you a free key when you create an account.
-			The key stays on your device — we never see it.
-		</p>
-	</aside>
+	<ReadingPath
+		label="Start here:"
+		primary={[
+			{ href: '#provider-comparison', text: 'Compare providers' },
+			{ href: '#openrouter', text: 'Set up your first key' },
+		]}
+		altLabel="Already set up?"
+		alt={[
+			{ href: '#extension-settings', text: 'Extension Settings' },
+			{ href: '#rate-limits', text: 'Rate Limits' },
+		]}
+	/>
 
-	<!-- ===== How to Open Settings ===== -->
-	<aside class="callout callout--info" role="note" aria-labelledby="open-settings-heading">
-		<p class="callout__title" id="open-settings-heading">How to open settings</p>
-		<ol class="callout__steps">
-			<li>Navigate to any <strong>Coursera quiz page</strong></li>
-			<li>Look for the <strong>🎓 graduation cap button</strong> in the <strong>bottom-right corner</strong> of the page</li>
-			<li>Click it to open the control panel</li>
-			<li>Click the <strong>gear/settings icon</strong></li>
-			<li>Paste your API key in the provider field</li>
-		</ol>
-		<p>
-			The 🎓 button only appears on Coursera pages — you won't see it on other websites.
-		</p>
-	</aside>
+	<details class="setup-primer">
+		<summary>New to API keys? Start here</summary>
+		<div class="setup-primer__content">
+			<div class="setup-primer__section">
+				<p class="setup-primer__title">What is an API key?</p>
+				<p>
+					An API key is a unique password that lets the extension communicate with an
+					AI service. Each provider gives you a free key when you create an account.
+					The key stays on your device — we never see it.
+				</p>
+			</div>
+			<div class="setup-primer__section">
+				<p class="setup-primer__title">How to open settings</p>
+				<ol class="callout__steps">
+					<li>Navigate to any <strong>Coursera quiz page</strong></li>
+					<li>Look for the <strong>🎓 graduation cap button</strong> in the <strong>bottom-right corner</strong> of the page</li>
+					<li>Click it to open the control panel</li>
+					<li>Click the <strong>gear/settings icon</strong></li>
+					<li>Paste your API key in the provider field</li>
+				</ol>
+				<p>
+					The 🎓 button only appears on Coursera pages — you won't see it on other websites.
+				</p>
+			</div>
+		</div>
+	</details>
 
 	<!-- ===== Provider Comparison ===== -->
-	<h2>Provider Comparison</h2>
+	<h2 id="provider-comparison">Provider Comparison</h2>
 	<p>
 		Not sure which provider to pick? Here's a side-by-side overview to help you decide.
 	</p>
@@ -109,195 +125,199 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 			<li><strong>NVIDIA NIM:</strong> <code>https://integrate.api.nvidia.com/v1</code></li>
 		</ul>
 	</details>
-
-	<!-- ===== Cost Overview ===== -->
-	<h2>Cost Overview</h2>
-	<p>
-		Every supported provider has a free tier. The extension uses each provider's
-		free tier by default — no credit card required, no surprise charges.
-	</p>
-	<p>
+	<p class="setup-tip">
+		💡 Every supported provider has a free tier — no credit card required, no surprise charges.
 		We recommend configuring at least two providers. If one goes down or hits its
 		rate limit, the extension automatically fails over to the next.
 	</p>
 
-	<!-- ===== Provider Cards ===== -->
-	<h2>Providers</h2>
+	<!-- ===== Provider Cards (Tabs) ===== -->
+	<h2 id="providers">Providers</h2>
 
-	<!-- OpenRouter -->
-	<div class="provider" id="openrouter">
-		<div class="provider__header">
-			<h3>OpenRouter <span class="provider__badge">Recommended</span></h3>
+	<div class="provider-tabs-wrapper">
+		<div class="provider-tabs" data-tab-group="provider" role="tablist" aria-label="API providers">
+			<button role="tab" data-tab="openrouter" aria-controls="panel-openrouter" aria-selected="true" tabindex="0">OpenRouter <span class="tab-badge">Recommended</span></button>
+			<button role="tab" data-tab="gemini" aria-controls="panel-gemini" aria-selected="false" tabindex="-1">Gemini</button>
+			<button role="tab" data-tab="groq" aria-controls="panel-groq" aria-selected="false" tabindex="-1">Groq</button>
+			<button role="tab" data-tab="cerebras" aria-controls="panel-cerebras" aria-selected="false" tabindex="-1">Cerebras</button>
+			<button role="tab" data-tab="nvidia" aria-controls="panel-nvidia" aria-selected="false" tabindex="-1">NVIDIA NIM</button>
 		</div>
-		<div class="provider__meta">
-			<div class="provider__field">
-				<span class="provider__label">Key format</span>
-				<code>sk-or-...</code>
-			</div>
-			<div class="provider__field">
-				<span class="provider__label">Free tier</span>
-				<span class="provider__value provider__value--yes">Yes — many free models</span>
-			</div>
-		</div>
-		<h4>Setup</h4>
-		<ol>
-			<li>Create an account at <a href="https://openrouter.ai/" target="_blank" rel="noopener noreferrer">openrouter.ai</a></li>
-			<li>Go to <strong>Settings → Keys</strong></li>
-			<li>Click <strong>Create Key</strong></li>
-			<li>Copy the key (starts with <code>sk-or-</code>)</li>
-		<li>Paste into Auto-Coursera settings (🎓 → gear icon → OpenRouter field)</li>
-	</ol>
-</div>
 
-<!-- Google Gemini -->
-	<div class="provider" id="gemini">
-		<div class="provider__header">
-			<h3>Google Gemini</h3>
-		</div>
-		<div class="provider__meta">
-			<div class="provider__field">
-				<span class="provider__label">Key format</span>
-				<code>AIza...</code>
+		<!-- OpenRouter -->
+		<div id="panel-openrouter" role="tabpanel" data-tab="openrouter">
+			<div id="openrouter">
+				<div class="provider__meta">
+					<div class="provider__field">
+						<span class="provider__label">Key format</span>
+						<code>sk-or-...</code>
+					</div>
+					<div class="provider__field">
+						<span class="provider__label">Free tier</span>
+						<span class="provider__value provider__value--yes">Yes — many free models</span>
+					</div>
+				</div>
+				<h4>Setup</h4>
+				<ol>
+					<li>Create an account at <a href="https://openrouter.ai/" target="_blank" rel="noopener noreferrer">openrouter.ai</a></li>
+					<li>Go to <strong>Settings → Keys</strong></li>
+					<li>Click <strong>Create Key</strong></li>
+					<li>Copy the key (starts with <code>sk-or-</code>)</li>
+					<li>Paste into Auto-Coursera settings (🎓 → gear icon → OpenRouter field)</li>
+				</ol>
 			</div>
-			<div class="provider__field">
-				<span class="provider__label">Free tier</span>
-				<span class="provider__value provider__value--yes">Yes</span>
-			</div>
 		</div>
-		<h4>Setup</h4>
-		<ol>
-			<li>Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a></li>
-			<li>Click <strong>Get API Key</strong></li>
-			<li>Click <strong>Create API Key</strong></li>
-			<li>Copy the key (starts with <code>AIza</code>)</li>
-		<li>Paste into Auto-Coursera settings (🎓 → gear icon → Gemini field)</li>
-	</ol>
-</div>
 
-<!-- Groq -->
-	<div class="provider" id="groq">
-		<div class="provider__header">
-			<h3>Groq</h3>
-		</div>
-		<div class="provider__meta">
-			<div class="provider__field">
-				<span class="provider__label">Key format</span>
-				<code>gsk_...</code>
+		<!-- Google Gemini -->
+		<div id="panel-gemini" role="tabpanel" data-tab="gemini" hidden>
+			<div id="gemini">
+				<div class="provider__meta">
+					<div class="provider__field">
+						<span class="provider__label">Key format</span>
+						<code>AIza...</code>
+					</div>
+					<div class="provider__field">
+						<span class="provider__label">Free tier</span>
+						<span class="provider__value provider__value--yes">Yes</span>
+					</div>
+				</div>
+				<h4>Setup</h4>
+				<ol>
+					<li>Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a></li>
+					<li>Click <strong>Get API Key</strong></li>
+					<li>Click <strong>Create API Key</strong></li>
+					<li>Copy the key (starts with <code>AIza</code>)</li>
+					<li>Paste into Auto-Coursera settings (🎓 → gear icon → Gemini field)</li>
+				</ol>
 			</div>
-			<div class="provider__field">
-				<span class="provider__label">Free tier</span>
-				<span class="provider__value provider__value--yes">Yes</span>
-			</div>
 		</div>
-		<h4>Setup</h4>
-		<ol>
-			<li>Go to <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Groq Console</a></li>
-			<li>Navigate to <strong>API Keys</strong></li>
-			<li>Click <strong>Create API Key</strong></li>
-			<li>Copy the key (starts with <code>gsk_</code>)</li>
-		<li>Paste into Auto-Coursera settings (🎓 → gear icon → Groq field)</li>
-	</ol>
-</div>
 
-<!-- Cerebras -->
-	<div class="provider" id="cerebras">
-		<div class="provider__header">
-			<h3>Cerebras</h3>
-		</div>
-		<div class="provider__meta">
-			<div class="provider__field">
-				<span class="provider__label">Key format</span>
-				<code>cbs-...</code>
+		<!-- Groq -->
+		<div id="panel-groq" role="tabpanel" data-tab="groq" hidden>
+			<div id="groq">
+				<div class="provider__meta">
+					<div class="provider__field">
+						<span class="provider__label">Key format</span>
+						<code>gsk_...</code>
+					</div>
+					<div class="provider__field">
+						<span class="provider__label">Free tier</span>
+						<span class="provider__value provider__value--yes">Yes</span>
+					</div>
+				</div>
+				<h4>Setup</h4>
+				<ol>
+					<li>Go to <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Groq Console</a></li>
+					<li>Navigate to <strong>API Keys</strong></li>
+					<li>Click <strong>Create API Key</strong></li>
+					<li>Copy the key (starts with <code>gsk_</code>)</li>
+					<li>Paste into Auto-Coursera settings (🎓 → gear icon → Groq field)</li>
+				</ol>
 			</div>
-			<div class="provider__field">
-				<span class="provider__label">Free tier</span>
-				<span class="provider__value provider__value--yes">Yes</span>
-			</div>
 		</div>
-		<h4>Setup</h4>
-		<ol>
-			<li>Go to <a href="https://cloud.cerebras.ai/" target="_blank" rel="noopener noreferrer">Cerebras Cloud</a></li>
-			<li>Navigate to <strong>API Keys</strong></li>
-			<li>Click <strong>Create</strong></li>
-			<li>Copy the key (starts with <code>cbs-</code>)</li>
-		<li>Paste into Auto-Coursera settings (🎓 → gear icon → Cerebras field)</li>
-	</ol>
-</div>
 
-<!-- NVIDIA NIM -->
-	<div class="provider" id="nvidia">
-		<div class="provider__header">
-			<h3>NVIDIA NIM</h3>
-		</div>
-		<div class="provider__meta">
-			<div class="provider__field">
-				<span class="provider__label">Key format</span>
-				<code>nvapi-...</code>
+		<!-- Cerebras -->
+		<div id="panel-cerebras" role="tabpanel" data-tab="cerebras" hidden>
+			<div id="cerebras">
+				<div class="provider__meta">
+					<div class="provider__field">
+						<span class="provider__label">Key format</span>
+						<code>cbs-...</code>
+					</div>
+					<div class="provider__field">
+						<span class="provider__label">Free tier</span>
+						<span class="provider__value provider__value--yes">Yes</span>
+					</div>
+				</div>
+				<h4>Setup</h4>
+				<ol>
+					<li>Go to <a href="https://cloud.cerebras.ai/" target="_blank" rel="noopener noreferrer">Cerebras Cloud</a></li>
+					<li>Navigate to <strong>API Keys</strong></li>
+					<li>Click <strong>Create</strong></li>
+					<li>Copy the key (starts with <code>cbs-</code>)</li>
+					<li>Paste into Auto-Coursera settings (🎓 → gear icon → Cerebras field)</li>
+				</ol>
 			</div>
-			<div class="provider__field">
-				<span class="provider__label">Free tier</span>
-				<span class="provider__value provider__value--limited">Limited</span>
+		</div>
+
+		<!-- NVIDIA NIM -->
+		<div id="panel-nvidia" role="tabpanel" data-tab="nvidia" hidden>
+			<div id="nvidia">
+				<div class="provider__meta">
+					<div class="provider__field">
+						<span class="provider__label">Key format</span>
+						<code>nvapi-...</code>
+					</div>
+					<div class="provider__field">
+						<span class="provider__label">Free tier</span>
+						<span class="provider__value provider__value--limited">Limited</span>
+					</div>
+				</div>
+				<p>
+					NVIDIA NIM is particularly well-suited for image-based questions thanks to
+					its vision models. Best used as a secondary provider alongside OpenRouter
+					or Gemini.
+				</p>
+				<h4>Setup</h4>
+				<ol>
+					<li>Go to <a href="https://build.nvidia.com/" target="_blank" rel="noopener noreferrer">NVIDIA Build</a></li>
+					<li>Navigate to the <strong>API</strong> section</li>
+					<li>Click <strong>Get API Key</strong></li>
+					<li>Copy the key (starts with <code>nvapi-</code>)</li>
+					<li>Paste into Auto-Coursera settings (🎓 → gear icon → NVIDIA field)</li>
+				</ol>
 			</div>
 		</div>
-		<p>
-			NVIDIA NIM is particularly well-suited for image-based questions thanks to
-			its vision models. Best used as a secondary provider alongside OpenRouter
-			or Gemini.
-		</p>
-		<h4>Setup</h4>
-		<ol>
-			<li>Go to <a href="https://build.nvidia.com/" target="_blank" rel="noopener noreferrer">NVIDIA Build</a></li>
-			<li>Navigate to the <strong>API</strong> section</li>
-			<li>Click <strong>Get API Key</strong></li>
-			<li>Copy the key (starts with <code>nvapi-</code>)</li>
-		<li>Paste into Auto-Coursera settings (🎓 → gear icon → NVIDIA field)</li>
-	</ol>
-</div>
+	</div>
 
 	<!-- ===== Extension Settings ===== -->
-	<h2>Extension Settings</h2>
-	<p>
-		After adding your API key, you can fine-tune the extension's behavior
-		in the settings panel (click 🎓 → Settings):
-	</p>
+	<details class="docs-section-details" id="extension-settings">
+		<summary>Extension Settings — customize thresholds, auto-select, and provider priority</summary>
+		<h2>Extension Settings</h2>
+		<p>
+			After adding your API key, you can fine-tune the extension's behavior
+			in the settings panel (click 🎓 → Settings):
+		</p>
 
-	<h3>Confidence Threshold</h3>
-	<p>
-		A decimal value from 0.0–1.0 that controls the minimum confidence needed to
-		highlight an answer. The default is 0.7. Lower values show more answers;
-		higher values are more selective.
-	</p>
+		<h3>Confidence Threshold</h3>
+		<p>
+			A decimal value from 0.0–1.0 that controls the minimum confidence needed to
+			highlight an answer. The default is 0.7. Lower values show more answers;
+			higher values are more selective.
+		</p>
 
-	<h3>Auto-Select</h3>
-	<p>
-		When enabled, high-confidence answers (green) are clicked automatically.
-		Enabled by default — answers above the confidence threshold are
-		automatically selected.
-	</p>
+		<h3>Auto-Select</h3>
+		<p>
+			When enabled, high-confidence answers (green) are clicked automatically.
+			Enabled by default — answers above the confidence threshold are
+			automatically selected.
+		</p>
 
-	<h3>Auto-Start</h3>
-	<p>
-		When enabled, quiz solving begins as soon as questions are detected on the
-		page. No need to click the FAB.
-	</p>
+		<h3>Auto-Start</h3>
+		<p>
+			When enabled, quiz solving begins as soon as questions are detected on the
+			page. No need to click the FAB.
+		</p>
 
-	<h3>Provider Priority</h3>
-	<p>
-		Set your preferred primary provider. If it fails or hits a rate limit, the
-		extension automatically tries other configured providers.
-	</p>
+		<h3>Provider Priority</h3>
+		<p>
+			Set your preferred primary provider. If it fails or hits a rate limit, the
+			extension automatically tries other configured providers.
+		</p>
 
-	<h3>API Key Storage</h3>
-	<p>
-		All API keys are encrypted at rest with <strong>AES-256-GCM</strong>
-		(PBKDF2, 100K iterations) before being stored in Chrome's local storage.
-		This protects against casual inspection of stored data. Keys are sent
-		directly from the extension to the AI provider over HTTPS — they never
-		pass through our servers.
-	</p>
+		<h3>API Key Storage</h3>
+		<p>
+			All API keys are encrypted at rest with <strong>AES-256-GCM</strong>
+			(PBKDF2, 100K iterations) before being stored in Chrome's local storage.
+			This protects against casual inspection of stored data. Keys are sent
+			directly from the extension to the AI provider over HTTPS — they never
+			pass through our servers.
+		</p>
+	</details>
 
 	<!-- ===== Understanding Confidence ===== -->
-	<h2>Understanding Confidence</h2>
+	<details class="docs-section-details" id="understanding-confidence">
+		<summary>Understanding Confidence Scores — how the color tiers work</summary>
+		<h2>Understanding Confidence</h2>
 	<p>
 		Every answer the AI returns includes a <strong>confidence score</strong> — a
 		number between 0 and 1 representing the model's self-assessed probability
@@ -363,9 +383,10 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 		You can adjust it with the confidence slider in settings
 		(🎓 → gear icon → Confidence Threshold).
 	</p>
+	</details>
 
 	<!-- ===== Rate Limits ===== -->
-	<h2>Rate Limits</h2>
+	<h2 id="rate-limits">Rate Limits</h2>
 	<p>
 		To avoid hitting AI provider rate limits, the extension throttles itself
 		using a token-bucket rate limiter.
@@ -405,6 +426,27 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 	</aside>
 
 </DocsLayout>
+
+<script>
+	import { initTabs, navigateToHash, setupHashListeners } from '../../scripts/tabs';
+
+	const TAB_GROUPS = [
+		{ group: 'provider', defaultTab: 'openrouter' }
+	];
+
+	function init() {
+		initTabs(TAB_GROUPS);
+		navigateToHash();
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
+	}
+
+	setupHashListeners();
+</script>
 
 <style>
 	/* ===== Product tagline ===== */
@@ -465,37 +507,71 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 		margin-block: var(--space-1);
 	}
 
-	/* ===== Provider cards ===== */
-	.provider {
-		margin-block: var(--space-6);
-		padding: var(--space-5);
-		background-color: var(--surface);
-		border: 1px solid var(--border);
-		border-radius: var(--border-radius);
+	/* ===== Provider Tabs ===== */
+	.provider-tabs-wrapper {
+		margin-block: var(--space-5);
 	}
 
-	.provider__header {
-		margin-block-end: var(--space-3);
-	}
-
-	.provider__header h3 {
+	.provider-tabs {
 		display: flex;
-		align-items: center;
-		gap: var(--space-3);
+		gap: 0;
+		border-bottom: 1px solid var(--border);
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 
-	.provider__badge {
-		display: inline-block;
+	.provider-tabs [role="tab"] {
 		font-family: var(--font-mono);
 		font-size: var(--text-small);
 		font-weight: var(--weight-medium);
+		color: var(--text-muted);
+		background: none;
+		border: none;
+		padding: var(--space-2) var(--space-4);
+		cursor: pointer;
+		border-bottom: 2px solid transparent;
+		margin-bottom: -1px;
+		white-space: nowrap;
+		transition:
+			color var(--transition-fast),
+			border-color var(--transition-fast);
+	}
+
+	.provider-tabs [role="tab"]:hover {
+		color: var(--text-secondary);
+	}
+
+	.provider-tabs [role="tab"][aria-selected="true"] {
+		color: var(--accent);
+		border-bottom-color: var(--accent);
+	}
+
+	.tab-badge {
+		display: inline-block;
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		font-weight: var(--weight-medium);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		padding: 0.15em 0.6em;
+		padding: 0.1em 0.5em;
 		background-color: var(--accent-subtle);
 		color: var(--accent);
 		border: 1px solid var(--border-accent);
 		border-radius: var(--border-radius-sm);
+		vertical-align: middle;
+		margin-inline-start: var(--space-1);
+	}
+
+	[role="tabpanel"] {
+		background-color: var(--surface);
+		border: 1px solid var(--border);
+		border-top: none;
+		border-radius: 0 0 var(--border-radius) var(--border-radius);
+		padding: var(--space-4) var(--space-5);
+	}
+
+	[role="tabpanel"][hidden] {
+		display: none;
 	}
 
 	.provider__meta {
@@ -530,16 +606,16 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 		font-size: var(--text-small);
 	}
 
-	.provider h4 {
+	[role="tabpanel"] h4 {
 		margin-block-start: var(--space-4);
 		margin-block-end: var(--space-2);
 	}
 
-	.provider ol {
+	[role="tabpanel"] ol {
 		margin-block-start: var(--space-2);
 	}
 
-	.provider p {
+	[role="tabpanel"] > div > p {
 		font-size: var(--text-small);
 		color: var(--text-muted);
 		margin-block: var(--space-2);
@@ -643,5 +719,124 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 		color: var(--text-secondary);
 		font-size: var(--text-body);
 		max-width: 40ch;
+	}
+
+	/* ===== Setup Primer (collapsed preamble) ===== */
+	.setup-primer {
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		background-color: var(--surface);
+		margin-block: var(--space-4);
+	}
+
+	.setup-primer summary {
+		padding: var(--space-3) var(--space-4);
+		font-weight: var(--weight-semibold);
+		font-size: var(--text-small);
+		color: var(--text-secondary);
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.setup-primer summary::before {
+		content: '▸ ';
+		color: var(--text-muted);
+	}
+
+	.setup-primer[open] summary::before {
+		content: '▾ ';
+	}
+
+	.setup-primer summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.setup-primer__content {
+		padding: var(--space-4) var(--space-5);
+		border-top: 1px solid var(--border);
+	}
+
+	.setup-primer__section {
+		margin-block-end: var(--space-4);
+	}
+
+	.setup-primer__section:last-child {
+		margin-block-end: 0;
+	}
+
+	.setup-primer__title {
+		font-weight: var(--weight-semibold);
+		color: var(--text-secondary);
+		font-size: var(--text-small);
+		margin-block-end: var(--space-2);
+	}
+
+	.setup-primer__content p {
+		font-size: var(--text-small);
+		color: var(--text-secondary);
+	}
+
+	/* ===== Docs Section Details (collapsible sections) ===== */
+	.docs-section-details {
+		border: 1px solid var(--border);
+		border-radius: var(--border-radius);
+		background-color: var(--surface);
+		margin-block: var(--space-5);
+	}
+
+	.docs-section-details summary {
+		padding: var(--space-4) var(--space-5);
+		font-weight: var(--weight-semibold);
+		font-size: 1.125rem;
+		color: var(--text-secondary);
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.docs-section-details summary::before {
+		content: '▸ ';
+		color: var(--text-muted);
+	}
+
+	.docs-section-details[open] summary::before {
+		content: '▾ ';
+	}
+
+	.docs-section-details summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.docs-section-details h2 {
+		margin-block-start: 0;
+		padding-inline: var(--space-5);
+	}
+
+	.docs-section-details h3 {
+		padding-inline: var(--space-5);
+	}
+
+	.docs-section-details > p,
+	.docs-section-details > ul,
+	.docs-section-details > .docs-table-wrap {
+		padding-inline: var(--space-5);
+	}
+
+	.docs-section-details > p:last-child,
+	.docs-section-details > ul:last-child {
+		padding-block-end: var(--space-4);
+	}
+
+	/* ===== Setup Tip ===== */
+	.setup-tip {
+		font-size: var(--text-small);
+		color: var(--text-muted);
+		margin-block: var(--space-3) var(--space-5);
+		line-height: 1.6;
+	}
+
+	/* ===== Scroll margin for fixed nav ===== */
+	h2[id],
+	details[id] {
+		scroll-margin-top: 6rem;
 	}
 </style>
