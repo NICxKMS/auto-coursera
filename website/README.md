@@ -121,7 +121,7 @@ Installer download links point directly to the current GitHub Release assets, an
 
 Published by `.github/workflows/deploy.yml` to Cloudflare Pages:
 
-- **Production branch:** `master`
+- **Production branch:** `main`
 - **Build command:** `cd website && pnpm install && pnpm build`
 - **Output directory:** `website/dist`
 - **Custom domain:** `autocr.nicx.me`

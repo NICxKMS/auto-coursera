@@ -230,5 +230,5 @@ if [[ "${1:-}" == "--bump" ]]; then
   echo "  git add -A"
   echo "  git commit -m 'chore: bump version to ${NEW_VERSION}'"
   echo "  git tag v${NEW_VERSION}"
-  echo "  git push auto-coursera master --tags"
+  echo "  git push auto-coursera main --tags"
 fi

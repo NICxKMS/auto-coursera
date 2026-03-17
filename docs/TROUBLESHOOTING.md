@@ -228,10 +228,10 @@ After updating the file locally, deploy to Cloudflare Pages:
 
 ```bash
 cd website && pnpm build
-wrangler pages deploy dist --project-name=auto-coursera --branch=master
+wrangler pages deploy dist --project-name=auto-coursera --branch=main
 ```
 
-Or push to the `master` branch to trigger CI deployment.
+Or push to the `main` branch to trigger CI deployment.
 
 ### Verify
 
@@ -281,9 +281,9 @@ The `create-release` job in `deploy.yml` uses `softprops/action-gh-release@v2` t
 - The tag must follow the `v*` pattern (e.g., `v1.9.1`)
 - No existing release with the same tag (or use `--clobber` to overwrite)
 
-**Master website deploy is skipped on purpose:**
+**main website deploy is skipped on purpose:**
 
-`deploy-website-main` now refuses to publish a new Pages state from `master` until the current `version.json` already has a matching **published** GitHub Release with the expected CRX + installer assets. If the job logs a notice about skipping deploy, create/publish the release first, then push again (or re-run the workflow) once the assets exist.
+`deploy-website-main` now refuses to publish a new Pages state from `main` until the current `version.json` already has a matching **published** GitHub Release with the expected CRX + installer assets. If the job logs a notice about skipping deploy, create/publish the release first, then push again (or re-run the workflow) once the assets exist.
 
 **Extension private key format:**
 

@@ -263,13 +263,13 @@ See [SIGNING.md](./SIGNING.md) for the full cryptographic details.
 | | |
 |---|---|
 | **Location** | `.github/workflows/` |
-| **Triggers** | Push to the website deployment branch (`master` in the current setup), push `v*` tag (full release) |
+| **Triggers** | Push to the website deployment branch (`main` in the current setup), push `v*` tag (full release) |
 
 **Workflows:**
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `deploy.yml` | website-branch push (`master` in the current setup) + `v*` tag | Orchestrates the full pipeline. Contains jobs: `build-extension`, `build-installers`, `create-release`, `deploy-website-main`, `deploy-website-release`; the master website job only publishes when the current `version.json` already has a matching published GitHub Release with the expected assets, and the tag-release path reruns the extension typecheck/lint/test gates plus installer `go vet` before packaging/signing |
+| `deploy.yml` | website-branch push (`main` in the current setup) + `v*` tag | Orchestrates the full pipeline. Contains jobs: `build-extension`, `build-installers`, `create-release`, `deploy-website-main`, `deploy-website-release`; the main website job only publishes when the current `version.json` already has a matching published GitHub Release with the expected assets, and the tag-release path reruns the extension typecheck/lint/test gates plus installer `go vet` before packaging/signing |
 | `build-extension.yml` | `pull_request` + `workflow_dispatch` | CI typecheck/lint/test/build for PRs touching `extension/` (no secrets, no release) |
 | `build-installers.yml` | `pull_request` + `workflow_dispatch` | CI `go vet` + cross-platform build for PRs touching `installer/` (no secrets, no release) |
 

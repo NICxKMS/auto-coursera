@@ -160,7 +160,7 @@ The website can be deployed via GitHub integration or direct upload.
 | Setting | Value |
 |---|---|
 | **Project name** | `auto-coursera` |
-| **Production branch** | `master` |
+| **Production branch** | `main` |
 | **Framework preset** | Astro |
 | **Build command** | `cd website && pnpm install && pnpm build` |
 | **Build output directory** | `website/dist` |
@@ -173,7 +173,7 @@ The website can be deployed via GitHub integration or direct upload.
 cd website
 pnpm install
 pnpm build
-wrangler pages deploy dist --project-name auto-coursera --branch=master
+wrangler pages deploy dist --project-name auto-coursera --branch=main
 ```
 
 ---
@@ -242,12 +242,12 @@ These are already set to their correct production values. If you forked the proj
 
 ## 10. First Deployment
 
-### Deploy website (push to master)
+### Deploy website (push to main)
 
 ```bash
 git add .
 git commit -m "Initial platform setup"
-git push auto-coursera master
+git push auto-coursera main
 ```
 
 This triggers the website deploy workflow, but `deploy-website-main` only publishes Cloudflare Pages when the current `version.json` already has a matching published GitHub Release with the expected assets.

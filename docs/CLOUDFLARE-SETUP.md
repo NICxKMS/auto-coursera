@@ -48,7 +48,7 @@
 | Setting | Value |
 |---|---|
 | **Project name** | `auto-coursera` |
-| **Production branch** | `master` |
+| **Production branch** | `main` |
 | **Framework preset** | Astro |
 | **Build command** | `cd website && pnpm install && pnpm build` |
 | **Build output directory** | `website/dist` |
@@ -64,10 +64,10 @@
 
 5. Click **Save and Deploy**
 
-If you deploy Pages via Wrangler/CI instead of the Git integration, target the production branch explicitly so the deployment binds to the `master` environment and custom domain:
+If you deploy Pages via Wrangler/CI instead of the Git integration, target the production branch explicitly so the deployment binds to the `main` environment and custom domain:
 
 ```bash
-wrangler pages deploy website/dist --project-name=auto-coursera --branch=master
+wrangler pages deploy website/dist --project-name=auto-coursera --branch=main
 ```
 
 ### Custom domain

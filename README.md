@@ -142,7 +142,7 @@ Deployment guides are available in the `docs/` directory:
 1. **Build extension** → `cd extension && pnpm build`
 2. **Package CRX** → `bash scripts/package-crx.sh -v <ver> -k extension-key.pem`
 3. **Upload to GitHub Releases** → CI/CD creates a GitHub Release with the CRX, CRX checksum, installers, and installer checksums
-4. **Deploy website** → CI runs `wrangler pages deploy website/dist --project-name=auto-coursera --branch=master`, but `deploy-website-main` only publishes when the current `version.json` already has a matching published GitHub Release with the expected assets
+4. **Deploy website** → CI runs `wrangler pages deploy website/dist --project-name=auto-coursera --branch=main`, but `deploy-website-main` only publishes when the current `version.json` already has a matching published GitHub Release with the expected assets
 
 GitHub Releases stores the CRX and installer binaries, while the static Astro website on Cloudflare Pages serves the landing page, docs, and the canonical `updates.xml` update manifest at `https://autocr.nicx.me/updates.xml`.
 

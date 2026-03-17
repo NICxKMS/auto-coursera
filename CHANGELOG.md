@@ -17,6 +17,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Infrastructure
 - Install page moved to directory-based routing, and CI/version checks were updated to match the new path structure.
+- Default branch and website deploy automation now target `main` instead of `master` for consistent release operations.
 
 ### Added
 

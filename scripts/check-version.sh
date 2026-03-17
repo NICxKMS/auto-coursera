@@ -242,16 +242,16 @@ check "website/public/scripts/install.sh (POLICY_FILENAME vs Go)" "$SHELL_POLICY
 echo ""
 echo "Checking deployment branch and source-link truth..."
 
-check_contains ".github/workflows/deploy.yml" "push to master"
-check_contains "docs/SETUP.md" '| **Production branch** | `master` |'
-check_contains "docs/SETUP.md" "git push auto-coursera master"
-check_contains "docs/CLOUDFLARE-SETUP.md" '| **Production branch** | `master` |'
-check_contains "docs/ARCHITECTURE.md" 'website deployment branch (`master` in the current setup)'
-check_contains "website/README.md" '- **Production branch:** `master`'
-check_contains "website/src/components/Footer.astro" "blob/master/LICENSE"
+check_contains ".github/workflows/deploy.yml" "push to main"
+check_contains "docs/SETUP.md" '| **Production branch** | `main` |'
+check_contains "docs/SETUP.md" "git push auto-coursera main"
+check_contains "docs/CLOUDFLARE-SETUP.md" '| **Production branch** | `main` |'
+check_contains "docs/ARCHITECTURE.md" 'website deployment branch (`main` in the current setup)'
+check_contains "website/README.md" '- **Production branch:** `main`'
+check_contains "website/src/components/Footer.astro" "blob/main/LICENSE"
 check_contains "website/src/components/Footer.astro" "versionInfo.version"
 check_contains ".github/workflows/deploy.yml" "needs: [create-release]"
-check_contains ".github/workflows/deploy.yml" "Gate master Pages deploy on published GitHub Release assets"
+check_contains ".github/workflows/deploy.yml" "Gate main Pages deploy on published GitHub Release assets"
 
 # ── Git Tag (CI only) ───────────────────────────────────────────────────────
 
