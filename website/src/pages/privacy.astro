@@ -116,6 +116,9 @@ import Base from '../layouts/Base.astro';
 						contains no user data — no identifiers, no cookies, no
 						analytics parameters. It's a plain HTTP GET.
 					</p>
+					<p>
+						This check occurs for all installation methods.
+					</p>
 				</div>
 
 				<div class="data-path">
@@ -126,6 +129,12 @@ import Base from '../layouts/Base.astro';
 						feature, not something our code controls. It sends a
 						standard Chromium update request with your extension ID
 						and current version.
+					</p>
+					<p>
+						This update mechanism is used for script and app
+						installations. Load Unpacked installations do not use
+						this update path — users update manually by replacing
+						the extension files.
 					</p>
 				</div>
 			</div>

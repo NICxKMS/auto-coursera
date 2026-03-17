@@ -10,7 +10,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 		{ label: 'Docs', href: '/docs/' },
 		{ label: 'Architecture' },
 	]}
-	prev={{ label: 'Troubleshooting', href: '/docs/troubleshoot/' }}
+	prev={{ label: 'Manual Install', href: '/docs/manual/' }}
 >
 	<p class="hero__product">Auto-Coursera — AI-powered Coursera quiz assistant</p>
 	<h1>Architecture Overview</h1>
@@ -238,6 +238,12 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 		The extension checks <code>version.json</code> every <strong>6 hours</strong>
 		for new releases. Users are notified of available updates through the
 		extension panel.
+	</p>
+	<p>
+		Auto-update applies to script and app installations via
+		<code>updates.xml</code>. Users who installed via Load Unpacked must
+		manually update by downloading a new release zip and reloading the
+		extension.
 	</p>
 
 	<!-- ===== AI Providers ===== -->

@@ -2,7 +2,7 @@
 description: "The Allfather -- Single orchestrator. Plans, delegates to specialists, tracks progress, accumulates wisdom, and verifies completion. The only agent that can delegate."
 mode: primary
 tools:
-  read: false
+  read: true
   glob: false
   grep: false
   edit: false
@@ -13,6 +13,9 @@ tools:
   todo: true
   question: true
 permission:
+  read:
+    "*.md": allow
+    "*": deny
   write:
     "*.md": allow
     "*": deny

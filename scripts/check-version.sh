@@ -91,8 +91,8 @@ check "installer/config.go (AppVersion)" "$GO_VERSION"
 echo ""
 echo "Checking website release-source wiring..."
 
-check_contains "website/src/pages/install.astro" "versionInfo.version"
-check_contains "website/src/pages/install.astro" "versionInfo.githubRepo"
+check_contains "website/src/pages/install/index.astro" "versionInfo.version"
+check_contains "website/src/pages/install/index.astro" "versionInfo.githubRepo"
 check_contains "website/src/pages/downloads.astro" "versionInfo.version"
 check_contains "website/src/pages/downloads.astro" "versionInfo.githubRepo"
 
@@ -185,7 +185,7 @@ DOMAIN_WEBSITE=$(jq -r '.domains.website' version.json)
 echo ""
 echo "Checking website domain in pages ($DOMAIN_WEBSITE)..."
 
-check_contains "website/src/pages/install.astro" "versionInfo.domains"
+check_contains "website/src/pages/install/index.astro" "versionInfo.domains"
 check_contains "website/src/pages/downloads.astro" "versionInfo.domains"
 check_contains "website/src/pages/docs/troubleshoot.astro" "versionInfo.version"
 check_contains "website/src/pages/downloads.astro" "versionInfo.version"

@@ -8,7 +8,30 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
----
+### Changed
+
+#### Website
+- Installation and onboarding content now consistently prioritizes **Load Unpacked** across homepage, install/download pages, docs, and README, with script/app installer paths moved into clearly marked alternative flows.
+- Install, setup, manual install, and support pages were streamlined with shared tab/disclosure patterns, reduced duplication, and more focused guidance for faster completion.
+- Docs navigation was reorganized for clearer reading paths, including earlier access to guide cards, split guide/reference pager flows, and a unified reading-path component across key docs pages.
+
+#### Infrastructure
+- Install page moved to directory-based routing, and CI/version checks were updated to match the new path structure.
+
+### Added
+
+#### Website
+- New install flow illustration plus reusable navigation/UI primitives (shared tab/hash utility and reading-path guides) to improve consistency across install and docs experiences.
+
+### Removed
+
+#### Website
+- Removed obsolete tab component no longer needed after consolidating tab behavior.
+
+### Fixed
+
+#### Website
+- Restored consistent section styling and spacing on install/support pages, improved docs deep-link reliability, and aligned install FAQ structure with site-wide formatting patterns.
 
 ## [2.0.0] — 2026-03-14
 

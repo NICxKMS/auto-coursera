@@ -23,14 +23,33 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 		so you always know how sure the model is.
 	</p>
 
+	<div class="docs-cards">
+		<a href="/docs/setup/" class="docs-card">
+			<h3>Setup Guide</h3>
+			<p>Configure AI providers and get your free API keys.</p>
+		</a>
+		<a href="/docs/manual/" class="docs-card">
+			<h3>Manual Installation</h3>
+			<p>Build from source or install manually on any Chromium browser.</p>
+		</a>
+		<a href="/docs/troubleshoot/" class="docs-card">
+			<h3>Troubleshooting</h3>
+			<p>Fix common issues with detection, API keys, and browser compatibility.</p>
+		</a>
+		<a href="/docs/architecture/" class="docs-card">
+			<h3>Architecture</h3>
+			<p>Technical deep-dive into how the extension works under the hood.</p>
+		</a>
+	</div>
+
 	<!-- ===== The Workflow ===== -->
-	<h2>The Workflow</h2>
+	<h2 id="workflow">The Workflow</h2>
 	<p>Five steps from install to answers:</p>
 	<ol class="docs-steps">
 		<li>
-			<strong>Install the extension</strong> — use the
-			<a href="/install/">one-command installer</a> or download from
-			<a href="/downloads/">releases</a>
+			<strong>Install the extension</strong> — download the zip and
+			<a href="/install/">load it unpacked</a> into your browser, or use
+			an alternative method
 		</li>
 		<li>
 			<strong>Configure an API key</strong> — all providers are free. See the
@@ -49,7 +68,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 	</ol>
 
 	<!-- ===== What to Expect ===== -->
-	<h2>What to Expect</h2>
+	<h2 id="what-to-expect">What to Expect</h2>
 	<p>
 		Every answer is highlighted with a color that reflects the model's confidence:
 	</p>
@@ -86,7 +105,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 	</p>
 
 	<!-- ===== Supported Question Types ===== -->
-	<h2>Supported Question Types</h2>
+	<h2 id="supported-question-types">Supported Question Types</h2>
 	<p>
 		The extension detects and answers the following Coursera question formats:
 	</p>
@@ -117,29 +136,8 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 		but the extension won't attempt to answer them.
 	</p>
 
-	<!-- ===== Explore the Docs ===== -->
-	<h2>Explore the Docs</h2>
-	<div class="docs-cards">
-		<a href="/docs/setup/" class="docs-card">
-			<h3>Setup Guide</h3>
-			<p>Configure AI providers and get your free API keys.</p>
-		</a>
-		<a href="/docs/manual/" class="docs-card">
-			<h3>Manual Installation</h3>
-			<p>Build from source or install manually on any Chromium browser.</p>
-		</a>
-		<a href="/docs/troubleshoot/" class="docs-card">
-			<h3>Troubleshooting</h3>
-			<p>Fix common issues with detection, API keys, and browser compatibility.</p>
-		</a>
-		<a href="/docs/architecture/" class="docs-card">
-			<h3>Architecture</h3>
-			<p>Technical deep-dive into how the extension works under the hood.</p>
-		</a>
-	</div>
-
 	<!-- ===== Keyboard Shortcuts ===== -->
-	<h2>Keyboard Shortcuts</h2>
+	<h2 id="keyboard-shortcuts">Keyboard Shortcuts</h2>
 	<div class="docs-table-wrap">
 		<table>
 			<thead>
@@ -167,7 +165,7 @@ import DocsLayout from '../../layouts/DocsLayout.astro';
 
 	<!-- ===== Install CTA ===== -->
 	<aside class="install-cta" aria-label="Install Auto-Coursera">
-		<p class="install-cta__text">Ready to install? It takes one command.</p>
+		<p class="install-cta__text">Ready to install? It takes two minutes.</p>
 		<a href="/install/" class="btn btn--primary">Install Auto-Coursera</a>
 	</aside>
 </DocsLayout>
