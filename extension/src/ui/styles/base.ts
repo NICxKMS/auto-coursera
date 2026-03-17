@@ -52,6 +52,24 @@ a {
 	color: var(--ac-brand);
 	text-decoration: none;
 }
+
+:focus-visible {
+	outline: 2px solid var(--ac-brand);
+	outline-offset: 2px;
+}
+
+/* Specific resets for custom elements that shouldn't show default browser outlines but need custom ones */
+.ac-input:focus-visible,
+.ac-select:focus-visible,
+.ac-btn:focus-visible,
+.ac-panel__minimize:focus-visible,
+.ac-overlay__close:focus-visible,
+[role="switch"]:focus-visible,
+[role="button"]:focus-visible,
+[tabindex="0"]:focus-visible {
+	outline: 2px solid var(--ac-brand);
+	outline-offset: 2px;
+}
 `;
 
 // ── Custom Properties ───────────────────────────────────────────
