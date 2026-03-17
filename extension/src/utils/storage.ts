@@ -17,19 +17,31 @@ export async function getSettings(): Promise<AppSettings> {
 		}
 	}
 
-	for (const key of API_KEY_FIELDS) {
-		result[key] = await decrypt(raw[key] as string);
+	// ⚡ Bolt: Parallelize API key decryption for faster storage reads
+	const decryptedKeys = await Promise.all(API_KEY_FIELDS.map((key) => decrypt(raw[key] as string)));
+
+	for (let i = 0; i < API_KEY_FIELDS.length; i++) {
+		result[API_KEY_FIELDS[i]] = decryptedKeys[i];
 	}
+
 	return result;
 }
 
 export async function saveSettings(settings: Partial<AppSettings>): Promise<void> {
 	const toStore: Record<string, unknown> = { ...settings };
-	for (const key of API_KEY_FIELDS) {
-		if (settings[key] !== undefined) {
-			toStore[key] = await encrypt(settings[key] as string);
+
+	// ⚡ Bolt: Parallelize API key encryption for faster storage writes
+	const keysToEncrypt = API_KEY_FIELDS.filter((key) => settings[key] !== undefined);
+	if (keysToEncrypt.length > 0) {
+		const encryptedValues = await Promise.all(
+			keysToEncrypt.map((key) => encrypt(settings[key] as string)),
+		);
+
+		for (let i = 0; i < keysToEncrypt.length; i++) {
+			toStore[keysToEncrypt[i]] = encryptedValues[i];
 		}
 	}
+
 	await chrome.storage.local.set(toStore);
 }
 
